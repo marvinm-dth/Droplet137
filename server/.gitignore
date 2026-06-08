@@ -1,0 +1,6 @@
+node_modules/
+.env
+.env.*
+supabase/combined.sql
+supabase/.branches/
+supabase/.temp/

@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Inventory</title>
+
+  <!-- Google Font -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css?family=Poppins:400,600,700&display=swap"
+  />
+
+  <!-- DataTables CSS (desktop/tablet) -->
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css"
+  />
+
+  <!-- Font Awesome (icons) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  />
+
+  <style>
+    /* ============================
+       Global & Base Styles
+       ============================ */
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      line-height: 1.4;
+    }
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* Container for entire page */
+    .container_info {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 16px;
+      box-sizing: border-box;
+    }
+
+    /* ----------------------------------------
+       Header (logo, title, logout)
+       ---------------------------------------- */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      background-color: #f8f9fa;
+      position: relative;
+    }
+    .header .logo-link {
+      display: flex;
+      align-items: center;
+    }
+    .header .logo-link img {
+      width: 30px;
+      height: 30px;
+      margin-right: 10px;
+    }
+    .header h1 {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+      font-size: 2.5em;
+      font-weight: bold;
+      color: #333;
+      text-align: center;
+    }
+    .logout-button {
+      padding: 10px 20px;
+      background-color: #cc716c;
+      color: #fff;
+      font-size: 1em;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+      margin-left: auto;
+    }
+    .logout-button:hover {
+      background-color: #b35c58;
+    }
+
+    /* ----------------------------------------
+       Cart Icon & Badge
+       ---------------------------------------- */
+    .cart-icon {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      font-size: 2em;
+      cursor: pointer;
+      color: #007bff;
+      margin-bottom: 20px;
+      margin-right: 20px;
+      position: relative;
+    }
+    .cart-badge {
+      background-color: #dc3545;
+      color: #fff;
+      border-radius: 50%;
+      padding: 2px 6px;
+      font-size: 0.8em;
+      position: absolute;
+      top: -8px;
+      right: -10px;
+      display: none;
+    }
+
+    /* ----------------------------------------
+       Modals (UPC Not Found, Confirmation, Cart)
+       ---------------------------------------- */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 800px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+    .modal-content .close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 1.5em;
+      cursor: pointer;
+      color: #333;
+    }
+    /* Confirmation modal smaller */
+    #confirmationModal .modal-content {
+      max-width: 400px;
+      text-align: center;
+      font-size: 14px;
+    }
+    #confirmationModal img {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 10px;
+      display: block;
+    }
+    #confirmationModal input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      margin: 10px 0;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #confirmationModal button {
+      background-color: #28a745;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    #confirmationModal button:hover {
+      background-color: #218838;
+    }
+
+    /* ----------------------------------------
+       Language Selector
+       ---------------------------------------- */
+    .language-selector {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .language-selector label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .language-selector select {
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+    }
+
+    /* ----------------------------------------
+       Form Groups (label + input)
+       ---------------------------------------- */
+    .form-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap; /* allow wrapping on mobile */
+    }
+    .form-group label {
+      min-width: 80px;
+      font-weight: bold;
+      margin-right: 10px;
+      font-size: 1em;
+    }
+    .form-group input[type='text'] {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1em;
+    }
+    .form-group select {
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1em;
+    }
+
+    /* ----------------------------------------
+       Buttons Container
+       ---------------------------------------- */
+    .buttons-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+    .button {
+      padding: 12px 25px;
+      margin: 0 15px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      color: #fff;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      white-space: nowrap;
+    }
+    .add-orders-btn {
+      background-color: #28a745;
+    }
+    .add-orders-btn:hover {
+      background-color: #218838;
+    }
+    /* Toggle button */
+    #toggleButton {
+      padding: 10px 20px;
+      cursor: pointer;
+      margin-right: 20px;
+      border-radius: 6px;
+      border: 1px solid #007bff;
+      background-color: #007bff;
+      color: #fff;
+    }
+    #toggleButton:hover {
+      background-color: #0056b3;
+    }
+
+    /* ----------------------------------------
+       Prelisted Items Table (desktop/tablet)
+       ---------------------------------------- */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto 40px;
+      font-size: 0.9em;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      background-color: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #007bff;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    tbody tr:hover {
+      background-color: #f1f1f1;
+    }
+    /* “Add Item” button in table */
+    table button {
+      padding: 6px 12px;
+      border: none;
+      background-color: #007bff;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.8em;
+    }
+    table button:hover {
+      background-color: #0056b3;
+    }
+    /* Hide the “Keywords” column header */
+    th:nth-child(8), td:nth-child(8) {
+      display: none;
+    }
+
+    /* ----------------------------------------
+       Cart Modal Table (desktop/tablet)
+       ---------------------------------------- */
+    #common-items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 0.9em;
+    }
+    #common-items-table th,
+    #common-items-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    #common-items-table th {
+      background-color: #007bff;
+      color: #fff;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    #common-items-table tr:hover {
+      background-color: #f1f1f1;
+    }
+    .add-inventory-button {
+      text-align: center;
+      margin-top: 10px;
+    }
+    .add-inventory-button button.add-btn {
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .add-inventory-button button.add-btn:hover {
+      background-color: #218838;
+    }
+
+    /* ----------------------------------------
+       Mobile‐Only Overrides (≤ 480px)
+       ---------------------------------------- */
+    @media (max-width: 480px) {
+      /* Header stacks vertically */
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-bottom: 10px;
+      }
+      .header h1 {
+        position: static;
+        transform: none;
+        margin: 0 0 10px;
+        font-size: 1.2em;
+      }
+      .logout-button {
+        margin: 8px 0 0;
+        width: auto;
+        font-size: 0.7em;
+      }
+
+      /* Cart icon smaller and aligned to right */
+      .cart-icon {
+        justify-content: flex-end;
+        margin-bottom: 10px;
+        margin-right: 10px;
+      }
+
+      /* Language selector stacks */
+      .language-selector {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .language-selector label {
+        margin-bottom: 6px;
+      }
+
+      /* Form groups stack vertically */
+      .form-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .form-group label {
+        width: 100%;
+        margin-bottom: 4px;
+        font-size: 0.95em;
+      }
+      .form-group input[type='text'],
+      .form-group select {
+        width: 100%;
+        font-size: 1em;
+      }
+
+      /* Buttons container shrinks */
+      .buttons-container {
+        margin: 20px 0;
+        text-align: center;
+      }
+      .button {
+        font-size: 0.9em;
+        padding: 8px 16px;
+        margin: 6px 0;
+      }
+      #toggleButton {
+        width: 100%;
+        margin: 6px 0;
+        font-size: 0.9em;
+      }
+
+      /* Card‐style table rows: only 90% width so you see a small margin on each side */
+        #prelisted-items-table {
+            width: 90% !important;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Hide the THEAD entirely in mobile */
+        #prelisted-items-table thead {
+            display: none;
+        }
+
+        /* Each <tr> becomes a block “card” with a bit of side‐margin */
+        #prelisted-items-table tbody tr {
+            display: block;
+            margin: 0 0 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+            padding: 8px;
+        }
+
+        /* Each <td> turns into a flex container, label on left, value on right */
+        #prelisted-items-table tbody tr td {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 8px;        /* smaller padding */
+            border: none;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+        }
+        /* Remove the bottom border on the very last <td> */
+        #prelisted-items-table tbody tr td:last-child {
+            border-bottom: none;
+        }
+
+        /* Prepend each cell with its “data-label” (which we already set via JS/data-label attributes) */
+        #prelisted-items-table tbody tr td::before {
+            content: attr(data-label) ": ";
+            flex-shrink: 0;
+            font-weight: 600;
+            color: #555;
+        }
+
+        /* Shrink down the “Add Item” button, too */
+        #prelisted-items-table tbody tr td button {
+            font-size: 0.8em;
+            padding: 4px 8px;
+        }
+
+      /* Cart Modal Table → Card‐style */
+      #common-items-table thead {
+        display: none;
+      }
+      #common-items-table tbody tr {
+        display: block;
+        margin-bottom: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background-color: #fff;
+        padding: 8px;
+      }
+      #common-items-table tbody tr td {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 8px;
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        text-align: left;
+        font-size: 0.9em;
+      }
+      #common-items-table tbody tr td:last-child {
+        border-bottom: none;
+      }
+      #common-items-table tbody tr td::before {
+        content: attr(data-label) ": ";
+        flex-shrink: 0;
+        font-weight: 600;
+        color: #555;
+      }
+      #common-items-table tbody tr td img {
+        max-width: 60px;
+        height: auto;
+        border-radius: 4px;
+      }
+      #common-items-table tbody tr td input[type='number'] {
+        width: 50px;
+        font-size: 0.9em;
+        padding: 4px;
+      }
+      #common-items-table tbody tr td button {
+        font-size: 0.8em;
+        padding: 6px 12px;
+      }
+      .add-inventory-button button.add-btn {
+        font-size: 0.9em;
+        padding: 8px 16px;
+        margin-top: 10px;
+      }
+
+      /* Modal content narrower */
+      .modal-content {
+        margin: 20% auto;
+        width: 90%;
+        max-width: 350px;
+      }
+      /* Confirmation modal input smaller */
+      #confirmationModal input[type="number"] {
+        font-size: 1em;
+      }
+
+      .container_info {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    /* Reduce overall font‐size a bit and tighten line‐height */
+    body {
+        font-size: 0.95em;
+        line-height: 1.3;
+    }
+    }
+  </style>
+</head>
+<body>
+  <div class="container_info" id="info-container">
+    <!-- HEADER -->
+    <div class="header">
+      <a href="{{ url_for('main') }}" class="logo-link">
+        <img
+          src="/static/home-logo.png"
+          alt="Home"
+          loading="lazy"
+        />
+      </a>
+      <h1 style="font-size: 1.5em;">Dragon Tiny Homes Inventory Logs (Onhand)</h1>
+      <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+      <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <!-- CART ICON & COUNT -->
+    <div class="cart-icon" onclick="openCartModal()">
+      <i class="fas fa-clipboard-list"></i>
+      <span id="cart-count" class="cart-badge">0</span>
+    </div>
+
+    <!-- UPC Not Found Modal -->
+    <div id="upcNotFoundModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeUpcModal()">&times;</span>
+        <p style="font-weight: bold;">UPC does not exist</p>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeConfirmationModal()">&times;</span>
+        <img id="confirmImage" src="" alt="Product Image" />
+        <p id="confirmName"></p>
+        <label for="Inv">Inventory Onhand:</label>
+        <input type="number" id="Inv" placeholder="Enter correct inventory" />
+        <button onclick="confirmAddItem()">Submit</button>
+      </div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="cartModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeCartModal()">&times;</span>
+        <h2>Inventories</h2>
+        <div id="supplier-tables-container">
+          <table id="common-items-table">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>SKU Number</th>
+                <th>Supplier</th>
+                <th>Supplier SKU Number</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Onhand</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="selected-items">
+              <!-- Dynamically added rows -->
+            </tbody>
+          </table>
+          <p style="text-align: left; margin-bottom: 20px;">
+            Total: $<span id="total-amount">0.00</span>
+          </p>
+          <div class="add-inventory-button">
+            <button onclick="submitInventory()" class="add-btn">Submit Inventory</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LANGUAGE SELECTOR -->
+    <div class="language-selector">
+      <label for="languageSelect" class="description data-english">Choose Language:</label>
+      <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言:</label>
+      <select id="languageSelect" onchange="updateDescriptions()">
+        <option value="english">English</option>
+        <option value="chinese">Chinese</option>
+      </select>
+    </div>
+
+    <!-- User Name Display -->
+    <div class="form-group">
+      <label for="order-name" class="description data-english">Name:</label>
+      <label for="order-name" class="description data-mandarin" style="display: none;">名称:</label>
+      <input type="text" id="order-name" name="order-name" value="{{ user.name }}" readonly />
+    </div>
+
+    <!-- Supplier Filter -->
+    <div class="form-group">
+      <label for="supplierFilter" class="description data-english">Filter by Supplier:</label>
+      <label for="supplierFilter" class="description data-mandarin" style="display: none;">按供应商筛选:</label>
+      <select id="supplierFilter" onchange="filterTable()" style="margin-left: 10px; width: 200px;">
+        <option value="">All Suppliers</option>
+        {% for supplier in supplier_data %}
+          <option value="{{ supplier.supplier_name }}">{{ supplier.supplier_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="daysFilter" class="description data-english">Filter by Days:</label>
+      <label for="daysFilter" class="description data-mandarin" style="display: none;">按天筛选:</label>
+      <select id="daysFilter" onchange="filterBySupplierAndDate()" style="margin-left: 10px; width: 200px;">
+        <option value="">All Dates</option>
+        <option value="1">Past 1 day</option>
+        <option value="3">Past 3 days</option>
+        <option value="7">Past 7 days</option>
+        <option value="15">Past 15 days</option>
+        <option value="30">Past 30 days</option>
+        <option value="45">Past 45 days</option>
+        <option value="60">Past 60 days</option>
+      </select>
+    </div>
+
+    <!-- Toggle Button (if needed) -->
+    <div class="buttons-container">
+      <button id="toggleButton" onclick="togglePrelisted()">Toggle Prelisted Table</button>
+    </div>
+
+    <!-- PRELISTED ITEMS TABLE -->
+    <div id="table-container" style="margin-bottom: 40px;">
+      <table id="prelisted-items-table">
+        <thead>
+          <tr>
+            <th onclick="sortTable(0)">Action</th>
+            <th onclick="sortTable(1)">SKU Number</th>
+            <th onclick="sortTable(2)">Supplier</th>
+            <th onclick="sortTable(3)">Supplier SKU Number</th>
+            <th onclick="sortTable(4)">Description</th>
+            <th onclick="sortTable(5)">Price</th>
+            <th>Image</th>
+            <th style="display: none;">Keywords</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in home_depot_items %}
+          <tr data-log-date="{{ item.latest_manual_log_date }}">
+            <td data-label="Action">
+              <button onclick="addItem(
+                '{{ item.material_id }}',
+                '{{ item.supplier_name }}',
+                '{{ item.internet_sku_number }}',
+                '{{ item.item_desc }}',
+                '{{ item.item_desc_mandarin }}',
+                '{{ item.item_price }}',
+                '{{ item.item_image }}'
+              )">Add Item</button>
+            </td>
+            <td data-label="SKU Number">{{ item.material_id }}</td>
+            <td data-label="Supplier">{{ item.supplier_name }}</td>
+            <td data-label="Supplier SKU Number">{{ item.internet_sku_number }}</td>
+            <td data-label="Description">
+              <div class="data-english" style="white-space: normal; margin: 0 auto;">{{ item.item_desc }}</div>
+              <div class="data-mandarin" style="white-space: normal; margin: 0 auto; display: none;">{{ item.item_desc_mandarin }}</div>
+            </td>
+            <td data-label="Price">{{ item.item_price }}</td>
+            <td data-label="Image">
+              <img src="{{ item.item_image }}" width="80" height="80" loading="lazy" alt="Item Image" />
+            </td>
+            <td data-label="Keywords" style="display: none;">{{ item.keywords }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- jQuery & DataTables JS -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script
+    type="text/javascript"
+    src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"
+  ></script>
+  <script>
+    let table;
+
+    $(document).ready(function () {
+      table = $('#prelisted-items-table').DataTable({
+        responsive: true,
+        paging: true,
+        searching: true,
+        info: false,
+      });
+
+      // Load saved filter
+      const savedFilter = localStorage.getItem('selectedSupplier');
+      if (savedFilter) {
+        $('#supplierFilter').val(savedFilter);
+        filterTable();
+      }
+    });
+
+    // Filter prelisted table by supplier
+    function filterBySupplierAndDate() {
+      const supplierFilter = document.getElementById('supplierFilter').value.toLowerCase();
+      const daysFilter = parseInt(document.getElementById('daysFilter').value);
+      const currentDate = new Date();
+
+      // Reset table filter
+      table.rows().every(function () {
+        const row = this.node();
+        const supplier = row.querySelector('td:nth-child(3)').textContent.toLowerCase(); // Assuming column 3 is Supplier
+        const logDateStr = row.getAttribute('data-log-date');
+        let show = true;
+
+        // Supplier check
+        if (supplierFilter && !supplier.includes(supplierFilter)) {
+          show = false;
+        }
+
+        // Days check
+        if (!isNaN(daysFilter) && logDateStr) {
+          const logDate = new Date(logDateStr);
+          const timeDiff = currentDate - logDate;
+          const dayDiff = timeDiff / (1000 * 3600 * 24);
+          if (dayDiff <=  daysFilter) {
+            show = false;
+          }
+        }
+
+        // Apply display
+        if (show) {
+          this.node().style.display = '';
+        } else {
+          this.node().style.display = 'none';
+        }
+      });
+    }
+
+
+    // Toggle prelisted table visibility (example)
+    function togglePrelisted() {
+      const container = document.getElementById('table-container');
+      if (container.style.display === 'none') {
+        container.style.display = 'block';
+      } else {
+        container.style.display = 'none';
+      }
+    }
+
+    // Language toggle
+    function updateDescriptions() {
+      const language = document.getElementById('languageSelect').value;
+      localStorage.setItem('selectedLanguage', language);
+
+      const englishElements = document.querySelectorAll('.data-english');
+      const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+      if (language === 'english') {
+        englishElements.forEach(el => (el.style.display = 'block'));
+        mandarinElements.forEach(el => (el.style.display = 'none'));
+      } else {
+        englishElements.forEach(el => (el.style.display = 'none'));
+        mandarinElements.forEach(el => (el.style.display = 'block'));
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedLanguage = localStorage.getItem('selectedLanguage');
+      if (savedLanguage) {
+        document.getElementById('languageSelect').value = savedLanguage;
+        updateDescriptions();
+      }
+    });
+
+    // UPC scan logic
+    let scanBuffer = "";
+    let lastScanTime = 0;
+    document.addEventListener("keydown", (event) => {
+      const currentTime = Date.now();
+      const scanThreshold = window.scanThreshold || 50;
+      const scanMinChar = window.scanMinChar || 3;
+
+      if (currentTime - lastScanTime > scanThreshold) {
+        scanBuffer = "";
+      }
+
+      if (event.key.length === 1) {
+        scanBuffer += event.key;
+      }
+
+      if (event.key === "Enter" && scanBuffer.length >= scanMinChar) {
+        document.dispatchEvent(new CustomEvent("PDA_SCAN", { detail: { value: scanBuffer } }));
+        scanBuffer = "";
+      }
+      lastScanTime = currentTime;
+    });
+
+    document.addEventListener("PDA_SCAN", (e) => {
+      const scannedCode = e.detail.value;
+      if (scannedCode) {
+        fetch('/search_barcode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ barcode: scannedCode })
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              openConfirmationModal(
+                data.material_id,
+                data.supplier_name,
+                data.internet_sku_number,
+                data.item_desc,
+                data.item_desc_mandarin,
+                data.item_price,
+                data.item_image,
+                data.default_order_qty,
+                "{{ user.name }}"
+              );
+            } else {
+              showUpcNotFoundModal();
+            }
+          });
+      }
+    });
+
+    // Open/close modals
+    function openCartModal() {
+      document.getElementById('cartModal').style.display = 'block';
+    }
+    function closeCartModal() {
+      document.getElementById('cartModal').style.display = 'none';
+    }
+    function showUpcNotFoundModal() {
+      document.getElementById('upcNotFoundModal').style.display = 'block';
+      setTimeout(closeUpcModal, 2000);
+    }
+    function closeUpcModal() {
+      document.getElementById('upcNotFoundModal').style.display = 'none';
+    }
+    function openConfirmationModal(
+      sku_num,
+      supplier_name,
+      internet_num,
+      description_english,
+      description_mandarin,
+      price,
+      image,
+      default_qty,
+      requesting_party
+    ) {
+      window.selectedItem = {
+        sku_num,
+        supplier_name,
+        internet_num,
+        description_english,
+        description_mandarin,
+        price,
+        image,
+        default_qty,
+        requesting_party
+      };
+      document.getElementById('confirmImage').src = image;
+      document.getElementById('confirmName').textContent = description_english;
+      document.getElementById('Inv').value = 1;
+      document.getElementById('confirmationModal').style.display = 'block';
+    }
+    function closeConfirmationModal() {
+      document.getElementById('confirmationModal').style.display = 'none';
+    }
+    function confirmAddItem() {
+      const inventory = document.getElementById('Inv').value;
+      if (confirm("Are you sure you want to request to order this item?")) {
+        const newItem = {
+          material_id: selectedItem.sku_num,
+          supplier_name: selectedItem.supplier_name,
+          internet_sku_number: selectedItem.internet_num,
+          item_desc: selectedItem.description_english,
+          item_price: parseFloat(selectedItem.price).toFixed(2),
+          item_image: selectedItem.image,
+          onhand: inventory
+        };
+        fetch('/onhand_inventory_used_bar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requestingItem: newItem })
+        });
+        alert("Your request has been submitted!");
+        closeConfirmationModal();
+      }
+    }
+
+    // Add item to cart
+    function addItem(
+      sku_num,
+      supplier_name,
+      supplier_num,
+      description_english,
+      description_mandarin,
+      price,
+      image
+    ) {
+      const tableBody = document.getElementById('selected-items');
+      const rows = tableBody.querySelectorAll('tr');
+
+      // Check if exists
+      let existingRow = null;
+      rows.forEach(row => {
+        const skuCell = row.querySelector('td:nth-child(2)');
+        if (skuCell && skuCell.textContent === sku_num) {
+          existingRow = row;
+        }
+      });
+
+      if (existingRow) {
+        const qtyInput = existingRow.querySelector('td:nth-child(7) input');
+        qtyInput.value = parseInt(qtyInput.value) + 1;
+      } else {
+        const newRow = document.createElement('tr');
+
+        // Image cell
+        const imageCell = document.createElement('td');
+        const img = document.createElement('img');
+        img.src = image;
+        img.alt = description_english;
+        img.style.width = '80px';
+        img.style.height = '80px';
+        imageCell.appendChild(img);
+
+        // SKU cell
+        const skuCell = document.createElement('td');
+        skuCell.textContent = sku_num;
+
+        // Supplier name cell
+        const supplierCell = document.createElement('td');
+        supplierCell.textContent = supplier_name;
+
+        // Internet SKU cell
+        const internetCell = document.createElement('td');
+        internetCell.textContent = supplier_num;
+
+        // Description cell
+        const descCell = document.createElement('td');
+        const descEngDiv = document.createElement('div');
+        descEngDiv.classList.add('data-english');
+        descEngDiv.textContent = description_english;
+        descEngDiv.style.display = 'block';
+        const descMandDiv = document.createElement('div');
+        descMandDiv.classList.add('data-mandarin');
+        descMandDiv.textContent = description_mandarin;
+        descMandDiv.style.display = 'none';
+        descCell.appendChild(descEngDiv);
+        descCell.appendChild(descMandDiv);
+
+        // Price cell
+        const priceCell = document.createElement('td');
+        priceCell.textContent = parseFloat(price).toFixed(2);
+
+        // Onhand cell (quantity input)
+        const onhandCell = document.createElement('td');
+        const onhandInput = document.createElement('input');
+        onhandInput.type = 'number';
+        onhandInput.value = 1;
+        onhandInput.min = 1;
+        onhandInput.style.width = '50px';
+        onhandCell.appendChild(onhandInput);
+
+        // Delete cell
+        const deleteCell = document.createElement('td');
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Delete';
+        delBtn.onclick = () => {
+          tableBody.removeChild(newRow);
+          updateCartCount();
+        };
+        deleteCell.appendChild(delBtn);
+
+        newRow.appendChild(imageCell);
+        newRow.appendChild(skuCell);
+        newRow.appendChild(supplierCell);
+        newRow.appendChild(internetCell);
+        newRow.appendChild(descCell);
+        newRow.appendChild(priceCell);
+        newRow.appendChild(onhandCell);
+        newRow.appendChild(deleteCell);
+
+        tableBody.appendChild(newRow);
+      }
+
+      updateCartCount();
+      updateDescriptions();
+    }
+
+    // Update cart badge count
+    function updateCartCount() {
+      const cartCountElem = document.getElementById('cart-count');
+      let totalQty = 0;
+      const rows = document.getElementById('selected-items').querySelectorAll('tr');
+      rows.forEach(row => {
+        const qtyInput = row.querySelector('td:nth-child(7) input');
+        totalQty += parseInt(qtyInput.value) || 0;
+      });
+      cartCountElem.textContent = totalQty;
+    }
+
+    // Submit inventory with confirmation
+    function submitInventory() {
+      if (!confirm("Are you sure everything is final? Click OK to continue or Cancel to review your inventory.")) {
+        return;
+      }
+
+      const orderName = "{{ user.name }}";
+      const selectedItems = [];
+      const rows = document.querySelectorAll('#selected-items tr');
+
+      rows.forEach(row => {
+        const sku_number = row.querySelector('td:nth-child(2)').textContent;
+        const supplier_name = row.querySelector('td:nth-child(3)').textContent;
+        const internet_sku_number = row.querySelector('td:nth-child(4)').textContent;
+        const description = row.querySelector('td:nth-child(5)').textContent;
+        const price = row.querySelector('td:nth-child(6)').textContent;
+        const image = row.querySelector('td:nth-child(1) img').src;
+        const onhand = row.querySelector('td:nth-child(7) input').value;
+
+        selectedItems.push({
+          material_id: sku_number,
+          supplier_name: supplier_name,
+          internet_sku_number: internet_sku_number,
+          item_desc: description,
+          item_price: price,
+          item_image: image,
+          onhand: onhand
+        });
+      });
+
+      if (selectedItems.length === 0) {
+        alert("Please add at least one item.");
+        return;
+      }
+
+      fetch('/onhand_inventory_used', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inv_name: orderName,
+          selected_items: selectedItems
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.message && data.redirect_url) {
+            alert('Inventory successfully added: ' + data.message);
+            window.location.href = data.redirect_url;
+          } else {
+            console.error('Invalid response:', data);
+            alert('An error occurred while processing the order.');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+  </script>
+</body>
+</html>

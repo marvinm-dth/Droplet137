@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="projects-layout">
+  <div class="stack sidebar-card">
+    <div class="card">
+      <div class="section-title">Projects</div>
+      <h2 style="margin:0;">Manage DTH builds</h2>
+      <div class="muted">Active, archived, and tools to clone when needed.</div>
+      {% if message %}
+      <div class="alert alert-success" style="margin-top:10px;">{{ message }}</div>
+      {% endif %}
+      {% if errors %}
+      <div class="alert alert-warning" style="margin-top:10px;">
+        <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="toolbar" style="margin-bottom:6px;">
+        <div class="section-title" style="margin:0;">Active projects</div>
+      </div>
+      {% if projects %}
+      <div class="stack">
+        {% for p in projects %}
+        <div class="card" style="padding:12px; border-color: var(--border); box-shadow:none;">
+          <div class="toolbar" style="align-items:center; flex-wrap:nowrap; gap:10px;">
+            <div style="flex:1 1 auto; min-width:0;">
+              <div style="font-weight:800; font-size:18px;">{{ p.name or p.project_code }}</div>
+              <div class="muted" style="max-width: 240px; display:none;">{{ p.project_code }}</div>
+              {% if p.description %}<div class="muted truncate" style="max-width: 240px;">{{ p.description }}</div>{% endif %}
+            </div>
+            <div class="form-actions" style="gap:6px; flex-shrink:0;">
+              <a class="btn btn-sm project-btn" href="{{ url_for('project_detail', project_code=p.project_code) }}">Open</a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="muted">No projects yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="card" id="add-clone-panel">
+      <div class="toolbar">
+        <div class="section-title" style="margin:0;">Add / Clone</div>
+        <button type="button" class="btn btn-sm" id="toggle-add-clone">Expand</button>
+      </div>
+      <div id="add-clone-body" style="display:none;">
+        <form method="post" class="stack" action="{{ url_for('projects') }}">
+          <input type="hidden" name="action" value="create">
+          <label for="project_code">DTH Number</label>
+          <input type="text" id="project_code" name="project_code" value="{{ form_data.project_code }}" required>
+          <label for="description">Description (optional)</label>
+          <input type="text" id="description" name="description" value="{{ form_data.description }}">
+          <button type="submit" class="btn btn-primary btn-sm">Create</button>
+        </form>
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 14px 0;">
+        <div class="section-title">Clone existing</div>
+        <form method="post" class="stack" action="{{ url_for('projects') }}">
+          <input type="hidden" name="action" value="clone">
+          <label for="source_project_id">Source project</label>
+          <select name="source_project_id" id="source_project_id">
+            <option value="">-- Select --</option>
+            {% for p in projects %}
+            <option value="{{ p.id }}">{{ p.project_code }}</option>
+            {% endfor %}
+          </select>
+          <label for="new_project_code">New DTH code</label>
+          <input type="text" id="new_project_code" name="new_project_code">
+          <button type="submit" class="btn btn-sm">Clone</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card" id="archived-panel">
+      <div class="toolbar">
+        <div>
+          <div class="section-title" style="margin:0;">Archived</div>
+          <div class="muted">Hidden from Fill &amp; Print lists.</div>
+        </div>
+        <button type="button" class="btn btn-sm" id="toggle-archived">Toggle</button>
+      </div>
+      <div id="archived-list" style="display:none; margin-top:10px;">
+        {% if archived_projects %}
+        <div class="stack">
+          {% for p in archived_projects %}
+          <div class="card" style="padding:12px; border-color: var(--border); box-shadow:none;">
+            <div class="toolbar">
+              <div>
+                <div style="font-weight:700;">{{ p.project_code }}</div>
+                <div class="muted truncate" style="max-width: 220px;">{{ p.description or 'No description' }}</div>
+              </div>
+              <div class="form-actions" style="gap:6px;">
+                <a class="btn btn-sm project-btn" href="{{ url_for('project_detail', project_code=p.project_code) }}">Open</a>
+                <form method="post" action="{{ url_for('projects') }}" onsubmit="return confirm('Activate this project?');">
+                  <input type="hidden" name="project_id" value="{{ p.id }}">
+                  <input type="hidden" name="action" value="activate">
+                  <button type="submit" class="btn btn-sm project-btn">Activate</button>
+                </form>
+                <form method="post" action="{{ url_for('projects') }}" onsubmit="return confirm('Delete this project?');">
+                  <input type="hidden" name="project_id" value="{{ p.id }}">
+                  <input type="hidden" name="action" value="delete">
+                  <button type="submit" class="btn btn-ghost btn-sm project-btn" {% if p.tickets|length %}disabled title="Cannot delete project with tickets"{% endif %}>Delete</button>
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="muted">No archived projects.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="stack">
+    {% if selected_project %}
+    <div class="card">
+      <div class="toolbar">
+        <div>
+          <div class="section-title">Project detail</div>
+          <h3 style="margin:2px 0 4px;">{{ selected_project.project_code }}</h3>
+          <div class="muted truncate" style="max-width: 360px;">{{ selected_project.description or "No description." }}</div>
+        </div>
+      </div>
+      <form method="post" class="project-form" action="{{ url_for('projects') }}">
+        <input type="hidden" name="project_id" value="{{ selected_project.id }}">
+        <input type="hidden" name="action" value="update">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="project_code">Project code (DTH)</label>
+            <input type="text" id="project_code" name="project_code" value="{{ selected_project.project_code }}">
+          </div>
+          <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" value="{{ selected_project.name or selected_project.project_code }}">
+          </div>
+          <div class="form-group">
+            <label for="description">Description</label>
+            <input type="text" id="description" name="description" value="{{ selected_project.description }}">
+          </div>
+          <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+              {% set statuses = ['active', 'archived'] %}
+              {% for status in statuses %}
+              <option value="{{ status }}" {% if selected_project.status == status %}selected{% endif %}>{{ status|capitalize }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-sm">Update</button>
+          <a class="btn btn-sm btn-ghost" href="{{ url_for('projects') }}">Back to list</a>
+        </div>
+      </form>
+
+      <h3 style="margin-top:14px;">Tickets</h3>
+      <div class="form-actions" style="margin-top:6px;">
+        <label for="status-filter" class="section-title" style="margin:0;">Filter by status</label>
+        <select id="status-filter" class="inline-select" style="max-width:180px;">
+          <option value="">All</option>
+          {% for s in ['upcoming','in_progress','complete','open','new'] %}
+          <option value="{{ s }}">{{ s.replace('_',' ') }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if ticket_pairs %}
+      <div class="ticket-list">
+        {% for pair in ticket_pairs %}
+        {% set t = pair.base %}
+        {% set tracking = pair.tracking %}
+        {% set form_id = 'ticket-form-' ~ t.id %}
+        <div class="ticket-card" data-status="{{ t.status }}">
+          <div class="top-row">
+            <div class="code">Ticket: {{ t.template.name if t.template else "" }} ({{ t.template.template_code if t.template else "" }})</div>
+            <div class="muted" style="text-align:right;">{{ t.template.design_id if t.template else "" }}</div>
+            <div>
+              <label for="ticket_name_{{ t.id }}">Assigned worker</label>
+              <input type="text" id="ticket_name_{{ t.id }}" name="ticket_name" value="{{ t.name or '' }}" class="inline-input" form="{{ form_id }}" placeholder="Assigned worker">
+            </div>
+            <div>
+              <label for="ticket_status_{{ t.id }}">Status</label>
+              <select id="ticket_status_{{ t.id }}" name="ticket_status" class="inline-select" form="{{ form_id }}">
+                {% set statuses = ['upcoming', 'in_progress', 'complete', 'open', 'new'] %}
+                {% for status in statuses %}
+                <option value="{{ status }}" {% if t.status == status %}selected{% endif %}>{{ status.replace('_', ' ') }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="actions">
+            <div class="form-actions" style="gap:6px; flex-wrap:wrap;">
+              <a class="btn btn-ghost btn-sm project-btn" href="{{ url_for('ticket_detail', uuid=t.uuid) }}">Open</a>
+              {% if tracking %}
+              <a class="btn btn-ghost btn-sm project-btn" href="{{ url_for('ticket_detail', uuid=tracking.uuid) }}">Open tracking</a>
+              {% endif %}
+              <form method="post" action="{{ url_for('projects') }}" class="inline-form" style="display:inline;">
+                <input type="hidden" name="action" value="print_both">
+                <input type="hidden" name="ticket_id" value="{{ t.id }}">
+                <input type="hidden" name="project_code" value="{{ selected_project.project_code }}">
+                <button type="submit" class="btn btn-sm project-btn">Print</button>
+              </form>
+              <form method="post" action="{{ url_for('ticket_delete', uuid=t.uuid) }}" onsubmit="return confirm('Delete this ticket?');" style="display:inline;">
+                <button type="submit" class="btn btn-ghost btn-sm project-btn">Delete</button>
+              </form>
+              <form id="{{ form_id }}" method="post" action="{{ url_for('projects') }}" class="inline-form" style="display:inline;">
+                <input type="hidden" name="action" value="update_ticket">
+                <input type="hidden" name="ticket_id" value="{{ t.id }}">
+                <input type="hidden" name="project_code" value="{{ selected_project.project_code }}">
+                <button type="submit" class="btn btn-sm project-btn">Save</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p>No tickets for this project yet.</p>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="card">
+      <div class="section-title">No project selected</div>
+      <p class="muted">Choose a project from the list to view details and tickets.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+(() => {
+  const addBtn = document.getElementById('toggle-add-clone');
+  const addBody = document.getElementById('add-clone-body');
+  if (addBtn && addBody) {
+    addBody.style.display = 'none';
+    addBtn.addEventListener('click', () => {
+      const isHidden = addBody.style.display === 'none' || addBody.style.display === '';
+      addBody.style.display = isHidden ? 'block' : 'none';
+      addBtn.textContent = isHidden ? 'Hide' : 'Expand';
+    });
+  }
+})();
+
+(() => {
+  const btn = document.getElementById('toggle-archived');
+  const list = document.getElementById('archived-list');
+  if (!btn || !list) return;
+  list.style.display = 'none';
+  btn.addEventListener('click', () => {
+    const isHidden = list.style.display === 'none' || list.style.display === '';
+    list.style.display = isHidden ? 'block' : 'none';
+    btn.textContent = isHidden ? 'Hide Archived' : 'Show Archived';
+  });
+})();
+
+(() => {
+  const filter = document.getElementById('status-filter');
+  const cards = Array.from(document.querySelectorAll('.ticket-card'));
+  if (!filter || !cards.length) return;
+  filter.addEventListener('change', () => {
+    const val = filter.value;
+    cards.forEach(c => {
+      const status = c.dataset.status || '';
+      c.style.display = !val || status === val ? 'block' : 'none';
+    });
+  });
+})();
+
+(() => {
+  const nameInput = document.getElementById('name');
+  const codeInput = document.getElementById('project_code');
+  if (!nameInput || !codeInput) return;
+  nameInput.addEventListener('input', () => {
+    codeInput.value = nameInput.value;
+  });
+})();
+</script>
+{% endblock %}

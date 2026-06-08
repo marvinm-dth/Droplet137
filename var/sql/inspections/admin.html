@@ -1,0 +1,557 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Inspections Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root{--bg:#0b0f19;--card:#111826;--muted:#a0a8b8;--text:#e6e9f2;--ok:#16a34a;--warn:#eab308;--bad:#dc2626;--border:#223048;--ink:#182235}
+      *{box-sizing:border-box}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+      a{color:#8ab4ff;text-decoration:none}
+      .wrap{max-width:1100px;margin:0 auto;padding:18px}
+      .muted{color:var(--muted);font-size:12px}
+      .btn{background:#1b2a47;color:#e6e9f2;border:1px solid var(--border);border-radius:10px;padding:8px 12px;cursor:pointer}
+      .btn.small{padding:6px 10px;font-size:12px}
+      input,select{width:100%;background:#0f182a;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px}
+      .row{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap}
+      .grid2{display:grid;gap:14px;grid-template-columns:1fr 1fr}
+      .card{background:linear-gradient(180deg,rgba(26,35,53,.8),rgba(12,17,27,.9));border:1px solid var(--border);border-radius:12px;padding:14px}
+      .cardTitle{display:flex;justify-content:space-between;align-items:center;gap:10px}
+      .pill{font-size:12px;padding:3px 8px;border-radius:999px;border:1px solid var(--border);background:#162038}
+      .dot{width:10px;height:10px;border-radius:50%}
+      .hr{height:1px;background:var(--border);margin:12px 0}
+      .hide{display:none}
+
+      /* Table-like editor */
+      .inspTable{display:grid;gap:8px}
+      .inspHead, .inspRow{
+        display:grid;
+        grid-template-columns: 180px 160px 240px 1fr; /* Type | Status | Scheduled | File link */
+        column-gap:12px; align-items:center;
+      }
+      .inspHead{font-size:12px;color:var(--muted)}
+      @media (max-width: 900px){
+        .inspHead, .inspRow{grid-template-columns:1fr}
+      }
+      /* Pending ingest panel */
+      #pending-card .cardTitle{align-items:flex-start}
+      #pending-card code{background:#162038;padding:0 6px;border-radius:6px}
+      .pendingList{display:flex;flex-direction:column;gap:12px;font-size:14px}
+      .pendingRow{padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--ink)}
+      .pendingMeta{display:flex;flex-wrap:wrap;gap:10px;font-size:14px}
+      .pendingCand,.pendingMapped{margin-top:6px;font-size:13px;color:var(--muted)}
+      .pendingActions{margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+      .pendingActions input{flex:1;min-width:220px;max-width:280px}
+      .btn.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <div class="cardTitle">
+          <div>
+            <h1 style="margin:0 0 6px 0;font-size:20px">Inspections Admin</h1>
+            <div class="muted">Write endpoints: <code>/admin/*</code> • Read: <code>/rest/*</code></div>
+          </div>
+          <div class="row"><a class="btn small" href="/">← Dashboard</a></div>
+        </div>
+        <div id="authBar" class="row">
+          <div style="flex:2;min-width:280px">
+            <label class="muted">Admin Token</label>
+            <input id="token" placeholder="Paste ADMIN_TOKEN and click Unlock" />
+          </div>
+          <div class="row" style="flex:1">
+            <button id="unlock" class="btn">Unlock</button>
+            <button id="logout" class="btn">Lock</button>
+            <button id="ping" class="btn small">Ping</button>
+          </div>
+        </div>
+        <div id="authStatus" class="muted">Locked.</div>
+      </div>
+
+      <!-- Main app (hidden until unlocked) -->
+      <div id="app" class="hide">
+        <div class="grid2" style="margin-top:12px">
+          <div class="card">
+            <h3 style="margin:0 0 8px 0">Create Project</h3>
+            <div class="row"><div style="flex:1"><input id="cp_id" placeholder="Project ID e.g., P-VA015" /></div></div>
+            <div class="row"><div style="flex:1"><input id="cp_name" placeholder="Project name" /></div></div>
+            <div class="row"><div style="flex:1"><input id="cp_notion" placeholder="Notion Page ID (optional)" /></div></div>
+            <div class="row"><button id="cp_create" class="btn">Create</button></div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin:0 0 8px 0">Find / Load Project</h3>
+            <div class="row">
+              <div style="flex:1"><input id="fm_query" placeholder="Search by name…" /></div>
+              <button id="fm_search" class="btn">Search</button>
+              <button id="fm_list" class="btn">View List</button>
+            </div>
+            <div id="fm_results" class="muted"></div>
+            <div class="hr"></div>
+            <div class="row">
+              <div style="flex:1"><input id="load_id" placeholder="Or enter Project ID to load" /></div>
+              <button id="btnLoadById" class="btn">Load</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="pending-card" class="card" style="margin-top:12px">
+          <div class="cardTitle">
+            <div>
+              <h3 style="margin:0 0 4px 0">Pending Ingest</h3>
+              <div class="muted">Queue of new submissions awaiting project links.</div>
+            </div>
+            <div class="row" style="justify-content:flex-end">
+              <button id="pending-refresh" class="btn small">Refresh</button>
+            </div>
+          </div>
+          <div id="pending-list" class="pendingList muted">Unlock to load pending items.</div>
+        </div>
+
+        <div id="editor" class="card hide" style="margin-top:12px">
+          <div class="cardTitle">
+            <div>
+              <h3 id="p_title" style="margin:0 0 4px 0">Project</h3>
+              <div id="p_meta" class="muted"></div>
+            </div>
+            <div class="row">
+              <button id="btnSaveInfo" class="btn small">Save Project Info</button>
+              <button id="btnSaveAll" class="btn small">Save All</button>
+              <button id="btnArchive" class="btn small">Archive</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <div style="flex:1;min-width:240px">
+              <label class="muted">Rename (optional)</label>
+              <input id="ep_name" placeholder="New name" />
+            </div>
+            <div style="flex:1;min-width:240px">
+              <label class="muted">Notion Page ID (optional)</label>
+              <input id="ep_notion" placeholder="32-char id" />
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="inspTable">
+            <div class="inspHead">
+              <div>Inspection</div>
+              <div>Status</div>
+              <div>Scheduled (local)</div>
+              <div>File Link</div>
+            </div>
+            <div id="inspEditor"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div class="row" style="justify-content:space-between">
+            <strong>Raw feed</strong>
+            <button id="btnShowRaw" class="btn small">Reload /rest/dashboard_projects</button>
+          </div>
+          <pre id="raw" class="muted" style="white-space:pre-wrap"></pre>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ---- endpoints ----
+      const DATA_URL   = "/rest/dashboard_projects?select=*";
+      const DATA_ONE   = (id)=> `/rest/dashboard_projects?select=*&id=eq.${encodeURIComponent(id)}`;
+      const ADMIN_URLS = { create:"/admin/create", update:"/admin/update", archive:"/admin/archive", link:"/admin/link", match:"/admin/match", health:"/admin/health" };
+      const LABELS = {foundation:"Foundation",framing:"Framing",dry_in:"Dry-in",electrical:"Electrical",plumbing:"Plumbing",insulation:"Insulation",final:"Final"};
+      let PendingQueue;
+
+      // ---- auth / token gate with idle timeout ----
+      const TOKEN_KEY="ADMIN_TOKEN"; const TOKEN_TS="ADMIN_TOKEN_TS"; const TTL_MIN=30; // change duration if you like
+      const $=(id)=>document.getElementById(id);
+      const show=(el)=>el.classList.remove("hide"); const hide=(el)=>el.classList.add("hide");
+      function getToken(){ return localStorage.getItem(TOKEN_KEY)||""; }
+      function setToken(t){ localStorage.setItem(TOKEN_KEY,t||""); localStorage.setItem(TOKEN_TS, String(Date.now())); }
+      function clearToken(){ localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(TOKEN_TS); }
+      function expired(){ const ts=Number(localStorage.getItem(TOKEN_TS)||0); return !ts || (Date.now()-ts)>(TTL_MIN*60*1000); }
+      function touch(){ localStorage.setItem(TOKEN_TS, String(Date.now())); }
+      ["click","keydown","mousemove"].forEach(ev=>document.addEventListener(ev,()=>{ if(getToken()) touch(); }, {passive:true}));
+
+      async function requireToken(){
+        const t=getToken(); if(!t) throw new Error("Token missing");
+        const res=await fetch(ADMIN_URLS.health,{headers:{"X-Admin-Token":t}});
+        if(!res.ok) throw new Error("Health check failed "+res.status);
+        return true;
+      }
+      function lockUI(msg="Locked."){
+        clearToken();
+        $("authStatus").textContent=msg;
+        hide($("app"));
+        show($("authBar"));
+        PendingQueue?.reset?.("Unlock to load pending items.");
+      }
+      async function unlockUI(){
+        try{
+          if(expired()) throw new Error("Token expired");
+          await requireToken();
+          $("authStatus").textContent=`Unlocked • will relock after ${TTL_MIN}m of inactivity`;
+          hide($("authBar")); show($("app")); touch();
+          PendingQueue?.setup?.();
+          PendingQueue?.refresh?.();
+        }catch(e){ lockUI("Locked. "+e.message); }
+      }
+      $("unlock").onclick = async ()=>{ setToken($("token").value.trim()); await unlockUI(); };
+      $("logout").onclick = ()=> lockUI("Locked.");
+      $("ping").onclick = async ()=>{ try{ await requireToken(); $("authStatus").textContent="Unlocked (health OK)"; }catch(e){ $("authStatus").textContent="Locked: "+e.message; } };
+
+      // ---- admin fetch ----
+      async function adminFetch(url, body){
+        const t=getToken(); if(!t) throw new Error("Token missing");
+        const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","X-Admin-Token":t},body:JSON.stringify(body)});
+        if(!res.ok){ const txt=await res.text().catch(()=> ""); throw new Error(res.status+" "+txt); }
+        return res.json().catch(()=> ({}));
+      }
+
+      // ---- data helpers ----
+      async function fetchAll(){ const r=await fetch(DATA_URL,{cache:"no-store"}); if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); }
+      async function fetchOne(id){ const r=await fetch(DATA_ONE(id),{cache:"no-store"}); if(!r.ok) throw new Error("HTTP "+r.status); const j=await r.json(); return Array.isArray(j)?j[0]:j; }
+
+      // ---- date helpers (datetime-local <-> ISO Z) ----
+      function isoToLocalInput(iso){
+        if(!iso) return "";
+        const d=new Date(iso); if(isNaN(d)) return "";
+        const p=n=>String(n).padStart(2,"0");
+        return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+      }
+      function inputToISOZ(val){
+        if(!val) return "";
+        const d=new Date(val); if(isNaN(d)) return "";
+        return d.toISOString().replace(/\.\d{3}Z$/,"Z");
+      }
+      function dotColor(e){ const s=String(e?.status??"pending").toLowerCase(); if(s==="complete"||s==="true") return "var(--ok)"; if(s==="failed"||s==="false") return "var(--bad)"; return "var(--warn)"; }
+      function safe(s){ return String(s??"").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+      function absolutize(u){ if(!u) return ""; if(/^https?:\/\//i.test(u)) return u; return "https://"+String(u).replace(/^\/+/,""); }
+
+      // ---- editor rendering ----
+      let current=null;
+      function renderEditor(p){
+        current=p;
+        $("editor").classList.remove("hide");
+        $("p_title").textContent = p.name || "(unnamed)";
+        $("p_meta").innerHTML = `ID: <code>${safe(p.id)}</code>${p.notion_page_id?` • Notion: <code>${safe(p.notion_page_id)}</code>`:""}`;
+        $("ep_name").value = p.name || "";
+        $("ep_notion").value = p.notion_page_id || "";
+
+        const insp=p.inspections||{};
+        const keys=Object.keys({foundation:1,framing:1,dry_in:1,electrical:1,plumbing:1,insulation:1,final:1});
+        $("inspEditor").innerHTML = keys.map(key=>{
+          const e=insp[key]||{};
+          const sched=e?.date?.scheduled||"";
+          const link=e?.link||"";
+          return `
+            <div class="inspRow" data-key="${key}">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="dot" style="background:${dotColor(e)}"></span>
+                <strong>${LABELS[key]}</strong>
+              </div>
+              <div>
+                <select class="i_status">
+                  <option value="pending"  ${String(e.status).toLowerCase()==="pending"?"selected":""}>pending</option>
+                  <option value="complete" ${String(e.status).toLowerCase()==="complete"?"selected":""}>complete</option>
+                  <option value="failed"   ${String(e.status).toLowerCase()==="failed"?"selected":""}>failed</option>
+                </select>
+              </div>
+              <div>
+                <input class="i_sched" type="datetime-local" value="${safe(isoToLocalInput(sched))}">
+              </div>
+              <div>
+                <input class="i_link" type="text" placeholder="https://…" value="${safe(link)}">
+              </div>
+            </div>`;
+        }).join("");
+      }
+
+      async function saveAll(){
+        if(!current) return;
+        const body={ project_id: current.id, inspections:{} };
+        document.querySelectorAll(".inspRow").forEach(row=>{
+          const key=row.dataset.key;
+          const status=row.querySelector(".i_status").value;
+          const schedLocal=row.querySelector(".i_sched").value.trim();
+          const link=row.querySelector(".i_link").value.trim();
+          const schedISO=inputToISOZ(schedLocal);
+          body.inspections[key]={ status, date:{ scheduled: schedISO || undefined }, link: link || undefined };
+        });
+        await adminFetch(ADMIN_URLS.update, body);
+        alert("All changes saved.");
+      }
+
+      // ---- pending ingest queue ----
+      PendingQueue = (()=>{
+        let initialized=false;
+
+        function listEl(){ return $("pending-list"); }
+
+        function ensureSetup(){
+          if(initialized) return;
+          const refreshBtn=$("pending-refresh");
+          if(!refreshBtn) return;
+          initialized=true;
+          refreshBtn.onclick = refresh;
+        }
+
+        function reset(message){
+          const list=listEl();
+          if(list){
+            list.classList.add("muted");
+            list.textContent = message || "Unlock to load pending items.";
+          }
+        }
+
+        async function pendingFetch(path, init={}){
+          const t=getToken(); if(!t) throw new Error("Token missing");
+          const headers = Object.assign({"X-Admin-Token":t}, init.headers || {}, init.method==="POST" ? {"Content-Type":"application/json"} : {});
+          const res = await fetch("/admin"+path, Object.assign({}, init, { headers }));
+          let data;
+          try{ data = await res.json(); }
+          catch{ data = { ok:false, error:"Invalid response" }; }
+          if(!res.ok){
+            if(!data || typeof data!=="object") data = {};
+            data.ok = false;
+            data.error = data.error || `HTTP ${res.status}`;
+          }
+          return data;
+        }
+
+        async function resolveItem(id, decision, existingId){
+          if(decision==="existing" && !existingId){
+            alert("Enter an existing project ID before linking.");
+            return;
+          }
+          try{
+            const body={ id, decision };
+            if(decision==="existing") body.existing_project_id = existingId;
+            const out = await pendingFetch("/pending/resolve",{ method:"POST", body: JSON.stringify(body) });
+            if(out?.ok){
+              alert(`Resolved to ${out.project_id}`);
+              await refresh();
+            }else{
+              alert(`Error: ${out?.error || "unknown"}`);
+            }
+          }catch(e){
+            alert(`Resolve failed: ${e.message || e}`);
+          }
+        }
+
+        async function discardItem(id){
+          const label = id != null ? `#${id}` : "this pending item";
+          if(!confirm(`Remove ${label} from the queue?`)) return;
+          try{
+            const out = await pendingFetch("/pending/resolve",{ method:"POST", body: JSON.stringify({ id, decision:"discard" }) });
+            if(out?.ok){
+              alert("Pending item removed.");
+              await refresh();
+            }else{
+              alert(`Error: ${out?.error || "unknown"}`);
+            }
+          }catch(e){
+            alert(`Remove failed: ${e.message || e}`);
+          }
+        }
+
+        function render(items){
+          const list=listEl();
+          if(!list) return;
+          if(!items.length){
+            reset("No pending items.");
+            return;
+          }
+          list.classList.remove("muted");
+          list.innerHTML="";
+          items.forEach(item=>{
+            const row=document.createElement("div");
+            row.className="pendingRow";
+
+            const meta=document.createElement("div");
+            meta.className="pendingMeta";
+            const idEl=document.createElement("strong");
+            idEl.textContent=item?.id!=null ? `#${item.id}` : "#—";
+            meta.appendChild(idEl);
+
+            const digitsSpan=document.createElement("span");
+            digitsSpan.appendChild(document.createTextNode("Digits: "));
+            const digitsCode=document.createElement("code");
+            digitsCode.textContent=item.digits || "—";
+            digitsSpan.appendChild(digitsCode);
+            meta.appendChild(digitsSpan);
+
+            const proposedSpan=document.createElement("span");
+            proposedSpan.appendChild(document.createTextNode("Proposed: "));
+            const proposedCode=document.createElement("code");
+            proposedCode.textContent=item.proposed_project_id || "—";
+            proposedSpan.appendChild(proposedCode);
+            meta.appendChild(proposedSpan);
+
+            row.appendChild(meta);
+
+            const candidates=document.createElement("div");
+            candidates.className="pendingCand";
+            candidates.appendChild(document.createTextNode("Candidates: "));
+            if(item.candidates && item.candidates.length){
+              item.candidates.forEach((cand, idx)=>{
+                if(idx>0) candidates.appendChild(document.createTextNode(", "));
+                const code=document.createElement("code");
+                code.textContent=cand.project_id || "—";
+                candidates.appendChild(code);
+              });
+            }else{
+              candidates.appendChild(document.createTextNode("—"));
+            }
+            row.appendChild(candidates);
+
+            const mapped=document.createElement("div");
+            mapped.className="pendingMapped";
+            mapped.appendChild(document.createTextNode("Type: "));
+            const typeCode=document.createElement("code");
+            typeCode.textContent=item.mapped?.type || "—";
+            mapped.appendChild(typeCode);
+            mapped.appendChild(document.createTextNode(" · Status: "));
+            const statusCode=document.createElement("code");
+            statusCode.textContent=item.mapped?.status || "—";
+            mapped.appendChild(statusCode);
+            mapped.appendChild(document.createTextNode(" · Date: "));
+            const dateCode=document.createElement("code");
+            dateCode.textContent=item.mapped?.scheduled_iso || "—";
+            mapped.appendChild(dateCode);
+            row.appendChild(mapped);
+
+            const actions=document.createElement("div");
+            actions.className="pendingActions";
+            const proposedLabel=item.proposed_project_id || (item.digits ? `P-${item.digits}` : "P-<digits>");
+            const createBtn=document.createElement("button");
+            createBtn.className="btn small";
+            createBtn.textContent=`Create New (${proposedLabel})`;
+            createBtn.onclick=()=>resolveItem(item.id,"new");
+            actions.appendChild(createBtn);
+
+            const input=document.createElement("input");
+            input.placeholder="Existing project_id (e.g., P-132)";
+            actions.appendChild(input);
+
+            const linkBtn=document.createElement("button");
+            linkBtn.className="btn small";
+            linkBtn.textContent="Link to Existing";
+            linkBtn.onclick=()=>resolveItem(item.id,"existing", input.value.trim());
+            actions.appendChild(linkBtn);
+
+            const removeBtn=document.createElement("button");
+            removeBtn.className="btn small danger";
+            removeBtn.textContent="Remove from Queue";
+            removeBtn.onclick=()=>discardItem(item.id);
+            actions.appendChild(removeBtn);
+
+            row.appendChild(actions);
+
+            list.appendChild(row);
+          });
+        }
+
+        async function refresh(){
+          ensureSetup();
+          const list=listEl();
+          if(!list) return;
+          if(!getToken() || expired()){
+            reset("Unlock to load pending items.");
+            return;
+          }
+          list.classList.add("muted");
+          list.textContent="Loading…";
+          try{
+            const data=await pendingFetch("/pending");
+            if(!data?.ok){
+              reset(`Failed: ${data?.error || "unknown"}`);
+              return;
+            }
+            render(data.items || []);
+          }catch(e){
+            reset("Failed to load pending queue.");
+          }
+        }
+
+        return { setup: ensureSetup, refresh, reset };
+      })();
+
+      // ---- actions ----
+      $("cp_create").onclick = async ()=>{
+        try{
+          const id=$("cp_id").value.trim(), name=$("cp_name").value.trim(), notion=$("cp_notion").value.trim()||null;
+          if(!id||!name) return alert("Project ID and Name are required.");
+          await adminFetch(ADMIN_URLS.create,{project:{id,name,notion_page_id:notion}});
+          alert("Created. Use Find/Load to open it.");
+        }catch(e){ alert("Create failed: "+e.message); }
+      };
+
+      $("fm_search").onclick = async ()=>{
+        try{
+          const q=$("fm_query").value.trim(); if(!q) return alert("Enter a query.");
+          const t=getToken(); const res=await fetch(ADMIN_URLS.match,{method:"POST",headers:{"Content-Type":"application/json","X-Admin-Token":t},body:JSON.stringify({query:q})});
+          const data=await res.json();
+          $("fm_results").innerHTML = (Array.isArray(data)&&data.length)
+            ? data.map(r=>`<div class="row" style="justify-content:flex-start;gap:10px">
+                <span class="pill">score ${(r.score??0).toFixed?.(2) ?? "?"}</span>
+                <strong>${safe(r.title)}</strong>
+                <code>${safe(r.id)}</code>
+                <button class="btn small" onclick="loadById('${safe(r.id)}')">Load</button>
+              </div>`).join("")
+            : "No matches.";
+        }catch(e){ alert("Search failed: "+e.message); }
+      };
+
+      $("fm_list").onclick = async ()=>{
+        try{
+          const arr=await fetchAll();
+          const sorted=(arr||[]).slice().sort((a,b)=>String(a.name||"").localeCompare(String(b.name||"")));
+          $("fm_results").innerHTML = sorted.map(p=>`
+            <div class="row" style="justify-content:flex-start;gap:10px">
+              <strong>${safe(p.name||"(unnamed)")}</strong>
+              <code>${safe(p.id)}</code>
+              <button class="btn small" onclick="loadById('${safe(p.id)}')">Load</button>
+            </div>`).join("") || "No projects.";
+        }catch(e){ alert("List failed: "+e.message); }
+      };
+
+      window.loadById = async (id)=>{
+        try{
+          const p=await fetchOne(id);
+          if(!p) return alert("Project not found");
+          renderEditor(p);
+        }catch(e){ alert("Load failed: "+e.message); }
+      };
+      $("btnLoadById").onclick = ()=>{ const id=$("load_id").value.trim(); if(id) window.loadById(id); };
+
+      $("btnSaveInfo").onclick = async ()=>{
+        if(!current) return alert("Load a project first.");
+        const name=$("ep_name").value.trim()||null; const notion=$("ep_notion").value.trim()||null;
+        await adminFetch(ADMIN_URLS.link, { project_id: current.id, meta:{ name, notion_page_id:notion } });
+        alert("Project info saved.");
+      };
+      $("btnSaveAll").onclick = ()=>saveAll();
+      $("btnArchive").onclick = async ()=>{
+        if(!current) return alert("Load a project first.");
+        if(!confirm("Archive "+current.id+"?")) return;
+        await adminFetch(ADMIN_URLS.archive,{project_id: current.id});
+        alert("Archived.");
+      };
+
+      $("btnShowRaw").onclick = async ()=>{
+        try{ const j=await fetchAll(); $("raw").textContent=JSON.stringify(j,null,2); }catch(e){ $("raw").textContent="Error: "+e.message; }
+      };
+
+      // ---- init ----
+      (async function init(){
+        $("token").value=getToken();
+        PendingQueue?.setup?.();
+        if(getToken() && !expired()){ await unlockUI(); } else { lockUI("Locked."); }
+      })();
+    </script>
+  </body>
+</html>

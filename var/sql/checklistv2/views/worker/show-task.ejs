@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Item Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+
+    <link rel="stylesheet" href="/css/pwa-style.css">
+    <link rel="stylesheet" href="/css/bs-addons.css">
+    <style>
+        .form-step {
+            display: none;
+        }
+
+        .form-step.active {
+            display: block;
+        }
+
+    #camera video{
+        object-fit: cover;
+        border-radius: 16px;
+    }
+    </style>
+</head>
+<body x-data="taskPage" x-init="start(<%=selectedTask.id%>)">
+    <%- include('./_partials/navbar-top') %>
+    <%- include('./_partials/lightbox') %>
+
+    <template x-if="appLoading">
+      <div style="z-index: 2000;" class="position-fixed top-0 start-0 d-flex align-items-center justify-content-center vh-100 vw-100 bg-light opacity-75">
+          <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+          </div>
+      </div>
+    </template>
+
+    <template x-if="!initialFetching">
+        <main class="container mt-4">
+
+            <a href="/checklists/" class="fw-semibold link-dark text-decoration-none d-block mb-3"><i class="bi bi-arrow-left"></i> Back to Checklist</a>
+
+            <!-- Status Section -->
+            <div :class="`text-bg-${task.STATUS}`" class="alert  text-center fw-bolder fs-5" x-text="`Task is ${task.STATUS}`"></div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Project Column -->
+                        <div class="col-12 col-md-4 mb-3 mb-md-0">
+                            <p class="small mb-0 text-muted fw-bold">Project:</p>
+                            <p class="card-title fs-5" x-text="task.milestone.project.name"></p>
+                        </div>
+                        
+                        <!-- Milestone Column -->
+                        <div class="col-12 col-md-4 mb-3 mb-md-0">
+                            <p class="small mb-0 text-muted fw-bold">Milestone:</p>
+                            <p class="card-title fs-5" x-text="task.milestone.name_en"></p>
+                        </div>
+                        
+                        <!-- Task Column -->
+                        <div class="col-12 col-md-4">
+                            <p class="small mb-0 text-muted fw-bold">Task:</p>
+                            <p class="card-title fs-5" x-text="task.name"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <template x-if="task.task_checklist[0]?.task_items.length">
+                        <div>
+
+                            <p class="small mb-0 text-muted fw-bold">Checklist:</p>
+                            <p class="card-text fs-5" x-text="task.task_checklist[0]?.name_en + ` (#${task.task_checklist[0].id})`"></p>
+
+                            <p class="small mb-0 text-muted fw-bold">Items:</p>
+                            <div class="list-group" id="taskItemsAccordion">
+
+                                <template x-for="taskItem in task.task_checklist[0]?.task_items" :key="taskItem.id">
+                                    <div>
+
+                                        <div class="list-group-item list-group-item-action px-3 py-2 d-flex gap-2 align-items-center">
+                                            <button class="btn w-75 text-start p-0 border-0" type="button"
+                                                    :data-bs-target="`#taskItemCollapse${taskItem.id}`"
+                                                    data-bs-toggle="collapse"
+                                                    :disabled="['cancelled', 'approved'].includes(taskItem.STATUS)"
+                                                    @click="openTaskItem = taskItem; console.log('OPEN_TASK_ITEM: #', taskItem.id);"
+                                                    >
+                                                      <span class="my-text-truncate-2" x-text="taskItem.title_en + ` (#${taskItem.id})`"></span>
+                                                      <span x-html="statusBadgeFormatter(taskItem.STATUS)"></span>
+                                                    </button>
+
+                                            <button class="btn btn-lg btn-primary w-auto"
+                                                    data-bs-target="#cameraOffcanvas"
+                                                    data-bs-toggle="offcanvas"
+                                                    @click="cameraActive = true; openTaskItem = taskItem; console.log('OPEN_TASK_ITEM: #', taskItem.id);"
+                                                    >
+                                                      <i class="bi bi-camera"></i>
+                                                    </button>
+                                        </div>
+                                        <div :id="`taskItemCollapse${taskItem.id}`" class="collapse" data-bs-parent="#taskItemsAccordion">
+                                            <div class="d-grid gap-2 p-3 bg-secondary-subtle">
+                                                <button class="btn btn-sm btn-outline-dark" data-bs-toggle="offcanvas" data-bs-target="#referenceOffcanvas">References</button>
+                                                <template x-if="taskItem.STATUS === 'inprogress'">
+                                                    <button class="btn btn-lg btn-primary" data-bs-toggle="offcanvas" data-bs-target="#submissionOffcanvas">Submit</button>
+                                                </template>
+                                                <template x-if="taskItem.STATUS === 'submitted'">
+                                                    <button class="btn btn-lg btn-warning" data-bs-toggle="offcanvas" data-bs-target="#submissionOffcanvas">View Submission</button>
+                                                </template>
+                                                <template x-if="taskItem.STATUS === 'approved'">
+                                                  <button class="btn btn-lg btn-success" data-bs-toggle="offcanvas" data-bs-target="#submissionOffcanvas" disabled>Approved</button>
+                                                </template>
+                                                <template x-if="taskItem.STATUS === 'rejected'">
+                                                  <button class="btn btn-lg btn-danger" data-bs-toggle="offcanvas" data-bs-target="#submissionOffcanvas" disabled>Rejected</button>
+                                                </template>
+                                                <template x-if="taskItem.STATUS === 'cancelled'">
+                                                  <button class="btn btn-lg btn-secondary" data-bs-toggle="offcanvas" data-bs-target="#submissionOffcanvas" disabled>Cancelled</button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="!task.task_checklist[0]?.task_items.length">
+                        <div class="text-center my-3">
+                            <p class="text-muted mt-2">No items available.</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+
+        </main>
+    </template>
+
+
+    <!-- region [modal] Reference offcanvas -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="referenceOffcanvas">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title">References</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body">
+    <!-- Embedded Video -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Instructional Video:</h5>
+        <template x-if="openTaskItem?.video_link">
+          <div class="w-100">
+            <video class="rounded-3 shadow-sm" width="100%" controls :src="openTaskItem?.video_link"> Your browser does not support the video tag.
+            </video>
+          </div>
+          <h5 class="card-title">Video Description:</h5>
+          <template x-if="openTaskItem?.video_desc_en">
+            <p class="bg-secondary-subtle p-3 w-100 rounded small fst-italic" style="min-height: calc(1.2rem * 5 + 32px);" placeholder=""
+              x-text="openTaskItem?.video_desc_en || 'No video description'"></p>
+          </template>
+          <template x-if="!openTaskItem?.video_desc_en">
+            <div class="text-center pt-3 w-100 border" style="border-style: dashed !important;">
+              <i class="bi bi-x-circle text-secondary" style="font-size: 1.5rem;"></i>
+              <p class="text-muted">No video description</p>
+            </div>
+          </template>
+        </template>
+        <template x-if="!openTaskItem?.video_link">
+          <div class="text-center pt-3 w-100 border" style="border-style: dashed !important;">
+            <i class="bi bi-x-circle text-secondary" style="font-size: 1.5rem;"></i>
+            <p class="text-muted">No available video</p>
+          </div>
+        </template>
+      </div>
+    </div>
+    <!-- Reference Photos Section -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Reference Photos</h5>
+        <div class="d-flex flex-wrap gap-3 mb-3 justify-content-start">
+          <template x-if="openTaskItem?.reference_photos?.length">
+            <template x-for="{id, original_path, thumbnail_path} in openTaskItem.reference_photos" :key="id">
+              <div class="ratio ratio-1x1" style="width: calc(50% - 1rem); cursor: pointer;" @click="lightboxImage = original_path; isLightBoxOpen = true;">
+                <img :src="`${thumbnail_path}`" class="img-thumbnail">
+              </div>
+            </template>
+          </template>
+          <template x-if="!openTaskItem?.reference_photos?.length">
+            <div class="text-center pt-3 w-100 border" style="border-style: dashed !important;">
+              <i class="bi bi-image text-secondary" style="font-size: 1.5rem;"></i>
+              <p class="text-muted mt-2">No reference photos.</p>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+    <!-- Requirements Section -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Submission Requirements:</h5>
+        <div class="d-flex flex-wrap gap-2">
+          <span class="badge fs-5" :class="openTaskItem?.require_photos ? 'bg-danger':'bg-secondary'"><i class="bi bi-image"></i> Photos
+            Required</span>
+          <span class="badge fs-5" :class="openTaskItem?.require_videos ? 'bg-danger':'bg-secondary'"><i class="bi bi-play-btn"></i> Videos
+            Required</span>
+          <span class="badge fs-5" :class="openTaskItem?.require_comments ? 'bg-danger':'bg-secondary'"><i class="bi bi-chat-dots"></i> Comments
+            Required</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- endregion -->
+
+<!-- region [modal] Submission offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="submissionOffcanvas">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title">Submission</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+        <div class="form-step active h-100" id="step1">
+
+            <div class="d-flex flex-column h-100">
+                <div class="card overflow-auto" style="flex: 1 1 auto">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Step 1: Photos
+                            <span :class="`badge text-bg-${openTaskItem?.require_photos ? 'danger':'secondary'}`" x-text="openTaskItem?.require_photos ? 'Required':'Optional'"></span>
+                        </h5>
+
+                        <div class="d-flex flex-wrap mb-3 justify-content-between border p-2 gap-2" style="border-style: dashed !important;">
+                        
+                          <template x-if="openTaskItem?.status === 'submitted'">
+                            <div class="alert alert-secondary d-flex justify-content-center align-items-center w-100 gap-2">
+                              <i class="bi bi-x-circle text-secondary" style="font-size: 1.5rem;"></i>
+                              <label class="text-muted">Cancel submission to update</label>
+                            </div>
+                          </template>
+
+                        <template x-if="openTaskItem?.status === 'inprogress'">
+                          <div class="text-center w-100 py-3 border-1" style="border-style: dashed !important; cursor: pointer;"
+                              data-bs-target="#cameraOffcanvas"
+                              data-bs-toggle="offcanvas"
+                              @click="cameraActive = true;"
+                            >
+                            <i class="bi bi-camera text-secondary" style="font-size: 1.5rem;"></i>
+                            <label class="text-muted mb-0 d-block">Capture Photos</label>
+                          </div>
+                        </template>
+
+                          <template x-if="openTaskItem?.submitted_photos?.length">
+                            <template x-for="{id, original_path, thumbnail_path} in openTaskItem.submitted_photos" :key="id">
+                                <div class="ratio ratio-1x1 position-relative" style="width: calc(50% - .35rem); min-width: 100px; cursor: pointer;" @click="lightboxImage = original_path; isLightBoxOpen = true;">
+                                  <img :src="`${thumbnail_path}`" class="img-thumbnail object-fit-cover">
+                                  <template x-if="openTaskItem.status === 'inprogress'">
+                                  <button class="bg-transparent text-white border-0"
+                                          style="top: 5%; left: 100%; transform: translate(-130%); height: fit-content; width: fit-content; font-size: 1.2rem;"
+                                          @click.stop="deleteSubmittedPhoto(id);"
+                                          >&times;</button>
+                                  </template>
+                                </div>
+                            </template>
+                          </template>
+
+                        <template x-if="openTaskItem?.status === 'inprogress'">
+                          <div class="text-center w-100 py-3 border-1 d-flex justify-content-center align-items-center w-100 gap-2" style="border-style: dashed !important; cursor: pointer;"
+                              @click="$refs.submittedPhotoInput.click()"
+                            >
+                            <i class="bi bi-image text-secondary" style="font-size: 1.5rem;"></i>
+                            <label class="text-muted">Add photos</label>
+                            <input type="file" accept="image/jpeg, image/png" class="d-none" multiple  x-ref="submittedPhotoInput" @input="uploadSubmittedPhotos(openTaskItem);"/>
+                          </div>
+                        </template>
+
+                        </div>
+                          
+                    </div>
+                </div>
+                <!-- Button Container -->
+                <div class="d-flex justify-content-end align-items-center px-3 py-3 w-100" style="flex: 0 0 115px;">
+                    <button type="button" class="btn btn-primary fs-5" onclick="gotoStep(3)"><i class="bi bi-arrow-right-short"></i></button>
+                </div>
+            </div>
+            
+        </div>
+        <div class="form-step h-100" id="step3"  x-data="{minInput: 50}">
+            <div class="d-flex flex-column h-100">
+                <div class="card overflow-auto" style="flex: 1 1 auto;">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Step 3: Comments 
+                            <span :class="`badge text-bg-${openTaskItem?.require_comments ? 'danger':'secondary'}`" x-text="openTaskItem?.require_comments ? 'Required':'Optional'"></span>
+                        </h5>
+                        <div class="d-flex flex-wrap mb-3 justify-content-between border p-2 gap-2" style="border-style: dashed !important;">
+
+                        <template x-if="openTaskItem?.status === 'submitted'">
+                          <div class="alert alert-secondary d-flex justify-content-center align-items-center w-100 gap-2">
+                            <i class="bi bi-x-circle text-secondary" style="font-size: 1.5rem;"></i>
+                            <label class="text-muted">Cancel submission to update</label>
+                          </div>
+                        </template>
+                        
+
+                        <div class="form-floating" style="width: 100%">
+                          
+                          <textarea
+                            class="form-control form-control-sm h-100"
+                            style="min-height: calc(1.2rem * 5 + 32px);"
+                            placeholder=""
+                            :class="openTaskItem?.submitted_comments?.length ? openTaskItem?.submitted_comments?.length >= minInput ? 'is-valid' : 'is-invalid' : ''"
+                            x-model="openTaskItem.submitted_comments"
+                            :disabled="openTaskItem?.status === 'submitted'"
+                            ></textarea>
+                          <label class="text-muted">English</label>
+                          <div class="invalid-feedback">Please enter at least <span x-text="minInput"></span> characters.</div>
+                          <div class="valid-feedback"></div>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center px-3 py-3 w-100 " style="flex: 0 0 115px;">
+                    <button type="button" class="btn btn-secondary fs-5" onclick="gotoStep(1)"><i class="bi bi-arrow-left-short"></i></button>
+                    <template x-if="openTaskItem?.status === 'inprogress'">
+                        <button type="button" class="btn btn-warning fs-5" @click="updateTaskItem(openTaskItem, 'submit')" :disabled="openTaskItem?.require_comments ? openTaskItem?.submitted_comments?.length < minInput : false">Submit for Review</button>
+                    </template>
+                    <template x-if="openTaskItem?.status === 'submitted'">
+                        <button type="button" class="btn btn-danger fs-5" @click="updateTaskItem(openTaskItem, 'submitUndo')">Withdraw</button>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        
+            <div class="form-step" id="step2">
+                <h6>Step 2: Add Video <span id="requireVideos" class="badge text-bg-secondary">Optional</span></h6>
+                <input name="submittedVideos" type="file" class="form-control mb-3" accept="video/*">
+                <p class="text-secondary mb-0 mt-3 small fw-semibold">Previously submitted: </p>
+                <div class="mb-3 mx-auto d-flex justify-content-center">
+                    <video class="rounded-3 shadow-sm d-none" width="100%" controls>
+                        <source data-field-for="submitted_videos" src="" type="video/mp4"> Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div class="d-flex justify-content-between px-2 mt-4 w-100" style="position: fixed; bottom: 20px; left: 0;">
+                    <button type="button" class="btn btn-lg btn-secondary" onclick="previousStep(1)"><i class="bi bi-arrow-left-short"></i></button>
+                    <button type="button" class="btn btn-lg btn-primary" onclick="nextStep(3)"><i class="bi bi-arrow-right-short"></i></button>
+                </div>
+            </div>
+
+    </div>
+</div>
+<!-- endregion -->
+
+<!-- region [modal] Camera offcanvas -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="cameraOffcanvas">
+    <div class="offcanvas-body bg-dark p-0">
+
+          <template x-if="cameraActive">
+            <div class="d-flex flex-column h-100">
+                <div id="camera" class="rounded-bottom-3 rounded-left-3" x-init="initCamera(openTaskItem)" style="flex: 1 1 auto;"></div>
+
+                <div class="bg-dark d-flex justify-content-around align-items-center px-1 w-100 pb-4 py-3" style="flex: 0 0 115px;">
+                    <button class="btn btn-light px-3 py-2 rounded-circle border"
+                        data-bs-target="#submissionOffcanvas"
+                        data-bs-toggle="offcanvas">
+                        <i class="bi bi-images fs-2 text-primary"></i>
+                    </button>
+                    
+                    <button class="btn btn-light btn-lg px-4 py-3 rounded-circle border"
+                    @click="snapImage(openTaskItem)" :disabled="appLoading">
+                        <i class="bi bi-camera fs-1"></i>
+                    </button>
+
+
+                    <button class="btn btn-light px-3 py-2 rounded-circle border" @click="rotateCamera()">
+                        <i class="bi bi-arrow-repeat fs-2"></i>
+                    </button>
+                </div>
+            </div>
+          </template>
+    </div>
+</div>
+<!-- endregion -->
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+<!-- CHECKLIST SELECT OPTIONS -->
+<script src="/js/web-scripts.js"></script>
+<script src="/js/alpine/show-task.alpine.js"></script>
+
+
+<script>
+    function gotoStep(step) {
+        document.querySelectorAll('.form-step').forEach((el) => el.classList.remove('active'));
+        document.getElementById(`step${step}`).classList.add('active');
+        console.log(step);
+    }
+
+// region [codeblock]
+    // document.addEventListener("DOMContentLoaded", () => {
+    //     window.history.replaceState({ offcanvas: false }, "");
+    // });
+
+    // const submissionOffcanvasElement = document.querySelector("#submissionOffcanvas")
+    // const submissionOffcanvas = new bootstrap.Offcanvas(submissionOffcanvasElement);
+
+    // submissionOffcanvasElement.addEventListener("show.bs.offcanvas", () => {
+    //     window.history.pushState({ offcanvas: true }, "");
+    // })
+
+    // submissionOffcanvasElement.addEventListener("hide.bs.offcanvas", () => {
+    //     if (window.history.state && window.history.state.offcanvas) {
+    //         window.history.back();
+    //     }
+    // })
+    
+
+    // window.addEventListener("popstate", (event) => {
+    //     if(event.state && !event.state.offcanvas) {
+    //         submissionOffcanvas.hide();
+    //     }
+    // })
+// endregion [codeblock]
+
+</script>
+    
+</body>
+</html>

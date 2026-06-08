@@ -1,0 +1,119 @@
+<div class="card" style="border-color:#1c2c46; padding:14px;">
+  <div class="section-title">Images</div>
+  {% if ticket.images %}
+  <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px;">
+    {% for img in ticket.images %}
+    <div class="card" style="padding:8px; border-color: var(--border); box-shadow:none;">
+      <div class="muted truncate" title="{{ img.file_path }}">{{ img.file_path }}</div>
+      {% if img.file_path %}
+      {% set full_src = url_for('image_thumb', path=img.file_path) %}
+      {% if img.thumbnail_path %}
+      {% set thumb_src = url_for('image_thumb', path=img.thumbnail_path) %}
+      <div style="margin-top:6px; display:flex; justify-content:center;">
+        <img class="js-image-thumb" data-full="{{ full_src }}" src="{{ thumb_src }}" alt="Image" loading="lazy" style="max-width: 100%; max-height: 140px; border-radius:8px; border:1px solid var(--border); object-fit: contain; cursor: zoom-in;">
+      </div>
+      {% else %}
+      <div style="margin-top:6px; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px; border:1px dashed var(--border); border-radius:8px;">
+        <div class="muted" style="font-size:12px;">Thumbnail queued</div>
+        <button type="button" class="btn btn-ghost btn-sm js-image-thumb" data-full="{{ full_src }}">Open full image</button>
+      </div>
+      {% endif %}
+      {% endif %}
+      {% if img.caption %}
+      <div class="muted" style="margin-top:6px;">{{ img.caption }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">No images.</p>
+  {% endif %}
+  {% set cs_with_attachments = ticket.checklist_statuses | selectattr("attachments") | list %}
+  {% if cs_with_attachments or ticket.attachments_unassigned %}
+  <div class="section-title" style="margin-top:12px;">Attachments</div>
+  {% for cs in cs_with_attachments %}
+  <div class="card" style="padding:8px; border-color: var(--border); box-shadow:none; margin-top:8px;">
+    <div class="muted">{{ cs.checklist_item.text_en }} / {{ cs.checklist_item.text_cn }}</div>
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px; margin-top:6px;">
+      {% for att in cs.attachments %}
+      <div class="card" style="padding:8px; border-color: var(--border); box-shadow:none;">
+        <div class="muted truncate" title="{{ att.file_path }}">{{ att.file_name or att.file_path }}</div>
+        {% if att.file_path %}
+          {% if att.is_video %}
+          {% set video_src = url_for('image_thumb', path=att.file_path) %}
+          {% set poster_src = url_for('image_thumb', path=att.thumbnail_path) if att.thumbnail_path else '' %}
+          <div style="margin-top:6px; display:flex; justify-content:center;">
+            <video controls preload="metadata" playsinline {% if poster_src %}poster="{{ poster_src }}"{% endif %} style="max-width: 100%; max-height: 180px; border-radius:8px; border:1px solid var(--border); background:#0b1422;">
+              <source src="{{ video_src }}" type="{{ att.mime_type or '' }}">
+            </video>
+          </div>
+          {% elif att.thumbnail_path %}
+          {% set full_src = url_for('image_thumb', path=att.file_path) %}
+          {% set thumb_src = url_for('image_thumb', path=att.thumbnail_path) %}
+          <div style="margin-top:6px; display:flex; justify-content:center;">
+            <img class="js-image-thumb" data-full="{{ full_src }}" src="{{ thumb_src }}" alt="Attachment" loading="lazy" style="max-width: 100%; max-height: 140px; border-radius:8px; border:1px solid var(--border); object-fit: contain; cursor: zoom-in;">
+          </div>
+          {% elif att.is_image %}
+          {% set full_src = url_for('image_thumb', path=att.file_path) %}
+          <div style="margin-top:6px; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px; border:1px dashed var(--border); border-radius:8px;">
+            <div class="muted" style="font-size:12px;">Thumbnail queued</div>
+            <button type="button" class="btn btn-ghost btn-sm js-image-thumb" data-full="{{ full_src }}">Open full image</button>
+          </div>
+          {% else %}
+          <div style="margin-top:6px;">
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('image_thumb', path=att.file_path) }}" target="_blank" rel="noopener">Open attachment</a>
+          </div>
+          {% endif %}
+        {% endif %}
+        {% if att.description %}
+        <div class="muted" style="margin-top:6px;">{{ att.description }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+  {% if ticket.attachments_unassigned %}
+  <div class="card" style="padding:8px; border-color: var(--border); box-shadow:none; margin-top:8px;">
+    <div class="muted">Other attachments</div>
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px; margin-top:6px;">
+      {% for att in ticket.attachments_unassigned %}
+      <div class="card" style="padding:8px; border-color: var(--border); box-shadow:none;">
+        <div class="muted truncate" title="{{ att.file_path }}">{{ att.file_name or att.file_path }}</div>
+        {% if att.file_path %}
+          {% if att.is_video %}
+          {% set video_src = url_for('image_thumb', path=att.file_path) %}
+          {% set poster_src = url_for('image_thumb', path=att.thumbnail_path) if att.thumbnail_path else '' %}
+          <div style="margin-top:6px; display:flex; justify-content:center;">
+            <video controls preload="metadata" playsinline {% if poster_src %}poster="{{ poster_src }}"{% endif %} style="max-width: 100%; max-height: 180px; border-radius:8px; border:1px solid var(--border); background:#0b1422;">
+              <source src="{{ video_src }}" type="{{ att.mime_type or '' }}">
+            </video>
+          </div>
+          {% elif att.thumbnail_path %}
+          {% set full_src = url_for('image_thumb', path=att.file_path) %}
+          {% set thumb_src = url_for('image_thumb', path=att.thumbnail_path) %}
+          <div style="margin-top:6px; display:flex; justify-content:center;">
+            <img class="js-image-thumb" data-full="{{ full_src }}" src="{{ thumb_src }}" alt="Attachment" loading="lazy" style="max-width: 100%; max-height: 140px; border-radius:8px; border:1px solid var(--border); object-fit: contain; cursor: zoom-in;">
+          </div>
+          {% elif att.is_image %}
+          {% set full_src = url_for('image_thumb', path=att.file_path) %}
+          <div style="margin-top:6px; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px; border:1px dashed var(--border); border-radius:8px;">
+            <div class="muted" style="font-size:12px;">Thumbnail queued</div>
+            <button type="button" class="btn btn-ghost btn-sm js-image-thumb" data-full="{{ full_src }}">Open full image</button>
+          </div>
+          {% else %}
+          <div style="margin-top:6px;">
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('image_thumb', path=att.file_path) }}" target="_blank" rel="noopener">Open attachment</a>
+          </div>
+          {% endif %}
+        {% endif %}
+        {% if att.description %}
+        <div class="muted" style="margin-top:6px;">{{ att.description }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+</div>

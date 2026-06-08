@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>Checklist Items Dashboard</title>
+
+    <style>
+        input[type="checkbox"] {
+            width: 20px;  /* Adjust width */
+            height: 20px; /* Adjust height */
+            cursor: pointer;
+        }
+        .no-shadow {
+            border: none;
+
+        }
+        .no-shadow:focus {
+            box-shadow: none;
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <div class="container-md border border-dark small p-0">
+        <div class="container-fluid mb-5 p-0">
+            <div class="bg-dark text-white text-center py-1 fs-4">CURRENT ASSIGNMENTS</div>
+            <div class="py-2 px-4 small fw-bolder">
+                NOTE: This is where a staff would view their assignments. Upload a photo and submit it for review.
+            </div>
+            
+            <div class="row py-2 px-4 g-0"> 
+                <div class="col row align-items-center g-1">
+                    <div class="col-3">
+                        <label for="select-employee" class="form-label">Login as: </label>
+                    </div>
+                    <div class="col">
+                        <select id="select-employee" name="employee_id" class="form-select"></select>
+                    </div>
+                </div>
+
+                <div class="col row align-items-center g-1"> </div>
+            </div>
+
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th class="col-2">Description (EN)</th>
+                        <th class="col-2">描述 (CN)</th>
+                        <th class="col-2">Notes</th>
+                        <th class="col-2">Assigned by</th>
+                        <th class="col-2">Photos</th>
+                        <th class="col-2">Status</th>
+                        <th class="col-auto">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<script>
+    let assignments;
+    let employees;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        await refreshEverything();
+    });
+
+    async function refreshEverything() {
+        await fetchEmployees();
+        populateSelectEmployees();
+
+        await fetchAssignments();
+        populateTable();
+    }
+
+    async function fetchEmployees() {
+        let res = await fetch(`/employees`)
+        employees = await res.json();
+    }
+
+    async function fetchAssignments() {
+        let res = await fetch(`/assignments?employee_id=${employees[0].employee_id}`)
+        assignments = await res.json();
+    }
+
+    function populateSelectEmployees() {
+        let options = employees.map(employee => {
+            return `<option value="${employee.employee_id}">${employee.employee_name}</option>`;
+        }).join('');
+        document.querySelector("#select-employee").innerHTML = options;
+    }
+
+    function populateTable() {
+        const tBody = document.querySelector('tbody');
+        tBody.innerHTML = '';
+
+        assignments.forEach(assignment => {
+            const row = document.createElement('tr');
+            row.setAttribute('id', `assignment-${assignment.id}`);
+            row.innerHTML = `
+                <td class="align-middle">${assignment.all_checklists_templates.description_en}</td>
+                <td class="align-middle">${assignment.all_checklists_templates.translation_overwrite_cn || assignment.all_checklists_templates.description_cn}</td>
+                <td class="align-middle">${assignment.notes}</td>
+                <td class="align-middle">${assignment.assigner.employee_name}</td>
+                <td class="align-middle text-center">
+                ${assignment.is_submitted && !assignment.is_rejected
+                    ? `<img src="${assignment.photo_path}" class="img-fluid d-block mx-auto"/>`
+                    :`<input id="photo-${assignment.id}" type="file" class="form-control form-control-sm" multiple accept="image/*">`}
+                </td>
+                <td class="align-middle text-center small">
+                    ${(assignment.is_approved) 
+                    ? ` <p> Approved on: <br/><span class="fw-bolder">${formatDate(new Date(assignment.approved_on))}</span></p>
+                        <p> Evaluated by: <br/><span class="fw-bolder">${assignment.evaluator.employee_name}</span></p>`
+                    :(assignment.is_rejected)
+                        ? ` <p class="text-danger">Rejected: <br/> ${assignment.rejected_reason_current}</p>
+                            <p class="text-black">Evaluated by: <br/><span class="fw-bolder">${assignment.evaluator.employee_name}</span></p>`
+                        :(assignment.is_submitted)
+                            ? `Waiting for Approval`
+                            : "In progress" }
+                </td>
+                <td class="align-middle text-center">
+                    ${assignment.is_approved
+                    ? `<button type="button" class="w-100 btn btn-outline-success disabled">Approved</button>`
+                    : (assignment.is_rejected)
+                        ? `<button type="button" class="w-100 btn btn-outline-warning" onclick="handleSubmit(${assignment.id})">Re-submit</button>`
+                        : (assignment.is_submitted)
+                            ? `<button type="button" class="w-100 btn btn-secondary" onclick="handleCancel(${assignment.id})">Cancel</button>`
+                            : `<button type="button" class="w-100 btn btn-primary" onclick="handleSubmit(${assignment.id})">Submit</button>`}
+                </td>`
+            tBody.appendChild(row);
+        });
+    }
+
+    async function handleSubmit(id) {
+        let assignment_id = id;
+        let photo_input = document.querySelector(`#photo-${id}`);
+        let photo_proof = photo_input.files[0];
+
+        if(!photo_proof) return alert("Could not submit without image");
+
+        const formData = new FormData();
+        formData.append("photo_proof", photo_proof); 
+        let res = await fetch(`/assignments/${id}/submit`, {
+            method: "POST",
+            body: formData,
+        });
+
+        if(res.ok) {
+            refreshEverything()
+            alert("Successfully submitted");
+        };
+    }
+
+
+    async function  handleCancel(id) {
+        let res = await fetch(`/assignments/${id}/cancel`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+        });
+        if(res.ok) {
+            refreshEverything()
+            alert("Successfully cancelled");
+        };
+    }
+
+
+    async function filterData() {
+        const employee_id = document.querySelector("#select-employee").value;
+        let res = await fetch(`/assignments?employee_id=${employee_id}`);
+        assignments = await res.json();
+        if(res.ok) populateTable();
+    }
+
+    document.querySelector("#select-employee").addEventListener("change", filterData);
+
+    const options = { 
+        month: 'short', 
+        day: '2-digit', 
+        year: 'numeric', 
+        hour: 'numeric', 
+        minute: 'numeric', 
+        hour12: true 
+    };
+
+    const formatDate = (date) => new Intl.DateTimeFormat('en-US', options).format(date);
+
+</script>
+</body>
+
+
+</html>

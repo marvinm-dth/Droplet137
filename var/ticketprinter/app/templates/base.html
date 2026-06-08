@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Dragon Ticket System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+<div class="page">
+    <header>
+        <div class="brand">
+            <div class="brand-mark">DTH</div>
+            <div>
+                <h1>Dragon Tiny Homes</h1>
+                <div class="subtle">Ticket printer console</div>
+            </div>
+        </div>
+        <nav>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('ticket_pdfs') }}">Ticket PDFs</a>
+            <a href="{{ url_for('ticket_fill') }}">Fill &amp; Print</a>
+            <a href="{{ url_for('templates_home') }}">Templates</a>
+            <a href="{{ url_for('projects') }}">Projects</a>
+        </nav>
+    </header>
+
+    {% block content %}{% endblock %}
+</div>
+<script defer src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script defer src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script defer src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
+<script defer src="{{ url_for('static', filename='react_app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "template_id": "wall_framing",
+  "name": "Wall Framing Ticket",
+  "design_id": "work_ticket_v1",
+  "template_code": "1045",
+  "job_type_en": "Framing",
+  "job_type_cn": "框架施工",
+  "checklist_items": [
+    { "en": "Confirm lumber on-site", "cn": "确认木料到场" },
+    { "en": "Review wall layout with crew", "cn": "与施工队复核墙体布局" },
+    { "en": "Verify anchor bolts and plates", "cn": "确认地脚螺栓和底板" },
+    { "en": "Check moisture barrier installation", "cn": "检查防潮层安装" },
+    { "en": "Ensure headers cut to spec", "cn": "确保过梁按规格切割" },
+    { "en": "Confirm rough openings for doors/windows", "cn": "确认门窗洞口尺寸" },
+    { "en": "Inspect nail spacing and fastening", "cn": "检查钉距与固定情况" },
+    { "en": "Verify wall plumb and bracing", "cn": "确认墙体垂直与支撑" }
+  ],
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2024-01-01T00:00:00Z"
+}

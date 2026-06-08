@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage</title>
+
+  <!-- Google Font -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css?family=Poppins:400,600,700&display=swap"
+  />
+
+  <!-- DataTables CSS (desktop/tablet) -->
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css"
+  />
+
+  <style>
+    /* ============================
+       Global & Base Styles
+       ============================ */
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      line-height: 1.4;
+      text-align: center;
+    }
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* Responsive font sizes */
+    @media (max-width: 768px) {
+      body {
+        font-size: 16px;
+      }
+    }
+    @media (max-width: 480px) {
+      body {
+        font-size: 14px;
+      }
+    }
+
+    /* ============================
+       Wrapper Container
+       ============================ */
+    .container_info {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 16px;
+      box-sizing: border-box;
+    }
+
+    /* ============================
+       Header (logo, title, logout)
+       ============================ */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      background-color: #f8f9fa;
+      position: relative;
+    }
+    .header .logo-link {
+      display: flex;
+      align-items: center;
+    }
+    .header .logo-link img {
+      width: 30px;
+      height: 30px;
+      margin-right: 10px;
+    }
+    .header h1 {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #333;
+      text-align: center;
+    }
+    .logout-button {
+      padding: 10px 20px;
+      background-color: #cc716c;
+      color: #fff;
+      font-size: 1em;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+      margin-left: auto;
+    }
+    .logout-button:hover {
+      background-color: #b35c58;
+    }
+
+    /* ============================
+       Language Selector
+       ============================ */
+    .language-selector {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 20px;
+    }
+    .language-selector label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .language-selector select {
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+    }
+
+    /* ============================
+       Table Container & Styles
+       ============================ */
+    .receive-table-container {
+      width: 100%;
+      overflow-x: auto; /* allow horizontal scroll on narrow screens */
+      margin-top: 30px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 90%;
+      max-width: 1000px;
+      margin: 0 auto;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      background-color: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 15px;
+    }
+    th {
+      background-color: #7ABACC;
+      color: #040101;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    td {
+      text-align: center;
+      font-size: 0.9em;
+    }
+    tbody tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    /* ============================
+       Buttons (Assign Item)
+       ============================ */
+    .assign-item-btn {
+      padding: 6px 10px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.8em;
+      transition: background-color 0.3s ease;
+    }
+    .assign-item-btn:hover {
+      background-color: #218838;
+    }
+
+    /* ============================
+       Mobile‐Only Overrides (≤ 480px)
+       ============================ */
+    @media (max-width: 480px) {
+      /* Header stacks vertically */
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-bottom: 10px;
+      }
+      .header h1 {
+        position: static;
+        transform: none;
+        margin: 0 0 10px;
+        font-size: 1.8em;
+      }
+      .logout-button {
+        margin: 8px 0 0;
+        width: auto;
+        font-size: 0.9em;
+      }
+
+      /* Language selector stacks */
+      .language-selector {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .language-selector label {
+        margin-bottom: 6px;
+      }
+
+      /* Table → Card‐style */
+      #receive-table thead {
+        display: none;
+      }
+      #receive-table tbody tr {
+        display: block;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background-color: #fff;
+        padding: 8px;
+      }
+      #receive-table tbody tr td {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 8px;
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        text-align: left;
+        font-size: 0.9em;
+      }
+      #receive-table tbody tr td:last-child {
+        border-bottom: none;
+      }
+      #receive-table tbody tr td::before {
+        content: attr(data-label) ": ";
+        flex-shrink: 0;
+        font-weight: 600;
+        color: #555;
+      }
+      #receive-table tbody tr td button {
+        font-size: 0.8em;
+        padding: 4px 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container_info" id="info-container">
+    <!-- HEADER -->
+    <div class="header">
+      <a href="{{ url_for('main') }}" class="logo-link">
+        <img
+          src="/static/home-logo.png"
+          alt="Home"
+          style="width: 30px; height: 30px; margin-right: 10px;"
+          loading="lazy"
+        />
+      </a>
+      <h1>Dragon Tiny Homes Manage Receive Item</h1>
+      <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+      <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <!-- LANGUAGE SELECTOR -->
+    <div class="language-selector">
+      <label for="languageSelect" class="description data-english">Choose Language:</label>
+      <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言:</label>
+      <select id="languageSelect" onchange="updateDescriptions()">
+        <option value="english">English</option>
+        <option value="chinese">Chinese</option>
+      </select>
+    </div>
+
+    <!-- RECEIVE TABLE -->
+    <div class="receive-table-container">
+      <table id="receive-table" class="display">
+        <thead>
+          <tr>
+            <th onclick="sortTable(0)">
+              <span class="description data-english">Receive No.</span>
+              <span class="description data-mandarin" style="display: none;">接收编号</span>
+            </th>
+            <th onclick="sortTable(1)">
+              <span class="description data-english">Receive Name</span>
+              <span class="description data-mandarin" style="display: none;">接收人姓名</span>
+            </th>
+            <th onclick="sortTable(2)">
+              <span class="description data-english">Receive Date</span>
+              <span class="description data-mandarin" style="display: none;">接收日期</span>
+            </th>
+            <th onclick="sortTable(3)">
+              <span class="description data-english">Status</span>
+              <span class="description data-mandarin" style="display: none;">进度</span>
+            </th>
+            <th>
+              <span class="description data-english">Action</span>
+              <span class="description data-mandarin" style="display: none;">操作</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for receive in receive_data %}
+          <tr>
+            <td data-label="Receive No.">
+              <a href="{{ url_for('assign_item', receive_id=receive.id) }}">{{ receive.id }}</a>
+            </td>
+            <td data-label="Receive Name">{{ receive.receiver_name }}</td>
+            <td data-label="Receive Date">{{ receive.received_date }}</td>
+            <td data-label="Status">{{ receive.status }}</td>
+            <td data-label="Action">
+              <a
+                href="{{ url_for('assign_item', receive_id=receive.id) }}"
+                style="display: inline-block;"
+              >
+                <button class="assign-item-btn">
+                  <span class="data-english">Assign Item</span>
+                  <span class="data-mandarin" style="display: none;">分配物品</span>
+                </button>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- jQuery & DataTables JS -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script
+    type="text/javascript"
+    src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"
+  ></script>
+  <script>
+    $(document).ready(function () {
+      $('#receive-table').DataTable({
+        responsive: true,
+        paging: true,
+        searching: true,
+        info: false
+      });
+    });
+
+    function updateDescriptions() {
+      const language = document.getElementById('languageSelect').value;
+      localStorage.setItem('selectedLanguage', language);
+
+      const engEls = document.querySelectorAll('.data-english');
+      const mandEls = document.querySelectorAll('.data-mandarin');
+      if (language === 'english') {
+        engEls.forEach(el => (el.style.display = 'block'));
+        mandEls.forEach(el => (el.style.display = 'none'));
+      } else {
+        engEls.forEach(el => (el.style.display = 'none'));
+        mandEls.forEach(el => (el.style.display = 'block'));
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedLang = localStorage.getItem('selectedLanguage');
+      if (savedLang) {
+        document.getElementById('languageSelect').value = savedLang;
+        updateDescriptions();
+      }
+    });
+
+    function confirmDelete(orderId) {
+      if (confirm("Are you sure you want to delete this order?")) {
+        fetch(`/order/delete/${orderId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        })
+          .then(response => {
+            if (response.ok) {
+              alert('Order deleted successfully');
+              window.location.href = '/manage_receive_item';
+            } else {
+              response.json().then(data => {
+                console.error('Failed to delete order:', data);
+                alert('Failed to delete order: ' + data.error);
+              });
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the order.');
+          });
+      }
+    }
+
+    async function updateNotificationCount(userId) {
+      const response = await fetch(`/unread-notifications-count/${userId}`);
+      const data = await response.json();
+      const notificationCountElement = document.getElementById('notification-count');
+      notificationCountElement.textContent = data.unread_count;
+      if (data.unread_count === 0) {
+        notificationCountElement.style.display = 'none';
+      } else {
+        notificationCountElement.style.display = 'inline';
+      }
+    }
+    const USER_ID = '{{ user.id }}';
+    updateNotificationCount(USER_ID);
+    setInterval(() => updateNotificationCount(USER_ID), 60000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Supplier</title>
+
+  <!-- FontAwesome for spinners/icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  />
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 2em;
+      color: #333;
+      background-color: #f8f9fa;
+      box-sizing: border-box;
+    }
+
+    /* Container wrapper */
+    .container_info {
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      box-sizing: border-box;
+    }
+
+    /* ===== Header ===== */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+      background-color: #f8f9fa;
+      position: relative;
+      box-sizing: border-box;
+    }
+    .header a.logo img {
+      width: 30px;
+      height: 30px;
+      margin-right: 10px;
+    }
+    .header h1 {
+      font-size: 2.5em;
+      font-weight: bold;
+      color: #333;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+      white-space: nowrap;
+    }
+    .logout-button {
+      padding: 10px 20px;
+      background-color: #cc716c;
+      color: #fff;
+      font-size: 1em;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+    }
+    .logout-button:hover {
+      background-color: #b3534e;
+    }
+
+    /* ===== Language Selector ===== */
+    .language-select-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 20px;
+      padding-left: 10px;
+      box-sizing: border-box;
+    }
+    .language-select-wrapper label {
+      font-weight: 500;
+      margin-right: 10px;
+      font-size: 0.95em;
+    }
+    .language-select-wrapper select {
+      padding: 6px 10px;
+      font-size: 0.9em;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    /* ===== Form Fields ===== */
+    form .form-group {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      box-sizing: border-box;
+    }
+    form .form-group label {
+      width: 180px;
+      font-weight: bold;
+      text-align: left;
+      font-size: 0.95em;
+      margin-right: 10px;
+      box-sizing: border-box;
+    }
+    form .form-group input[type="text"],
+    form .form-group input[type="number"] {
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 0.9em;
+      flex: 1 1 300px;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    form .form-group input.product_desc {
+      height: 150px;
+      resize: vertical;
+      overflow-y: auto;
+      white-space: normal;
+    }
+
+    /* ===== Buttons (Add, Delete, etc.) ===== */
+    button {
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+    .add-row-btn,
+    .upload-btn,
+    .delete-btn {
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      padding: 5px;
+      margin-right: 5px;
+      font-size: 0.9em;
+      box-sizing: border-box;
+    }
+    .upload-btn,
+    .delete-btn {
+      background-color: #ff6f69;
+    }
+    .add-row-btn:hover,
+    .upload-btn:hover,
+    .delete-btn:hover {
+      opacity: 0.85;
+    }
+
+    /* ===== Table Styling ===== */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 0 auto 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-size: 0.85em;
+      box-sizing: border-box;
+    }
+    th,
+    td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    th {
+      background-color: #007bff;
+      color: #fff;
+      font-weight: 600;
+    }
+    td {
+      text-align: center;
+      color: #333;
+    }
+    tbody tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    /* ===== Modal ===== */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: rgba(0, 0, 0, 0.4);
+      box-sizing: border-box;
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 90%;
+      max-width: 400px;
+      border-radius: 10px;
+      text-align: left;
+      box-sizing: border-box;
+    }
+    .modal-content h2 {
+      margin-top: 0;
+      font-size: 1.5em;
+    }
+    .modal-content .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .modal-content .close:hover,
+    .modal-content .close:focus {
+      color: #000;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .modal-content .add-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 15px;
+      font-size: 0.9em;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      box-sizing: border-box;
+    }
+    .modal-content .add-btn:hover {
+      background-color: #218838;
+    }
+    .btn-text {
+      margin-right: 8px;
+    }
+    .btn-spinner {
+      font-size: 1em;
+      color: #fff;
+    }
+
+    /* =========================================================================
+       Responsive: Tablets (≤768px)
+    ========================================================================== */
+    @media (max-width: 768px) {
+      .container_info {
+        width: 95%;
+        padding: 15px;
+      }
+      .header {
+        padding: 15px;
+      }
+      .header h1 {
+        font-size: 2em;
+      }
+      .header a.logo img {
+        width: 25px;
+        height: 25px;
+      }
+      .logout-button {
+        padding: 8px 16px;
+        font-size: 0.9em;
+      }
+      .language-select-wrapper label {
+        font-size: 0.9em;
+      }
+      .language-select-wrapper select {
+        font-size: 0.9em;
+      }
+      form .form-group label {
+        width: 140px;
+        font-size: 0.9em;
+      }
+      form .form-group input[type="number"],
+      form .form-group input[type="text"] {
+        font-size: 0.85em;
+        padding: 8px;
+      }
+      form .form-group input.product_desc {
+        height: 120px;
+      }
+      table {
+        font-size: 0.8em;
+      }
+      th,
+      td {
+        padding: 8px;
+      }
+      .add-row-btn {
+        padding: 8px 12px;
+        font-size: 0.9em;
+      }
+      .modal-content {
+        width: 95%;
+      }
+      .modal-content h2 {
+        font-size: 1.3em;
+      }
+      .modal-content .add-btn {
+        width: 100%;
+        margin-top: 10px;
+      }
+    }
+
+    /* =========================================================================
+       Responsive: Phones (≤480px)
+    ========================================================================== */
+    @media (max-width: 480px) {
+      /* Container spans full width */
+      .container_info {
+        width: 100%;
+        margin: 0;
+        padding: 10px;
+        box-shadow: none;
+      }
+
+      /* Stack header elements vertically */
+      .header {
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 10px 0;
+      }
+      .header a.logo {
+        order: 0;
+        flex: 0 0 auto;
+        margin-bottom: 8px;
+      }
+      .header h1 {
+        order: 1;
+        position: relative;
+        left: auto;
+        transform: none;
+        width: 100%;
+        text-align: center;
+        margin: 5px 0;
+        font-size: 1.5em;
+      }
+      .logout-button {
+        order: 2;
+        margin: 5px 0;
+        width: 100%;
+        font-size: 0.9em;
+        padding: 8px;
+      }
+
+      /* Center language selector */
+      .language-select-wrapper {
+        justify-content: center;
+        margin-bottom: 15px;
+      }
+      .language-select-wrapper label {
+        font-size: 0.85em;
+      }
+      .language-select-wrapper select {
+        font-size: 0.85em;
+        padding: 5px 8px;
+      }
+
+      /* Stack form groups */
+      form .form-group {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      form .form-group label {
+        width: 100%;
+        margin-bottom: 6px;
+        font-size: 0.9em;
+      }
+      form .form-group input[type="number"],
+      form .form-group input[type="text"] {
+        width: 100%;
+        flex: 1 1 auto;
+        padding: 8px;
+        font-size: 0.85em;
+      }
+      form .form-group input.product_desc {
+        height: 100px;
+      }
+
+      /* Table: allow horizontal scroll */
+      table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        font-size: 0.8em;
+      }
+      th,
+      td {
+        padding: 6px;
+      }
+
+      /* Buttons: full width stacking */
+      .add-row-btn {
+        width: 100%;
+        margin: 8px 0;
+        padding: 10px;
+        font-size: 0.95em;
+      }
+
+      /* Modal adjustments */
+      .modal-content {
+        width: 100%;
+        margin: 10% auto;
+        padding: 15px;
+      }
+      .modal-content h2 {
+        font-size: 1.2em;
+      }
+      .modal-content .form-group {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .modal-content .form-group label {
+        width: 100%;
+        margin-bottom: 6px;
+        font-size: 0.9em;
+      }
+      .modal-content .form-group input[type="text"] {
+        width: 100%;
+        padding: 6px;
+        font-size: 0.85em;
+      }
+      .modal-content .add-btn {
+        width: 100%;
+        margin-top: 10px;
+        font-size: 0.9em;
+      }
+    }
+  </style>
+
+  <!-- Manifest + theme color -->
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <meta name="theme-color" content="#000000">
+
+  <!-- Service Worker registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('{{ url_for("static", filename="service-worker.js") }}')
+          .then((registration) => {
+            console.log('ServiceWorker registered:', registration.scope);
+          })
+          .catch((err) => {
+            console.log('SW registration failed:', err);
+          });
+      });
+    }
+  </script>
+</head>
+<body>
+<div class="container_info" id="info-container" style="width: 100%; max-width: 1000px; margin: 0 auto;">
+    <div class="header">
+        <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+            <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;">
+        </a>
+        <h1>Add Supplier</h1>
+        <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+        <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <div style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+        <label for="languageSelect" class="description data-english">Choose Language:</label>
+        <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言: </label>
+        <select id="languageSelect" onchange="updateDescriptions()" style="margin-left: 10px;">
+            <option value="english">English</option>
+            <option value="chinese">Chinese</option>
+        </select>
+    </div>
+
+    <form id="supplierForm" onsubmit="showLoading()">
+        <div style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="supplierName" class="description data-english" >Supplier Name:</label>
+            <label for="supplierName" class="description data-mandarin" style="display: none;">供应商名称:</label>
+            <input type="text" id="supplierName" name="supplierName">
+        </div>
+
+        <button type="button" id="addSupplierBtn" style="margin-bottom: 20px;" class="button data-english">
+            <span class="button-text">Add</span>
+            <i class="fas fa-spinner fa-spin loading-spinner" style="display:none;"></i>
+        </button>
+        <button type="button" id="addSupplierBtn" style="margin-bottom: 20px;" class="button data-mandarin" style="display: none;">
+            <span class="button-text">添加</span>
+            <i class="fas fa-spinner fa-spin loading-spinner" style="display:none;"></i>
+        </button>
+
+        <table style="width: 100%; max-width: 1000px; margin: 0 auto;">
+            <thead>
+                <tr>
+                    <th>
+                        <div class="col data-english">Supplier SKU Number</div>
+                        <div class="col data-mandarin" style="display: none;">供应商 SKU 编号</div>
+                    </th>
+                    <th>
+                        <div class="col data-english">Item Name</div>
+                        <div class="col data-mandarin" style="display: none;">物品名称</div>
+                    </th>
+                    <th>
+                        <div class="col data-english">Price</div>
+                        <div class="col data-mandarin" style="display: none;">价格</div>
+                    </th>
+                    <th>
+                        <div class="col data-english">Product Description</div>
+                        <div class="col data-mandarin" style="display: none;">产品描述</div>
+                    </th>
+                    <th>
+                        <div class="col data-english">Inventory Location</div>
+                        <div class="col data-mandarin" style="display: none;">库存位置</div>
+                    </th>
+                    <th>
+                        <div class="col data-english">Reorder Point</div>
+                        <div class="col data-mandarin" style="display: none;">补货点</div>
+                    </th>
+                    <th>
+                        <div class="col data-english">Pack Size</div>
+                        <div class="col data-mandarin" style="display: none;">包装规格</div>
+                    </th>
+                    <th>
+                        <div class="col data-english">Action</div>
+                        <div class="col data-mandarin" style="display: none;">操作</div>
+                    </th>
+                </tr>
+            </thead>
+            <tbody id="materialsContainer">
+                <tr id="inputRowTemplate">
+                    <td><input type="number" name="materialId[]" placeholder="ID"></td>
+                    <td><input type="text" name="description[]" placeholder="Description"></td>
+                    <td><input type="number" name="price[]" placeholder="Price"></td>
+                    <td><input type="text" name="productDescription[]" placeholder="Product Description"></td>
+                    <td><input type="text" name="inventoryLocation[]" placeholder="Inventory Location"></td>
+                    <td><input type="number" name="reorderPoint[]" placeholder="Reorder Point" value="0"></td>
+                    <td><input type="number" name="packSize[]" placeholder="Pack Size" value="1"></td>
+                    <td>
+                        <input type="file" class="upload-input" name="image[]" accept="image/*">
+                        <button type="button" class="delete-btn" onclick="deleteRow(this)">Delete</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <button type="button" class="add-row-btn" id="addRowBtn">+</button>
+    </form>
+</div>
+
+<script>
+    function showLoading() {
+            // Disable the submit button to prevent multiple submissions
+            const buttons = document.querySelectorAll('.button');
+            buttons.forEach(button => {
+                button.disabled = true;
+            });
+
+            // Hide button text and show the loading spinner
+            const buttonTexts = document.querySelectorAll('.button-text');
+            const spinners = document.querySelectorAll('.loading-spinner');
+
+            buttonTexts.forEach(text => text.style.display = 'none');
+            spinners.forEach(spinner => spinner.style.display = 'inline-block');
+        }
+        
+    function updateDescriptions() {
+        const language = document.getElementById('languageSelect').value;
+
+        // Save the selected language in local storage
+        localStorage.setItem('selectedLanguage', language);
+
+        // Get all elements with class 'data-english' and 'data-mandarin'
+        const englishElements = document.querySelectorAll('.data-english');
+        const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+        if (language === 'english') {
+            englishElements.forEach(element => {
+                element.style.display = 'block';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'none';
+            });
+        } else if (language === 'chinese') {
+            englishElements.forEach(element => {
+                element.style.display = 'none';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'block';
+            });
+        }
+
+    }
+
+    // Function to load the saved language preference on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Get the selected language from local storage
+        const savedLanguage = localStorage.getItem('selectedLanguage');
+
+        // If there's a saved language, set it in the dropdown and update descriptions
+        if (savedLanguage) {
+            document.getElementById('languageSelect').value = savedLanguage;
+            updateDescriptions();
+        }
+    });
+
+    document.getElementById("addRowBtn").addEventListener("click", function() {
+            addNewRow();
+        });
+
+    document.getElementById("addSupplierBtn").addEventListener("click", function() {
+        generateJson();
+    });
+
+    function addNewRow() {
+        let container = document.getElementById("materialsContainer");
+        let newRow = document.getElementById("inputRowTemplate").cloneNode(true);
+        newRow.removeAttribute("id");
+        // Clear input fields for the new row
+        newRow.querySelectorAll("input").forEach(input => input.value = "");
+        // Ensure new row does not have previous data-image attribute
+        newRow.querySelector(".upload-input");
+        container.appendChild(newRow);
+    }
+
+    function deleteRow(button) {
+        let row = button.parentElement.parentElement;
+        row.remove();
+    }
+
+    function uploadImage(button) {
+        let uploadInput = document.createElement("input");
+        uploadInput.type = "file";
+        uploadInput.accept = "image/*";
+        uploadInput.style.display = "none";
+
+        uploadInput.onchange = function () {
+            if (uploadInput.files.length > 0) {
+                button.setAttribute('data-image', uploadInput.files[0].name);
+                alert("Image uploaded: " + uploadInput.files[0].name);
+            }
+        };
+
+        button.parentElement.appendChild(uploadInput);
+        uploadInput.click();
+    }
+
+        function generateJson() {
+            let supplierName = document.getElementById("supplierName").value;
+            if (!supplierName) {
+                alert("Supplier name is required.");
+                return;
+            }
+
+            let allRowsValid = true;
+            let formData = new FormData();
+            formData.append("supplier_name", supplierName)
+
+            document.querySelectorAll("#materialsContainer tr").forEach((row, index) => {
+                let materialId = row.querySelector("input[name='materialId[]']").value;
+                let description = row.querySelector("input[name='description[]']").value;
+                let price = row.querySelector("input[name='price[]']").value;
+                let productDescription = row.querySelector("input[name='productDescription[]']").value;
+                let inventoryLocation = row.querySelector("input[name='inventoryLocation[]']").value;
+                let reorderPoint = row.querySelector("input[name='reorderPoint[]']").value;
+                let packSize = row.querySelector("input[name='packSize[]']").value;
+                let imageUploaded = row.querySelector("input[name='image[]']").files[0];
+
+                if (!materialId || !description || !price || !imageUploaded) {
+                    alert("Material ID, Description, Price, and Image upload are required for each material.");
+                    allRowsValid = false;
+                    return;
+                }
+
+                // Append material data to FormData
+                formData.append(`materials[${index}][material_id]`, materialId);
+                formData.append(`materials[${index}][description]`, description);
+                formData.append(`materials[${index}][price]`, price);
+                formData.append(`materials[${index}][product_desc]`, productDescription);
+                formData.append(`materials[${index}][inventory_location]`, inventoryLocation);
+                formData.append(`materials[${index}][reorder_point]`, reorderPoint);
+                formData.append(`materials[${index}][pack_size]`, packSize);
+                formData.append(`materials[${index}][image]`, imageUploaded);
+            });
+
+            if (!allRowsValid) {
+                return;
+            }
+
+            //if (materials.length === 0) {
+            //    alert("At least one material is required.");
+            //    return;
+            //}
+
+            
+            // Send the data to the backend using Fetch API
+            fetch('/submit_supplier', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message && data.redirect_url) {
+                    alert('Order successfully added: ' + data.message);
+                    window.location.href = data.redirect_url;
+                } else {
+                    console.error('Invalid response:', data);
+                    alert('An error occurred while processing the order.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Database Viewer</h1>
+<p>Showing up to 50 rows per table for quick inspection.</p>
+
+{% if not tables %}
+<p>No tables found.</p>
+{% endif %}
+
+{% for table in tables %}
+  <section class="db-table">
+    <h2>{{ table.name }}</h2>
+
+    {% if table.error %}
+      <div class="alert alert-warning">Error reading table: {{ table.error }}</div>
+    {% elif table.rows|length == 0 %}
+      <p>No rows in this table.</p>
+    {% else %}
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              {% for col in table.columns %}
+              <th>{{ col }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in table.rows %}
+            <tr>
+              {% for col in table.columns %}
+              <td>{{ row.get(col, "") }}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </section>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <style>
+        .no-shadow {
+            border: none;
+
+        }
+        .no-shadow:focus {
+            box-shadow: none;
+        }
+
+        .bg-secondary {
+            background-color: #D9D9D9 !important;
+        }
+
+        .form-step { display: none; }
+        .form-step.active { display: block; }
+    </style>
+</head>
+<body>
+    
+    
+    <div class="container-md border border-dark small p-0 form-step active">
+        <header class="pt-4">
+            <div class="d-block d-md-flex align-items-center gap-4">
+                <div class="col-5 col-md-3 mb-3 mb-md-0 ps-0 ps-md-4 mx-auto">
+                    <img src="/uploads/dth-logo.jpg" alt="tiny-dragon-home-logo" class="img-fluid">
+                </div>
+                <div class="col">
+                    <div class="fs-5">PRE INSPECTION FORM  <span>预检表格</span></div>
+                    <div id="checklist-title" class="fs-3 fw-bolder"></div>
+
+                    <div class="row g-0">
+                        <div class="col-6 col-md-6 row align-items-center g-0 border border-dark">
+                            <div class="col-auto ps-2">Date <span>日期</span>:</div>
+                            <div class="col"><input type="text" class="form-control no-shadow" disabled placeholder="disabled"></div>
+                        </div>
+                
+                        <div class="col-6 col-md-6 row align-items-center g-0 border border-dark">
+                            <div class="col-auto ps-2">DTH #<span>/房屋号码</span>:</div>
+                            <div class="col"><input type="text" class="form-control no-shadow" disabled placeholder="disabled"></div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>    
+        </header>
+
+
+        <div class="row justify-content-between g-0">
+
+            <div class="mb-3">
+                <div class="bg-dark text-light text-center py-1 fs-4">DESCRIPTION <span>描述</span>:</div>
+                <div class="p-3">The foundation is the steel framed trailer that the house is built on top of. It is important that everything on the foundation iscorrect because this is the starting point of a home. If anything is wrong or missing it could cause serious problems down the line. It is always good to double check things during the building process. Even if you think you have checked something check it again to confirm. If something doesn't look right or you have any questions please talk to a manager before signing your name.
+                    <span class="d-block mt-3">基础是建在钢框架拖车上的房子的根基。确保基础的一切都正确是非常重要的，因为这是房屋的起点。如果现在有任何错误或遗漏 可能会在后续造成严重问题。在建造过程中始终好好检查事物是明智的。即使你认为已经检查过某些东西，也要再次检查以确认 如果有什么看起来不对或者你有任何问题，请在签名前与经理交谈。</span>
+                </div>
+
+                
+            </div>
+
+            <div>
+                <div class="bg-dark text-light text-center py-1 fs-4">PRE INSPECTION INFO <span>(预检信息)</span></div>
+                
+                <div class="row g-0">
+                    <div class="col-12 col-md-6 row g-0">
+                        <div class="col-12 col-md-6 bg-secondary text-center col py-2">PHASE START DATE <span class="d-block">阶段开始日期</span></div>
+                        <div class="col-12 col-md-6 d-flex justify-content-center py-2 py-md-0">
+                            <input id="phase_start_date" type="date" class="form-control no-shadow">
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 row g-0">
+                        <div class="col-12 col-md-6 bg-secondary text-center col py-2">WHO DID THE WORK <span class="d-block">谁做的工作?阶段开始日期</span></div>
+                        <div class="col-12 col-md-6 d-flex justify-content-center py-2 py-md-0">
+                            <input id="who_did_the_work" type="text" class="form-control no-shadow">
+                        </div>
+                    </div>    
+                </div>
+                
+
+
+                <div class="border border-dark">
+                    <div class="bg-secondary text-center col py-2">ISSUES THAT HAPPENED DURING THE CONSTRUCTION PROCESS <span class="d-block">施工过程中发生的问题</span></div>
+                    <div class="col d-flex justify-content-center">
+                        <textarea id="issues" rows="3" class="form-control no-shadow"></textarea>
+                    </div>
+                </div>
+
+                <div class="border border-dark">
+                    <div class="bg-secondary text-center col py-2">CHANGES TO THE DESIGN OR BUILD <span class="d-block">设计或建造的变更</span></div>
+                    <div class="col d-flex justify-content-center ">
+                        <textarea id="changes" rows="3" class="form-control no-shadow"></textarea>
+                    </div>
+                </div>
+
+                <div class="row g-0 border border-dark"> 
+                    <div class="col-12 col-md-6 row g-0">
+                        <div class="col-12 col-md-6 bg-secondary text-center col py-2">WHO IS CHECKING <span class="d-block">谁在检查</span></div>
+                        <div class="col-12 col-md-6 d-flex justify-content-center">
+                            <input id="who_is_checking" type="text" class="form-control no-shadow">
+                        </div>                
+                    </div>
+
+
+                    <div class="col-12 col-md-6 row g-0">
+                        <div class="col-12 col-md-6 bg-secondary text-center col py-2">COMPLETED DATE <span class="d-block">完成的日期</span></div>
+                        <div class="col-12 col-md-6 d-flex justify-content-center">
+                            <input id="completed_date" type="date" class="form-control no-shadow">
+                        </div>                
+                    </div>
+                </div>
+
+
+
+                <div class="row g-0 border border-dark"> 
+                    <div class="col-12 col-md-6 row g-0">
+                        <div class="col-12 col-md-6 bg-secondary text-center col py-2">IS EVERYTHING DONE <span class="d-block">都完成了吗</span></div>
+                        <div class="col-12 col-md-6 d-flex flex-column justify-content-center align-items-center">
+
+                            <div class="form-group">
+                                <label for="is_done_yes">YES<span>/是的</span></label>
+                                <input type="checkbox" class="form-check-input" id="is_done_yes" name="group-done">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="is_done_no">NO<span>/不是</span></label>
+                                <input type="checkbox" class="form-check-input" id="is_done_no" name="group-done">
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-12 col-md-6 row g-0">
+                        <div class="col-12 col-md-6 bg-secondary text-center col py-2">MISSING ITEMS? <span class="d-block">缺少的项目</span></div>
+                        <div class="col-12 col-md-6 d-flex flex-column justify-content-center align-items-center">
+
+                            <div class="form-group">
+                                <label for="is_missing_yes">YES<span>/是的</span></label>
+                                <input type="checkbox" class="form-check-input" id="is_missing_yes" name="group-missing">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="is_missing_no">NO<span>/不是</span></label>
+                                <input type="checkbox" class="form-check-input" id="is_missing_no" name="group-missing">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+
+                <div class="row g-0 border border-dark">
+                    <div class="col row g-0">
+                        <div class="bg-secondary text-center col-12 col-md-3 p-2">IF NO WHAT IS NOT DONE?<span class="d-block">如果没有，缺少什么或 未完成的部分是什么？</span></div>
+                        <div class="col-12 col-md-9 d-flex justify-content-center">
+                            <textarea id="what_is_not_done" rows="3" class="form-control"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="row g-0 border border-dark">
+                    <div class="col-12 col-md-6 row g-0">
+                        <div class="bg-secondary text-center col-12 col-md-6 p-2">READY TO INSPECT?<span class="d-block">准备好检查了吗</span></div>
+                        <div class="col d-flex flex-column justify-content-center align-items-center">
+                            <div class="form-group">
+                                <label for="is_ready_inspect_yes">YES<span>/是的</span></label>
+                                <input type="checkbox" class="form-check-input" id="is_ready_inspect_yes" name="group-inspect">
+                            </div>
+                            <div class="form-group">
+                                <label for="is_ready_inspect_no">NO<span>/不是</span></label>
+                                <input type="checkbox" class="form-check-input" id="is_ready_inspect_no" name="group-inspect">
+                            </div>
+                        </div>
+                    </div>
+        
+                    <div class="col-12 col-md-6 row g-0">
+                        <div class="bg-secondary text-center col-12 col-md-8 p-2"> REQUESTED INSPECTION DATE/TIME <span class="d-block">要求的检查日期/时间</span></div>
+                        <div class="col-12 col-md-4 d-flex justify-content-center">
+                            <input id="requested_inspection_date" type="date" class="form-control no-shadow">
+                        </div>
+                    </div>
+                </div>
+
+
+                
+
+                <div class="row g-0 border border-dark">
+                    <div class="row g-0 col-12 col-md-8 border border-dark">
+                        <div class="col-12 col-md-3 p-md-2">MANAGER SIGNATURE <span class="d-block">经理签名:</span></div>
+                        <div class="col-12 col-md-9 d-flex justify-content-center">
+                            <input type="text" class="form-control no-shadow" disabled placeholder="disabled">
+                        </div>
+                    </div>
+        
+                    <div class="row g-0 col-12 col-md-4 border border-dark">
+                        <div class="col-12 col-md-3 p-md-2">DATE <span class="d-block">日期:</span></div>
+                        <div class="col-12 col-md-9 d-flex justify-content-center">
+                            <input type="text" class="form-control no-shadow" disabled placeholder="disabled">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-0">
+                    <div class="col text-center bg-danger text-white py-2">
+                        <div>DO NOT SCHEDULE THE INSPECTION UNTIL EVERYTHING IS COMPLETED <span class="d-block">在一切没有完成之前不要安排检查。</span></div>
+                        
+                    </div>
+                </div>
+
+                <div class="row g-0 border border-dark">
+                    <div class="row g-0">
+                        <div class="bg-secondary text-center col-12 col-md-3 py-2">INSPECTION DATE/TIME <span class="d-block">检查 日期/时间</span></div>
+                        <div class="col-md-9 d-flex justify-content-center">
+                            <input id="inspection_time" type="date" class="form-control no-shadow">
+                        </div>    
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center p-3">
+            <button class="btn btn-primary w-25" onclick="prevStep()" disabled>Previous</button>
+            <button class="btn btn-primary w-25" onclick="nextStep()">Next</button>
+        </div>
+    </div>
+
+    <div class="form-step container-md border border-dark small p-0">
+        <div class="container-fluid mb-5 p-0">
+            <div id="checklist-name" class="bg-dark text-white text-center py-1 fs-4"></div>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th class="col-auto">#</th>
+                        <th class="col-auto">Description (EN)</th>
+                        <th class="col-auto">描述 (CN)</th>
+                        <th class="col-auto">Notes</th>
+                        <th class="col-auto">Photo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center p-3">
+            <button class="btn btn-primary w-25" onclick="prevStep()">Previous</button>
+            <button class="btn btn-primary w-25" onclick="submitForm()">Submit</button>
+        </div>
+
+    </div>
+    <script>
+        let checklistInfo;
+        let checklistItems;
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await refreshEverything();
+        });
+
+        async function refreshEverything() {
+            await fetchChecklistInfo();
+            populateChecklistInfo();
+            populateChecklistItems()
+        }
+        async function fetchChecklistInfo() {
+            const checklist_id = new URLSearchParams(window.location.search).get("checklist_id");
+            if(!checklist_id) window.location.href = "/page/projects"
+            let res = await fetch(`/json/checklists/${checklist_id}`)
+            checklistInfo = await res.json();
+            checklistItems = checklistInfo.all_items;
+        }
+
+        function populateChecklistInfo() {
+            document.querySelector("#checklist-title").innerText = checklistInfo.all_template_checklists.name;
+            document.querySelector("#checklist-name").innerText = checklistInfo.all_template_checklists.name;
+        }
+
+        
+        function populateChecklistItems() {
+            const tBody = document.querySelector('tbody');
+            tBody.innerHTML = '';
+
+            checklistItems.forEach((item, index) => {
+                const row = document.createElement('tr');
+                const template = item.all_template_items;
+                row.setAttribute('id', `item-${item.id}`); // Set the id for the row
+                row.innerHTML = `
+                    <td class="align-middle text-center">${index + 1}</td>
+                    <td class="align-middle">${template.description_en}</td>
+                    <td class="align-middle">${template.translation_overwrite_cn || template.description_cn}</td>
+                    <td class="align-middle">${template.notes}</td>
+                    <td class="align-middle"><input id="photo-${item.id}" type="file" class="form-control form-control-sm" multiple accept="image/*"></td>
+                `;
+                tBody.appendChild(row);
+            });
+        }
+
+        function updateChecklist() {
+            const data = {
+                id: checklistInfo.id,
+                who_did_the_work: document.querySelector("#who_did_the_work").value,
+                who_is_checking: document.querySelector("#who_is_checking").value,
+                issues: document.querySelector("#issues").value,
+                changes: document.querySelector("#changes").value,
+                what_is_not_done: document.querySelector("#what_is_not_done").value,
+                phase_start_date: document.querySelector("#phase_start_date").value || null,
+                completed_date: document.querySelector("#completed_date").value || null,
+                requested_inspection_date: document.querySelector("#requested_inspection_date").value || null,
+                inspection_time: document.querySelector("#inspection_time").value || null,
+                is_everything_done: document.querySelector("#is_done_yes").checked,
+                missing_items: document.querySelector("#is_missing_yes").checked,
+                ready_to_inspect: document.querySelector("#is_ready_inspect_yes").checked
+            };
+
+            console.log(data);
+
+            fetch(`/json/checklists`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+            .then((res) => res.json())
+            .then((data) => alert(data.message))
+            .catch((error) => console.error('Error:', error));
+        }
+
+        </script>
+        <script>
+            let currentStep = 0;
+                const steps = document.querySelectorAll(".form-step");
+
+                function showStep(step) {
+                    window.scrollTo({top: 0});
+                    steps.forEach((formStep, index) => {
+                        formStep.classList.toggle("active", index === step);
+                    });
+                }
+
+                function nextStep() {
+                    if (currentStep < steps.length - 1) {
+                        currentStep++;
+                        showStep(currentStep);
+                    }
+                }
+
+                function prevStep() {
+                    if (currentStep > 0) {
+                        currentStep--;
+                        showStep(currentStep);
+                    }
+                }
+        </script>
+
+    <script>
+        function applyRadioBehavior(groupName) {
+            const checkboxes = document.querySelectorAll(`input[name="${groupName}"]`);
+            checkboxes.forEach((checkbox) => {
+                checkbox.addEventListener('change', function() {
+                    checkboxes.forEach((box) => {
+                        if (box !== checkbox) box.checked = false; 
+                    });
+                });
+            });
+        }
+
+        applyRadioBehavior('group-done'); 
+        applyRadioBehavior('group-missing'); 
+        applyRadioBehavior('group-inspect'); 
+    </script>
+</body>
+
+</html>

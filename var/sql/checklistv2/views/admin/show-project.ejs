@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.0/dist/bootstrap-table.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-resizable-columns@0.2.3/dist/jquery.resizableColumns.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="/css/web-style.css">
+</head>
+<body x-data="projectPage" x-init="start(<%= selectedProject.id %>)">
+  <!-- Sidebar --> <%- include('./_partials/sidebar.ejs') %> <%- include('./_partials/lightbox.ejs') %> <template x-if="appLoading">
+    <div style="z-index: 2000;"
+      class="position-fixed top-0 start-0 d-flex align-items-center justify-content-center vh-100 vw-100 bg-light opacity-75">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  </template>
+  <template x-if="!initialFetching">
+    <div class="content">
+      <div class="container-fluid mt-5">
+        <a href="/checklists/admin/" class="fw-semibold link-dark text-decoration-none mb-3"><i class="bi bi-arrow-left"></i> Back to
+          Checklist</a>
+        <!-- SECTION: Project Info -->
+         <div class="d-flex align-items-center justify-content-between gap-2 mt-5 mb-3">
+            <h1 class="section-title m-0" x-text="project.name"></h1>
+
+            <span class="ms-auto" x-html="statusIconFormatter(project.STATUS, false)"></span>
+            <span x-html="forceCompleteActionButtonFormatter(project, 'project', false)"></span>
+         </div>
+        
+
+
+        <div class="row g-4 row-cols-1 row-cols-xl-2 row-cols-xxl-3">
+          <!-- Project Details -->
+          <div class="col">
+            <div class="card shadow border-1" style="height: 100%;">
+              <div class="card-header text-bg-dark">
+                <h5 class="mb-0">Project Details</h5>
+              </div>
+              <style>
+                .table td,
+                .table th {
+                  padding-right: 1.5rem; /* Adjust this as needed */
+                }
+                .table td:last-child,
+                .table th:last-child {
+                  padding-right: 0; /* Remove extra space on last column */
+                }
+              </style>
+
+              <div class="card-body">
+                <table class="table table-sm table-borderless align-middle">
+                  <thead>
+                    <tr>
+                      <th style="width: 40px;" class="text-center">Public</th>
+                      <th style="width: 1%; white-space: nowrap;">Field</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody class="table-group-divider">
+                    <tr>
+                      <td class="text-center"><input class="form-check-input text-center" type="checkbox"></td>
+                      <td class="text-nowrap">Name:</td>
+                      <td><input type="text" class="form-control form-control-sm" x-model="project.name"></td>
+                    </tr>
+
+                    <tr>
+                      <td class="text-center"><input class="form-check-input text-center" type="checkbox"></td>
+                      <td class="text-nowrap">Original Price:</td>
+                      <td>
+                        <div class="input-group input-group-sm ">
+                          <span class="input-group-text">$</span>
+                          <input type="text" class="form-control" :value="project.model.original_price">
+                        </div>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td class="text-center"><input class="form-check-input text-center" type="checkbox"></td>
+                      <td class="text-nowrap">Sale Percent:</td>
+                      <td>
+                        <div class="input-group input-group-sm ">
+                          <input type="text" class="form-control" :value="project.sale_percent">
+                          <span class="input-group-text">%</span>
+                        </div>
+                      </td>
+
+                    </tr>
+                    
+                    <tr>
+                      <td class="text-center"><input class="form-check-input text-center" type="checkbox"></td>
+                      <td class="text-nowrap">Listed Price:</td>
+                      <td>
+                        <div class="input-group input-group-sm ">
+                          <span class="input-group-text">$</span>
+                          <input disabled type="text" class="form-control" :value="(project.model.original_price * (1 - project.sale_percent / 100)).toLocaleString()">
+                        </div>
+                      </td>
+                    </tr>
+
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- Model Info -->
+          <div class="col">
+            <div class="card shadow border-1" style="height: 100%;">
+              <div class="card-header text-bg-dark">
+                <h5 class="mb-0">Model Information</h5>
+              </div>
+              <div class="card-body">
+                <div class="row mb-3">
+                  <div class="col-4"><strong>Name:</strong></div>
+                  <div class="col-8" x-text="project.model.name"></div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-4"><strong>Description:</strong></div>
+                  <div class="col-8 my-text-truncate-5" x-text="project.model.description"></div>
+                </div>
+                <div class="row mb-2">
+                  <div class="col-4"><strong>Width:</strong></div>
+                  <div class="col-2 text-end" x-text="project.model.width"></div>
+                  <div class="col-4"><strong>Length:</strong></div>
+                  <div class="col-2 text-end" x-text="project.model.length"></div>
+                </div>
+                <div class="row mb-2">
+                  <div class="col-4"><strong>Height:</strong></div>
+                  <div class="col-2 text-end" x-text="project.model.height"></div>
+                  <div class="col-4"><strong>Area:</strong></div>
+                  <div class="col-2 text-end" x-text="project.model.area">></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+
+        <!-- PROJEC INFORMATION, CONSTRUCTION MILESTONES, INSPECTION -->
+        <section>
+          <h3 class="section-title">Project Information</h3>
+
+          <div class="nav nav-underline mb-3">
+            <button class="text-primary nav-link active" data-bs-toggle="tab" data-bs-target="#constructionMilestoneContent">Construction Milestones</button>
+            <button class="text-primary nav-link" data-bs-toggle="tab" data-bs-target="#inspectionContent">Inspections</button>
+          </div>
+
+          <div class="tab-content">
+            <div id="constructionMilestoneContent" class="tab-pane fade active show" x-data="{filterInput: ''}">
+
+              <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
+                <div class="input-group flex-grow-1">
+                  <i class="bi bi-search input-group-text"></i>
+                  <input type="text" class="form-control" placeholder="Search" x-model="filterInput">
+                </div>
+
+                <div class="dropdown w-auto">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" x-ref="addButtonMilestone"> Add Milestone </button>
+                  <div class="dropdown-menu p-3" style="min-width: 250px;">
+                    <div x-data="{ inputVal: '', minInput: 1}">
+                      <div class="mb-2">
+                        <input type="text" class="form-control" x-model="inputVal"
+                          :class="inputVal.length ? (inputVal.length >= minInput ? 'is-valid' : 'is-invalid') : ''" placeholder="New milestone's name">
+                      </div>
+                      <button class="btn btn-outline-primary btn-sm w-100" :disabled="inputVal.length < minInput"
+                        @click="addMilestone(project.id, inputVal).then(() => inputVal = '');">Add</button>
+
+
+                    </div>
+
+
+                    <div class="mt-2">
+                      <h6 class="text-muted small mb-0">Add Random</h6>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-purple flex-grow-1" @click="factoryCreate('milestone', project.id, 5)">5</button>
+                        <button class="btn btn-sm btn-purple flex-grow-1" @click="factoryCreate('milestone', project.id, 10)">10</button>
+                        <button class="btn btn-sm btn-purple flex-grow-1" @click="factoryCreate('milestone', project.id, 20)">20</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <hr>
+              <!-- MILESTONE LIST START -->
+              <template x-if="project.milestones.length">
+                <div id="milestoneAccordion">
+                  <template x-for="(milestone, milestoneIndex) in project.milestones.filter((mf) => mf.name_en.includes(filterInput))" :key="milestoneIndex">
+                    <div class="card mb-1">
+                      <div :id="`milestone${milestone.id}`" class="my-card-header d-flex align-items-center justify-content-between px-3 py-2 gap-1" :class="milestone.STATUS === 'waiting' ? 'bg-secondary-subtle':''">
+                        <span class="fw-semibold" style="font-size: .8rem;">[MILESTONE]</span>
+                        <button class="btn flex-shrink-1 w-100 text-start py-1 px-0 border-0"
+                                data-bs-toggle="collapse"
+                                :data-bs-target="`#milestoneCollapse${milestoneIndex}`">
+                                <span x-text="`${milestone.name_en} (#${milestone.id})`"></span>
+                                <span x-html="statusBadgeFormatter(milestone.STATUS, milestone.COMPLETED_BY)"></span>
+                              </button>
+
+
+
+                        <div class="dropdown">
+                          <button class="btn btn-light border border-dark-subtle btn-sm dropdown-toggle no-caret" title="Create milestone child" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" style="font-size: 1.2rem; padding: 0 .4rem">
+                            <i class="bi bi-diagram-2"></i>
+                          </button>
+                          
+                          </style>
+                          <div class="dropdown-menu p-3" style="width: 100vw; max-width: 300px;">
+                            <div x-data="{ inputVal: `${milestone.name_en}'s dependent`, minInput: 1}">
+                              <div class="mb-2">
+                                <textarea type="text" class="form-control" x-model="inputVal"
+                                  :class="inputVal.length ? (inputVal.length >= minInput ? 'is-valid' : 'is-invalid') : ''" placeholder="Dependent's name"></textarea>
+                              </div>
+                              <button class="btn btn-outline-primary btn-sm w-100" :disabled="inputVal.length < minInput"
+                                @click="addMilestone(project.id, inputVal, milestone.id).then(() => inputVal = '');">Add</button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button class="btn btn-sm btn-light border border-dark-subtle" @click="makeTemplateMilestone(milestone.id)" title="Make it Template"><i class="bi-clipboard-plus"></i></button>
+                        <button class="btn btn-sm btn-light border border-dark-subtle" @click="duplicateMilestone(milestone.id)" title="Duplicate Milestone"><i class="bi bi-copy"></i></button>
+
+                        <span x-html="forceCompleteActionButtonFormatter(milestone,'milestone')"></span>
+                        <button class="btn btn-sm btn-danger" @click="deleteMilestone(milestone.id)" title="Remove Milestone"><i class="bi bi-trash3-fill"></i></button>
+                      </div>
+
+                      
+                      <div :id="`milestoneCollapse${milestoneIndex}`" style="min-height: 300px;" class="collapse milestone pt-3" data-bs-parent="#milestoneAccordion">
+                        <div class="card-body pt-0 pb-5">
+                          <!-- ALL TASK HEADER -->
+
+                          <template x-if="milestone.STATUS === 'waiting'">
+                            <div class="alert alert-warning text-center" role="alert">
+                              <span class="d-block">Dependencies must be completed first: </span>
+                              <template x-for="(m, mIndex) in milestone.dependencies" :key="mIndex">
+                                <a class="alert-link" :href="`#milestone${m.id}`" x-text="`${m.name_en}(#${m.id}), `"></a>
+                              </template>
+                            </div>
+                          </template>
+                          
+                          <div class="nav nav-pills small" id="milestoneTabsHeaders">
+                            <button class="nav-link active rounded-pill small" data-bs-toggle="tab" :data-bs-target="`#milestoneInformationContent${milestoneIndex}`">Milestone Information</button>
+                            <button class="nav-link rounded-pill small" data-bs-toggle="tab" :data-bs-target="`#milestoneAllTasksContent${milestoneIndex}`">All Tasks</button>
+                          </div>
+
+
+                          <hr class="border border-primary border-3 border my-1 mb-3">
+                          <!-- TASKS BODY -->
+
+                          <div class="tab-content">
+
+                            <div class="tab-pane fade active show" :id="`milestoneInformationContent${milestoneIndex}`" x-data="{choices: null}">
+                                  <!-- <h6 class="text-muted mt-3 mb-0 small">Item Information: </h6> -->
+                                  <!-- <p class="small fst-italic">Additional details.</p> -->
+
+                                  <h6 class="text-primary small mb-0"> Milestone Name: </h6>
+                                  <div class="input-group">
+                                    <div class="form-floating">
+                                      <textarea class="form-control form-control-sm h-100" placeholder="" x-model="milestone.name_en"></textarea>
+                                      <label class="text-muted">English</label>
+                                    </div>
+                                    <div class="form-floating">
+                                      <textarea class="form-control form-control-sm h-100" placeholder="" x-model="milestone.name_zh"></textarea>
+                                      <label class="text-muted">Chinese</label>
+                                    </div>
+                                  </div>
+
+                                  <div class="row">
+                                    <div class="col">
+                                      <h6 class="text-primary mt-3 small mb-0">Assigned To: </h6>
+                                      <select class="choices"
+                                              placeholder="Select workers"
+                                              multiple
+                                              x-init="initChoices(users.map((u) => ({value: u.id, label: u.name})))">
+                                              </select>
+                                    </div>
+
+                                    <div class="col">
+                                      <h6 class="text-primary mt-3 small mb-0">Time to Complete: </h6>
+                                      <div class="input-group" style="min-height: 47px;" >
+                                        <input type="date" class="form-control" style="font-size: .8rem;" :value="new Date().toISOString().split('T')[0]">
+                                        <input type="time" class="form-control" style="font-size: .8rem;" :value="const now = new Date();
+                                        const hours = String(now.getHours()).padStart(2, '0');
+                                        const minutes = String(now.getMinutes()).padStart(2, '0');
+                                        return `${hours}:${minutes}`;">
+                                      </div>
+                                    </div>
+                                    
+                                  </div>
+                                  
+
+                                  
+
+                                  <h6 class="text-primary mt-3 small mb-0">Special Notes: </h6>
+                                  <div class="input-group">
+                                    <div class="form-floating">
+                                      <textarea class="form-control form-control-sm h-100" placeholder="" x-model="milestone.special_notes_en"></textarea>
+                                      <label class="text-muted">English</label>
+                                    </div>
+                                    <div class="form-floating">
+                                      <textarea class="form-control form-control-sm h-100" placeholder="" x-model="milestone.special_notes_zh"></textarea>
+                                      <label class="text-muted">Chinese</label>
+                                    </div>
+                                  </div>
+
+                                  <h6 class="text-primary mt-3 small mb-0">Dependencies: </h6>
+                                  <div class="row">
+                                    <div class="col">
+                                      <p class="m-0 small text-center text-muted">Available: </p>
+                                      <template x-if="milestone.AVAILABLE_DEPENDENCY_ARRAY?.length">
+                                        <div class="d-grid gap-2 overflow-y-auto" style="max-height: 300px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+                                            <template x-for="(m, mIndex) in milestone.AVAILABLE_DEPENDENCY_ARRAY" :key="m.id">
+                                              <div class="border rounded-2 d-flex bg-white justify-content-between align-items-center gap-1 py-1 px-2">
+                                                <span class="flex-grow-1 overflow-hidden text-truncate" x-text="`(#${m.id}) ${m.name_en}`"></span>
+                                                <button class="btn btn-sm btn-light border" title="Add as dependency" @click="addMilestoneDependency(milestone.id, m.id)">
+                                                  <i class="bi bi-plus-square"></i>
+                                                </button>
+                                              </div>
+                                            </template>
+                                        </div>
+                                      </template>
+
+                                      <template x-if="!milestone.AVAILABLE_DEPENDENCY_ARRAY?.length">
+                                        <div class="text-center py-3 border" style="border-style: dashed !important;">
+                                          <i class="bi bi-diagram-3-fill text-secondary" style="font-size: 1.5rem;"></i>
+                                          <p class="text-muted mb-0">No possible dependency for this record!</p>
+                                        </div>
+                                      </template>
+                                    </div>
+
+                                    <div class="col">
+                                      <p class="m-0 small text-center text-muted">Existing: </p>
+
+                                      <template x-if="milestone.dependencies?.length">
+                                        <div>
+                                          <div class="d-grid gap-2 overflow-y-auto" style="max-height: 300px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+                                            <template x-for="(m, mIndex) in milestone.dependencies" :key="m.id">
+                                              <div class="border rounded-2 d-flex bg-white justify-content-between align-items-center gap-1 py-1 px-2"
+                                                  :class="!m.ignored && m.STATUS !== 'completed'  ? 'bg-secondary' : 'border border-2 border-success'">
+                                                <span class="flex-grow-1 overflow-hidden text-truncate"
+                                                      :class="m.ignored || m.STATUS === 'completed' ? 'text-decoration-line-through':''"
+                                                      :title="m.name_en" x-text="`(#${m.id}) ${m.name_en}`"></span>
+
+                                                  <template x-if="m.ignored">
+                                                    <button class="btn btn-sm btn-light border" @click="updateMilestoneDependency(milestone.id, m.id, 'ignoreUndo')">
+                                                      <i class="bi bi-toggle-off" title="Activate dependency"></i>
+                                                    </button>
+                                                  </template>
+                                                  <template x-if="!m.ignored">
+                                                    <button class="btn btn-sm btn-light border" @click="updateMilestoneDependency(milestone.id, m.id, 'ignore')">
+                                                        <i class="bi bi-toggle-on" title="Deactive dependency"></i>
+                                                    </button>
+                                                  </template>
+                                                <button class="btn btn-sm btn-light border " title="Remove dependency" @click="deleteMilestoneDependency(milestone.id, m.id, 'ignore')">
+                                                  <i class="bi bi-x-square"></i>
+                                                </button>
+                                              </div>
+                                            </template>
+                                          </div>
+
+                                          <div class="text-end mt-3">
+                                            <button class="btn btn-secondary btn-sm" @click="updateMilestoneDependency(milestone.id, milestone.DEPENDENCY_ARRAY, 'ignore')">Ignore All</button>
+                                            <button class="btn btn-danger btn-sm" @click="deleteMilestoneDependency(milestone.id, milestone.DEPENDENCY_ARRAY)">Remove All</button>
+                                          </div>
+                                        </div>
+                                      </template>
+                                      <template x-if="!milestone.dependencies?.length">
+                                        <div class="text-center py-3 border" style="border-style: dashed !important;">
+                                          <i class="bi bi-diagram-3-fill text-secondary" style="font-size: 1.5rem;"></i>
+                                          <p class="text-muted mb-0">No dependencies. Good to go!</p>
+                                        </div>
+                                      </template>
+                                    </div>
+                                  </div>
+
+                                  <hr class="mt-3 mb-2">
+                                  <div class="text-end">
+                                    <button class="btn btn-sm btn-primary" @click="updateMilestone(milestone)"><i class="bi bi-floppy me-1"></i> Save Changes</button>
+                                  </div>
+                            </div>
+
+                            <div class="tab-pane fade" :id="`milestoneAllTasksContent${milestoneIndex}`" x-data="{filterInput: ''}">
+                              <div class="d-flex align-items-center justify-content-center gap-5 mb-3">
+                                <div class="input-group">
+                                  <i class="bi bi-search input-group-text"></i>
+                                  <input type="text" class="form-control" placeholder="Search" x-model="filterInput">
+                                </div>
+
+                                <div class="dropdown">
+                                  <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"> Add Task </button>
+                                  <div class="dropdown-menu p-3" style="min-width: 250px;">
+                                    <div x-data="{ inputVal: '', minInput: 1}">
+                                      <div class="mb-2">
+                                        <input type="text" class="form-control" x-model="inputVal"
+                                          :class="inputVal.length ? (inputVal.length >= minInput ? 'is-valid' : 'is-invalid') : ''" placeholder="New task's name">
+                                      </div>
+                                      <button class="btn btn-outline-primary btn-sm w-100" :disabled="inputVal.length < minInput"
+                                        @click="addTask(milestone, inputVal).then(() => inputVal = '');">Add</button>
+                                    </div>
+
+                                    <div class="mt-2">
+                                      <h6 class="text-muted small mb-0">Add Random</h6>
+                                      <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-purple flex-grow-1" @click="factoryCreate('task', milestone.id, 5)">5</button>
+                                        <button class="btn btn-sm btn-purple flex-grow-1" @click="factoryCreate('task', milestone.id, 10)">10</button>
+                                        <button class="btn btn-sm btn-purple flex-grow-1" @click="factoryCreate('task', milestone.id, 20)">20</button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <hr>
+
+                              <template x-if="milestone.tasks?.length">
+                                <div class="list-group" id="taskAccordion">
+                                  <template x-for="(task, taskIndex) in milestone.tasks.filter((tf) => tf.name.includes(filterInput))" :key="task.id">
+                                    <div>
+                                      <div class="my-card-header list-group-item px-3 py-1 ">
+
+                                        <div class="d-flex align-items-center gap-3">
+                                          <span class="fw-semibold" style="font-size: .8rem;">[TASK]</span>
+                                          <button class="btn w-100 text-start border-0 px-0"
+                                                  type="button"
+                                                  data-bs-toggle="collapse"
+                                                  :data-bs-target="`#taskCollapse${task.id}`"
+                                                  @click="openTask = task; console.log('OPENED_TASK: #', task.id)"
+                                                  >
+
+                                                  <!-- <span :class="`badge text-bg-${(task.task_checklist[0]?.TOTAL_ITEMS) ? `info`:`secondary`} fs-6 p-2 me-2`"
+                                                    title="Listed Items">
+                                                    <span x-text="(task.task_checklist[0]?.TOTAL_ITEMS) ? task.task_checklist[0]?.TOTAL_ITEMS : ''"></span> <i
+                                                      class="bi bi-clipboard-check"></i></span>
+                                                  <span :class="`badge text-bg-${(task.users.length) ? `warning`:`secondary`} fs-6 p-2 me-2`"
+                                                    title="Assigned Users">
+                                                    <span x-text="task.users.length ? task.users.length : ``"></span> <i class="bi bi-people"></i>
+                                                  </span> -->
+
+                                                  <span x-text="`${task.name} (#${task.id})`"></span>
+                                                  <span x-html="statusBadgeFormatter(task.STATUS, task.COMPLETED_BY)"></span>
+                                                  </button>
+
+                                          <span x-html="forceCompleteLinkFormatter(task, 'task')"></span>
+                                          <a href="#" class="link-danger small link-underline-opacity-0" @click.prevent="deleteTask(task.id)" title="Remove Task">Delete</a>
+                                        </div>
+
+                                        <!-- PROGRESS BAR -->
+                                        <div class="progress-stacked my-1" style="height: 4px">
+                                          <div class="progress"
+                                            :style="{width: `${task.task_checklist[0]?.COMPLETED_ITEMS/task.task_checklist[0]?.TOTAL_ACTIVE_ITEMS * 100}%`}">
+                                            <div class="progress-bar bg-success" :title="`Approved: ` + task.task_checklist[0]?.APPROVED_ITEMS"></div>
+                                          </div>
+                                          <div class="progress"
+                                            :style="{width: `${task.task_checklist[0]?.REJECTED_ITEMS/task.task_checklist[0]?.TOTAL_ACTIVE_ITEMS * 100}%`}">
+                                            <div class="progress-bar bg-danger" :title="`Rejected: ` + task.task_checklist[0]?.REJECTED_ITEMS"></div>
+                                          </div>
+                                          <div class="progress"
+                                            :style="{width: `${task.task_checklist[0]?.SUBMITTED_ITEMS/task.task_checklist[0]?.TOTAL_ACTIVE_ITEMS * 100}%`}">
+                                            <div class="progress-bar bg-warning" :title="`Submitted: ` + task.task_checklist[0]?.SUBMITTED_ITEMS"></div>
+                                          </div>
+                                          <div class="progress"
+                                            :style="{width: `${task.task_checklist[0]?.INPROGRESS_ITEMS/task.task_checklist[0]?.TOTAL_ACTIVE_ITEMS * 100}%`}">
+                                            <div class="progress-bar" style="background-color: var(--bs-secondary-bg)"
+                                              :title="`Inprogress: ` + task.task_checklist[0]?.INPROGRESS_ITEMS"></div>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <!-- TASK CONTENT -->
+                                      <div :id="`taskCollapse${task.id}`" class="collapse task" data-bs-parent="#taskAccordion">
+                                        <div class="p-3 bg-secondary">
+                                        
+                                          <div class="nav nav-tabs" id="taskTabsHeaders" role="tablist" style="font-size: .7rem;">
+
+                                            <button class="nav-link active" data-bs-toggle="tab" :data-bs-target="`#taskDetailsContent${task.id}`"
+                                              type="button" role="tab">Task Details</button>
+                                            <button class="nav-link" data-bs-toggle="tab" :data-bs-target="`#attachedChecklistContent${task.id}`"
+                                              type="button" role="tab">Checklist Items</button>
+                                            
+                                          </div>
+
+                                          <!-- NAV-TABS-CONTENT FOR CHECKLIST ITEM CONTENT -->
+                                          <div class="bg-white border border-top-0 p-3">
+                                            <div class="tab-content" id="navtabContent">
+                                              <div class="tab-pane fade show active" :id="`taskDetailsContent${task.id}`">
+                                                        <h6 class="text-primary mb-0 small">Task Name</h6>
+                                                        <div class="input-group">
+                                                          <div class="form-floating">
+                                                            <textarea class="form-control form-control-sm h-100" placeholder="" x-model="task.name"></textarea>
+                                                            <label class="text-muted">English</label>
+                                                          </div>
+                                                          <div class="form-floating">
+                                                            <textarea class="form-control form-control-sm h-100" placeholder="" x-model="task.name"></textarea>
+                                                            <label class="text-muted">Chinese</label>
+                                                          </div>
+                                                        </div>
+
+                                                        <h6 class="text-primary mt-3 mb-0 small">Assigned To: </h6>
+                                                        <div x-data="{choices: null}">
+                                                          <div class="mb-2">
+                                                            <select name="userIds" class="choices" placeholder="Select workers" multiple
+                                                              x-init="initChoices(users.map((u) => ({value: u.id, label: u.name, selected: task.USERS_ARRAY?.includes(u.id)})))">
+                                                            </select>
+                                                          </div>
+                                                          <div class="text-end">
+                                                            <button class="btn btn-sm btn-secondary" @click="updateTaskUsers(task.id, 'clear')">Clear</button>
+                                                            <button class="btn btn-sm btn-primary" @click="updateTaskUsers(task.id)">Update</button>
+                                                          </div>
+                                                        </div>
+                                              </div>
+
+                                              <div class="tab-pane fade p-0" :id="`attachedChecklistContent${task.id}`" role="tabpanel"
+                                                tabindex="0">
+                                                <template x-if="task.task_checklist.length">
+                                                  <div x-data="{checklist: task.task_checklist[0]}">
+
+                                                    <div class="d-flex align-items-center justify-content-between mb-2 gap-1">
+                                                        <h6 class="mb-0 text-primary">
+                                                          <span>TITLE: </span>
+                                                          <span x-text="`${task.task_checklist[0].name_en} (#${task.task_checklist[0].id})`"></span>
+                                                        </h6>
+                                                        <span x-html="statusBadgeFormatter(task.task_checklist[0].STATUS, task.task_checklist[0].COMPLETED_BY)"></span>
+
+                                                        <span class="fw-semibold ms-auto" style="font-size: .8rem;">[TASK CHECKLIST]</span>
+                                                        <span x-html="forceCompleteActionButtonFormatter(task.task_checklist[0], 'task_checklist', true, 'task.task_checklist[0]')"></span>
+                                                        <button class="btn btn-sm btn-danger" @click="deleteTaskChecklist(task.task_checklist[0].id)" title="Remove Checklist"><i class="bi bi-trash3-fill"></i></button>
+                                                    </div>
+                                                    <table x-init="initBsTables(task.task_checklist[0].task_items)"
+                                                      x-effect="refreshBsTable(task.task_checklist[0].task_items)"
+                                                      :id="`taskTable${task.task_checklist[0].id}`" class="table table-sm">
+                                                      <thead class="table-secondary">
+                                                        <tr>
+                                                          <th class="col-auto small tex-center"></th>
+                                                          <th class="col-8 small"></th>
+                                                          <th class="col-1 small text-center"></th>
+                                                          <th class="col-2 small text-center"></th>
+                                                          <th class="col-1 small text-center"></th>
+                                                        </tr>
+                                                      </thead>
+                                                      <tbody></tbody>
+                                                    </table>
+                                                  </div>
+                                                </template>
+                                                <template x-if="!task.task_checklist.length">
+                                                  <div class="alert alert-info text-center" role="alert">
+                                                    <span class="d-block">Attach a checklist.</span>
+                                                    <div class="d-flex justify-content-center align-items-center gap-2">
+                                                      <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#selectTemplateModal">Use
+                                                        Template</button>
+                                                      <div class="dropdown">
+                                                        <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                                                          data-bs-auto-close="outside">Create New</button>
+                                                        <div class="dropdown-menu p-3" style="min-width: 250px;">
+                                                          <div x-data="{ inputVal: '', minInput: 1}">
+                                                            <div class="mb-2">
+                                                              <input type="text" class="form-control" x-model="inputVal"
+                                                                :class="inputVal.length ? (inputVal.length >= minInput ? 'is-valid' : 'is-invalid') : ''"
+                                                                placeholder="New checklist's name">
+                                                            </div>
+                                                            <button class="btn btn-outline-primary btn-sm w-100" :disabled="inputVal.length < minInput"
+                                                              @click="addTaskChecklist(openTask.id, null, inputVal).then(() => inputVal = '');">Add</button>
+                                                          </div>
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                </template>
+                                              </div>
+
+                                              
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </template>
+                                </div>
+                              </template>
+                              <template x-if="!milestone.tasks?.length">
+                                <div class="text-center mt-3">
+                                  <i class="bi bi-clipboard-x text-secondary" style="font-size: 1.5rem;"></i>
+                                  <p class="text-muted mt-2">No tasks yet. Start by adding one!</p>
+                                </div>
+                              </template>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                  <div style="height: 200px;"></div>
+                </div>
+              </template>
+              <template x-if="!project.milestones.length">
+                <div class="text-center my-3 pt-2 border border-3" style="border-style: dashed !important; cursor: pointer;" @click="$refs.addButtonMilestone.click()">
+                  <i class="bi bi-clipboard-x text-secondary" style="font-size: 1.5rem;"></i>
+                  <p class="text-muted mt-2">No milestone yet. Start by adding one!</p>
+                </div>
+              </template>
+            </div>
+
+            <div id="inspectionContent" class="tab-pane fade">
+              <div class="card">
+                <div class="card-body" style="min-height: 300px;">
+                  No Content Yet
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </template>
+
+
+  <!-- region [modal] add checklist -->
+  <div class="modal fade" id="selectTemplateModal" tabindex="-1" x-data="{checklistTemplateId: null}">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Select Checklist Template</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label for="selectChecklist" class="form-label">Choose:</label>
+          <select id="selectChecklist" name="checklistId" class="form-select choices" placeholder="Select a checklist" x-model="checklistTemplateId">
+            <option value="null" disabled selected>Select a checklist</option>
+            <template x-for="option in checklistTemplates" :key="option.id">
+              <option :value="option.id" x-text="option.name_en"></option>
+            </template>
+          </select>
+          <div id="itemsContainer" class="mt-4">
+            <h6>Included Items:</h6>
+            <template x-if="checklistTemplateId !== null">
+              <ul class=" list-group list-group-flush list-group-numbered">
+                <template x-for="(item, itemIndex) in checklistTemplates.find((t) => t.id == checklistTemplateId).items" :key="itemIndex">
+                  <li class="list-group-item small"><span x-text="item.title_en"></span></li>
+                </template>
+              </ul>
+            </template>
+            <template x-if="checklistTemplateId === null">
+              <div class="text-center">
+                <p class="text-muted mb-0">Select from the available template to preview items.</p>
+              </div>
+            </template>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" @click="addTaskChecklist(openTask.id, checklistTemplateId)">Use Checklist</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- endregion [modal] add checklist -->
+  <!-- region [modal] task item information submission -->
+  <div class="modal fade" id="taskItemModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Task Item Information</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- NAV-TABS FOR CHECKLIST ITEM CONTENT -->
+          <nav>
+            <div class="nav nav-tabs" id="nav-tab" role="tablist" style="font-size: .7rem;">
+              <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#navItemDetails" type="button" role="tab">Details</button>
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#navRequire" type="button" role="tab">Requirements</button>
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#navRefPhotos" type="button" role="tab">Reference Photos</button>
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#navRefVideos" type="button" role="tab">Reference Videos</button>
+            </div>
+          </nav>
+          <!-- NAV-TABS-CONTENT FOR CHECKLIST ITEM CONTENT -->
+          <div class="bg-white border border-top-0 p-2">
+            <div class="tab-content" id="navtabContent">
+              <div class="tab-pane fade p-0 show active" id="navItemDetails" role="tabp">
+                <h6 class="text-muted card-title mt-3 small">Item Information: </h6>
+                <p class="small fst-italic">Specific instructions that make it easy for anyone to complete this item.</p>
+
+                <h6 class="text-muted card-title small">Title: </h6>
+                <div class="input-group">
+                  <div class="form-floating">
+                    <textarea name="title_en" class="form-control form-control-sm h-100" placeholder="" x-model="openTaskItem.title_en"></textarea>
+                    <label class="text-muted">English</label>
+                  </div>
+                  <div class="form-floating">
+                    <textarea name="title_zh" class="form-control form-control-sm h-100" placeholder="" x-model="openTaskItem.title_zh"></textarea>
+                    <label class="text-muted">Chinese</label>
+                  </div>
+                </div>
+                <h6 class="text-muted card-title mt-3 small">Description: </h6>
+                <div class="input-group">
+                  <div class="form-floating">
+                    <textarea name="description_en" class="form-control form-control-sm h-100" placeholder=""
+                      x-model="openTaskItem.description_en"></textarea>
+                    <label class="text-muted">English</label>
+                  </div>
+                  <div class="form-floating">
+                    <textarea name="description_zh" class="form-control form-control-sm h-100" placeholder=""
+                      x-model="openTaskItem.description_zh"></textarea>
+                    <label class="text-muted">Chinese</label>
+                  </div>
+                </div>
+                <h6 class="text-muted card-title mt-3 small">Note: </h6>
+                <div class="input-group mb-3">
+                  <div class="form-floating">
+                    <textarea name="notes_en" class="form-control form-control-sm h-100" placeholder="" x-model="openTaskItem.notes_en"></textarea>
+                    <label class="text-muted">English</label>
+                  </div>
+                  <div class="form-floating">
+                    <textarea name="notes_zh" class="form-control form-control-sm h-100" placeholder="" x-model="openTaskItem.notes_zh"></textarea>
+                    <label class="text-muted">Chinese</label>
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-3">
+                  <template x-if="['inprogress'].includes(openTaskItem?.status)">
+                    <button class="btn btn-sm btn-secondary" title="Cancel Item"
+                      @click="updateTaskItem(openTaskItem, 'cancel'); console.log(openTaskItem)"><i class="bi bi-slash-square"></i></button>
+                  </template>
+                  <template x-if="['cancelled'].includes(openTaskItem?.status)">
+                    <button class="btn btn-sm btn-primary" title="Restore Item" @click="updateTaskItem(openTaskItem, 'restore');"><i
+                        class="bi bi-hammer"></i></button>
+                  </template>
+                  <button class="btn btn-sm btn-primary ms-auto" @click="updateTaskItem(openTaskItem)"><i class="bi bi-floppy me-1"></i> Save Changes</button>
+                </div>
+              </div>
+              <div class="tab-pane fade p-0" id="navRequire" role="tabp>
+                <h6 class="text-muted card-title mt-3 small">Submission Requirements: </h6>
+                <p class="small fst-italic">If any required item is missing, the submission cannot be accepted.</p>
+                <div class="mb-3">
+                  <div class="row g-0">
+                    <div class="form-check row mb-2 col-6">
+                      <div class="col-2">
+                        <input name="require_photos" class="form-check-input" type="checkbox" id="requirePhotos" x-model="openTaskItem.require_photos">
+                      </div>
+                      <div class="col-auto">
+                        <label class="form-check-label" for="requirePhotos">Photo Proof </label>
+                        <p class="small fst-italic">The staff must upload one or more photos before submitting the item for review.</p>
+                      </div>
+                    </div>
+                    <div class="form-check row col-6">
+                      <div class="col-2">
+                        <input name="require_comments" class="form-check-input" type="checkbox" id="requireComments"
+                          x-model="openTaskItem.require_comments">
+                      </div>
+                      <div class="col-auto">
+                        <label class="form-check-label" for="requireComments">Staff Comment </label>
+                        <p class="small fst-italic">The staff must include specific text required for the task before submitting the item for review.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row g-0">
+                    <div class="form-check row mb-2 col-6">
+                      <div class="col-2">
+                        <input name="require_videos" class="form-check-input" type="checkbox" id="requireVideo" x-model="openTaskItem.require_videos">
+                      </div>
+                      <div class="col-auto">
+                        <label class="form-check-label" for="requireVideo">Video Proof </label>
+                        <p class="small fst-italic">Staff must record a video of the completed task before submitting it for review.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+
+                <div class="d-flex justify-content-between mt-3">
+                  <template x-if="['inprogress'].includes(openTaskItem?.status)">
+                    <button class="btn btn-sm btn-secondary" title="Cancel Item"
+                      @click="updateTaskItem(openTaskItem, 'cancel'); console.log(openTaskItem)"><i class="bi bi-slash-square"></i></button>
+                  </template>
+                  <template x-if="['cancelled'].includes(openTaskItem?.status)">
+                    <button class="btn btn-sm btn-primary" title="Restore Item" @click="updateTaskItem(openTaskItem, 'restore');"><i
+                        class="bi bi-hammer"></i></button>
+                  </template>
+                  <button class="btn btn-sm btn-primary ms-auto" @click="updateTaskItem(openTaskItem)"><i class="bi bi-floppy me-1"></i> Save Changes</button>
+                </div>
+              </div>
+
+              <div class="tab-pane fade p-0" id="navRefPhotos" role="tabp>
+                <h6 class="text-muted card-title mt-3 small">Photo References: </h6>
+                <p class="small fst-italic">Uploaded picture(s) will serve as a reference for the expected outcome of the item.</p>
+                <!-- <input class="form-control" type="file"> -->
+                <div class="d-grid gap-2 mb-3 border p-2"
+                  style="border-style: dashed !important; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));">
+                  <template x-if="openTaskItem?.reference_photos?.length">
+                    <template x-for="({id, original_path, thumbnail_path}, imageIndex) in openTaskItem?.reference_photos" :key="imageIndex">
+                      <div class="ratio ratio-1x1 position-relative" style="cursor: pointer;"
+                        @click="lightboxImage = original_path; isLightBoxOpen = true;">
+                        <img :src="`${thumbnail_path}`" class="img-thumbnail object-fit-cover w-100 h-100">
+                          <button class="bg-transparent text-white border-0"
+                          style="top: 5%; left: 100%; transform: translate(-130%); height: fit-content; width: fit-content; font-size: 1.2rem;"
+                          @click.stop="deleteReferencePhoto(id); ">&times;</button>
+                      </div>
+                    </template>
+                  </template>
+
+                  <div class="ratio ratio-1x1 border border-2 border-primary-subtle d-flex align-items-center justify-content-center img-thumbnail"
+                    style="border-style: dashed !important; cursor: pointer;" @click="$refs.referencePhotoInput.click()">
+                    <label class="text-muted mb-0 d-flex flex-column align-items-center position-static"
+                          style="height: fit-content; width: fit-content; cursor: pointer;"
+                    >
+                      <i class="bi bi-image text-secondary" style="font-size: 1.5rem;"></i> Click to add photos </label>
+                  </div>
+
+                    <input type="file" accept="image/jpeg, image/png" class="d-none" multiple x-ref="referencePhotoInput"
+                      @input="uploadReferencePhotos(openTaskItem);" />
+
+                </div>
+
+                <div class="d-flex justify-content-between mt-3">
+                  <template x-if="['inprogress'].includes(openTaskItem?.status)">
+                    <button class="btn btn-sm btn-secondary" title="Cancel Item"
+                      @click="updateTaskItem(openTaskItem, 'cancel'); console.log(openTaskItem)"><i class="bi bi-slash-square"></i></button>
+                  </template>
+                  <template x-if="['cancelled'].includes(openTaskItem?.status)">
+                    <button class="btn btn-sm btn-primary" title="Restore Item" @click="updateTaskItem(openTaskItem, 'restore');"><i
+                        class="bi bi-hammer"></i></button>
+                  </template>
+                </div>
+              </div>
+              <div class="tab-pane fade p-0" id="navRefVideos" role="tabp>
+                <h6 class="text-muted card-title mt-3 small">Video References: </h6>
+                <p class="small fst-italic">Attached video(s) serve as visual reference for the expected outcome.</p>
+
+                <div class="mb-3" style="min-height: 150px;">
+
+                  <template x-if="openTaskItem?.reference_videos?.length">
+                    <template x-for="(referenceVideo, index) in openTaskItem?.reference_videos">
+                      
+                      <div class="row gap-0 mb-2">
+                        <h6 class="col-2 col-form-label text-muted card-title" style="font-size: .875em !important;">Video #<span x-text="index + 1"></span>:</h6>
+                        <div class="col">
+                          <div class="input-group">
+
+                            <input class="form-control" type="text" placeholder="http://www.example.com/video.mp4"
+                              x-model="referenceVideo.video_link">
+
+                            <button class="btn btn-outline-secondary dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Video description" data-bs-auto-close="outside">
+                              <i class="bi bi-card-text"></i>
+                            </button>
+                            <div class="dropdown-menu p-3" style="min-width: 100%;">
+                              <h6 class="text-muted card-title small">Video Description: </h6>
+                              <div class="input-group">
+                                <div class="form-floating">
+                                  <textarea class="form-control form-control-sm h-100" x-model="referenceVideo.video_desc_en"></textarea>
+                                  <label class="text-muted">English</label>
+                                </div>
+                                <div class="form-floating">
+                                  <textarea class="form-control form-control-sm h-100" x-model="referenceVideo.video_desc_zh"></textarea>
+                                  <label class="text-muted">Chinese</label>
+                                </div>
+                              </div>
+
+                              <p class="text-end small fst-italic m-0 mt-2 text-warning">Remember to press "Save Changes".</p>
+                            </div>
+
+
+
+                            <a target="_blank" :href="referenceVideo.video_link" class="btn btn-outline-secondary" title="View video" :class="referenceVideo.video_link?.length ? '':'disabled'"><i
+                              class="bi bi-play-btn"></i></a>
+
+                            <button class="btn btn-outline-danger" title="Remove video" @click="deleteReferenceVideo(referenceVideo)">
+                              <i class="bi bi-x-lg"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                    </template>
+                  </template>
+
+                  
+                  <div class="d-flex justify-content-center gap-2 p-2 w-100 border border-2 border-primary-subtle mb-2" style="border-style: dashed !important; cursor: pointer;">
+                    <input class="d-none" type="file" accept="video/*"  x-ref="referenceVideoInput" @input="addToUploadVideo(openTaskItem);">
+                    <button class="btn btn-light btn-sm border" @click="$refs.referenceVideoInput.click()"><i class="bi bi-file-earmark-play me-2"></i>From files</button>
+                    <div class="dropdown w-auto">
+                      <button class="btn btn-light btn-sm border dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"><i class="bi bi-link-45deg me-2"></i>Link only</button>
+                      <div class="dropdown-menu p-3" style="min-width: 250px;">
+                        <div x-data="{ inputVal: '', minInput: 1}">
+                          <div class="mb-2">
+                            <input type="text" class="form-control" x-model="inputVal"
+                              :class="inputVal.length ? (inputVal.length >= minInput ? 'is-valid' : 'is-invalid') : ''" placeholder="Video link">
+                          </div>
+                          <button class="btn btn-outline-secondary btn-sm w-100" :disabled="inputVal.length < minInput"
+                            @click="addReferenceVideoLink(openTaskItem, inputVal).then(() => inputVal = '');">Add</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <template x-if="openTaskItem?.toUploadVideos?.length">
+                    <template x-for="(video, videoIndex) in openTaskItem.toUploadVideos" :key="videoIndex">
+
+                      <div class="text-center p-2 w-100 d-flex align-items-center justify-content-between border border-2" style="border-style: dashed !important;">
+                        <span x-text="video.file.name"></span>
+                        <span x-text="video.progress + '%'"></span>
+
+                        <template x-if="['uploading'].includes(video.status)">
+                          <button class="btn btn-outline-danger btn-sm me-2" @click="video.abortController?.abort()"><i class="bi bi-x-circle me-1"></i>Cancel</button>
+                        </template>
+                        <template x-if="['waiting'].includes(video.status)">
+                          <button class="btn btn-light border btn-sm" @click="uploadReferenceVideos(openTaskItem, video)"><i class="bi bi-upload me-2"></i>Upload</button>
+                        </template>
+                        <template x-if="['error'].includes(video.status)">
+                          <button class="btn btn-danger btn-sm" @click="uploadReferenceVideos(openTaskItem, video)"><i class="bi bi-upload me-2"></i>Retry</button>
+                        </template>
+                        <template x-if="['uploaded'].includes(video.status)">
+                          <button class="btn btn-secondary btn-sm" disabled><i class="bi bi-upload me-2" title="Reload to edit"></i>Uploaded</button>
+                        </template>
+                      </div>
+                    </template>
+                  </template>
+                </div>
+
+
+                <div class="d-flex justify-content-between mt-3">
+                  <template x-if="['inprogress'].includes(openTaskItem?.status)">
+                    <button class="btn btn-sm btn-secondary" title="Cancel Item"
+                      @click="updateTaskItem(openTaskItem, 'cancel'); console.log(openTaskItem)"><i class="bi bi-slash-square"></i></button>
+                  </template>
+                  <template x-if="['cancelled'].includes(openTaskItem?.status)">
+                    <button class="btn btn-sm btn-primary" title="Restore Item" @click="updateTaskItem(openTaskItem, 'restore');"><i
+                        class="bi bi-hammer"></i></button>
+                  </template>
+                  <button class="btn btn-sm btn-primary ms-auto" @click="updateReferenceVideos(openTaskItem)"><i class="bi bi-floppy me-1"></i> Save Changes</button>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- endregion [modal] task item information submission -->
+  <!-- region [modal] review submission -->
+  <div class="modal fade" id="reviewSubmissionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Review Submission</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- <h6 class="">Submitted by: <span data-field-for=?"submitterName||'No Record'" class="badge text-bg-warning fw-bold">Alex</span></h6> -->
+          <nav>
+            <div class="nav nav-tabs" id="nav-tab" role="tablist" style="font-size: .7rem;">
+              <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#navSubmittedPhotos" type="button" role="tab">Photos</button>
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#navSubmittedVideos" type="button" role="tab">Videos</button>
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#navSubmittedComments" type="button" role="tab">Comments</button>
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#navReview" type="button" role="tab">Review</button>
+            </div>
+          </nav>
+          <!-- NAV-TABS-CONTENT FOR CHECKLIST ITEM CONTENT -->
+          <div class="p-2">
+            <div class="tab-content" id="navtabContent">
+              <div style="min-height: 150px;" class="tab-pane p-0 show active" id="navSubmittedPhotos" role="tabpanel" tabindex="0">
+                <h6 class="card-title mt-3 mb-1 small">Submitted By: <span class="fw-bolder text-decoration-underline"
+                    x-text="openTaskItem.submitter?.name||'No Record'"></span></h6>
+                <h6 class="text-muted card-title mt-3 mb-1 small">Photos: <span class="badge"
+                    :class="openTaskItem.require_photos ? 'text-bg-danger':'text-bg-secondary'"
+                    x-text="openTaskItem.require_photos ? 'Required':'Optional'"></span>
+                </h6>
+                <div class="d-flex flex-wrap gap-3 mb-3 justify-content-start">
+                  <template x-if="openTaskItem.submitted_photos?.length">
+                    <template x-for="({id, original_path, thumbnail_path}, imageIndex) in openTaskItem.submitted_photos" :key="imageIndex">
+                      <div class="ratio ratio-1x1" style="width: calc(33% - 1rem); cursor: pointer;"
+                        @click="lightboxImage = original_path; isLightBoxOpen = true;">
+                        <img :src="`${thumbnail_path}`" class="img-thumbnail">
+                      </div>
+                    </template>
+                  </template>
+                  <template x-if="!openTaskItem.submitted_photos?.length">
+                    <div class="text-center pt-3 w-100 border" style="border-style: dashed !important;">
+                      <i class="bi bi-image text-secondary" style="font-size: 1.5rem;"></i>
+                      <p class="text-muted mt-2">No submitted photos.</p>
+                    </div>
+                  </template>
+                </div>
+              </div>
+              <div style="min-height: 150px;" class="tab-pane p-0" id="navSubmittedVideos" role="tabpanel" tabindex="0">
+                <h6 class="card-title mt-3 mb-1 small">Submitted By: <span class="fw-bolder text-decoration-underline"
+                    x-text="openTaskItem.submitter?.name||'No Record'"></span></h6>
+                <h6 class="text-muted card-title mt-3 mb-1 small">Videos: <span class="badge"
+                    :class="openTaskItem.require_videos ? 'text-bg-danger':'text-bg-secondary'"
+                    x-text="openTaskItem.require_videos ? 'Required':'Optional'"></span>
+                </h6>
+                <div class="d-flex flex-wrap gap-3 mb-3 justify-content-start" x-data>
+                  <template x-if="openTaskItem.submitted_videos">
+                    <div class="w-100">
+                      <video class="rounded-3 shadow-sm" width="100%" controls :src="openTaskItem.submitted_videos"> Your browser does not support the
+                        video tag. </video>
+                    </div>
+                  </template>
+                  <template x-if="!openTaskItem.submitted_videos">
+                    <div class="text-center pt-3 w-100 border" style="border-style: dashed !important;">
+                      <i class="bi bi-play-btn text-secondary" style="font-size: 1.5rem;"></i>
+                      <p class="text-muted mt-2">No submitted videos.</p>
+                    </div>
+                  </template>
+                </div>
+              </div>
+              <div style="min-height: 150px;" class="tab-pane p-0" id="navSubmittedComments" role="tabpanel" tabindex="0">
+                <h6 class="card-title mt-3 mb-1 small">Submitted By: <span class="fw-bolder text-decoration-underline"
+                    x-text="openTaskItem.submitter?.name||'No Record'"></span></h6>
+                <h6 class="text-muted card-title mt-3 mb-1 small">Comments: <span class="badge"
+                    :class="openTaskItem.require_comments ? 'text-bg-danger':'text-bg-secondary'"
+                    x-text="openTaskItem.require_comments ? 'Required':'Optional'"></span>
+                </h6>
+                <div class="d-flex flex-wrap gap-3 mb-3 justify-content-start">
+                  <template x-if="openTaskItem.submitted_comments?.length">
+                    <p class="bg-secondary-subtle p-3 w-100 rounded small fst-italic" style="min-height: calc(1.2rem * 5 + 32px);" placeholder=""
+                      x-text="openTaskItem.submitted_comments || 'No comments'"></p>
+                  </template>
+                  <template x-if="!openTaskItem.submitted_comments?.length">
+                    <div class="text-center pt-3 w-100 border" style="border-style: dashed !important;">
+                      <i class="bi bi-chat-dots text-secondary" style="font-size: 1.5rem;"></i>
+                      <p class="text-muted mt-2">No submitted comments.</p>
+                    </div>
+                  </template>
+                </div>
+              </div>
+              <div style="min-height: 150px;" class="tab-pane p-0" id="navReview" role="tabpanel" tabindex="0" x-data="{minInput: 0}">
+                <h6 class="card-title mt-3 mb-1 small">Submitted By: <span class="fw-bolder text-decoration-underline"
+                    x-text="openTaskItem.submitter?.name||'No Record'"></span></h6>
+                <h6 class="text-muted card-title mt-3 mb-1 small">Review Comments: <span class="badge text-bg-danger">Required</span>
+                </h6>
+                <div class="form-floating">
+                  <textarea
+                    :class="openTaskItem.reviewer_comments?.length ? openTaskItem.reviewer_comments?.length >= minInput ? 'is-valid' : 'is-invalid' : ''"
+                    class="form-control form-control-sm h-100" style="min-height: calc(1.2rem * 5 + 32px);" placeholder=""
+                    x-model="openTaskItem.reviewer_comments"></textarea>
+                  <label class="text-muted">English</label>
+                </div>
+                <div class="d-flex justify-content-end align-items-center mt-3 gap-2">
+                  <template x-if="['submitted', 'approved', 'rejected'].includes(openTaskItem.status)">
+                    <div class="me-auto" x-html="statusIconFormatter(openTaskItem.status)"></div>
+                  </template>
+                  <template x-if="['submitted'].includes(openTaskItem.status)">
+                    <button class="btn btn-sm" :class="openTaskItem.reviewer_comments?.length < minInput ? 'btn-outline-danger':'btn-danger'"
+                      :disabled="openTaskItem.reviewer_comments?.length < minInput" @click="updateTaskItem(openTaskItem, 'reject')">Reject</button>
+                  </template>
+                  <template x-if="['submitted'].includes(openTaskItem.status)">
+                    <button class="btn btn-sm" :class="openTaskItem.reviewer_comments?.length < minInput ? 'btn-outline-success':'btn-success'"
+                      :disabled="openTaskItem.reviewer_comments?.length < minInput" @click="updateTaskItem(openTaskItem, 'approve')">Approve</button>
+                  </template>
+                  <template x-if="['rejected'].includes(openTaskItem.status)">
+                    <button class="btn btn-sm btn-outline-secondary"
+                      @click="alert('Not available')">Cancel</button>
+                  </template>
+                  <template x-if="['rejected'].includes(openTaskItem.status)">
+                      <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Rework
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item text-muted" href="#" @click.prevent="alert('Not available')">Do Last</a></li>
+                            <li><a class="dropdown-item" href="#" @click.prevent="alert('Not available')">Anytime</a></li>
+                            <li><a class="dropdown-item text-danger" href="#" @click.prevent="alert('Not available')">Urgent</a></li>
+                        </ul>
+                    </div>
+                  </template>
+                  <template x-if="['approved', 'rejected'].includes(openTaskItem.status)">
+                    <button class="btn btn-sm btn-outline-secondary" :disabled="openTaskItem.reviewer_comments?.length < minInput"
+                      @click="updateTaskItem(openTaskItem, 'rethink');">Rethink</button>
+                  </template>
+                </div>
+              </div>
+              <template x-if="['cancelled'].includes(openTaskItem.status)">
+                <div class="text-center py-2 alert alert-warning">Item is <span class="fst-italic fw-bold">cancelled</span>, open task item
+                  information to reactivate.</div>
+              </template>
+              <template x-if="['inprogress'].includes(openTaskItem.status)">
+                <div class="text-center py-2 alert alert-warning">Item is still <span class="fst-italic fw-bold">inprogress</span> and not ready to be
+                  reviewed.</div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- endregion [modal] review submission -->
+  <!-- region [modal] lightbox -->
+  <!-- endregion [modal] lightbox -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery-resizable-columns@0.2.3/dist/jquery.resizableColumns.min.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Bootstrap Table JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.0/dist/bootstrap-table.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.0/dist/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.0/dist/extensions/resizable/bootstrap-table-resizable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <!-- CHECKLIST SELECT OPTIONS -->
+  <script src="/js/web-scripts.js"></script>
+  <script src="/js/alpine/show-project.alpine.js"></script>
+</body>
+</html>

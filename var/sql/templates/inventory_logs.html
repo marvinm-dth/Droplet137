@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Inventory</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: nowrap; 
+            justify-content: space-around;
+            align-items: flex-start;
+            padding: 20px;
+            gap: 20px;
+        }           
+
+        .centered {
+            justify-content: center; /* Center the selected items table when prelisted is hidden */
+        }
+
+        table {
+            border-collapse: collapse;
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        .buttons-container {
+            margin: 30px;
+        }
+
+        .button {
+            padding: 12px 25px;
+            margin: 0 15px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #fff;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .add-orders-btn {
+            background-color: #28a745;
+        }
+
+        #prelisted-items-table {
+            max-height: 1000px; /* Set a max height for the prelisted items */
+            overflow-y: auto;  /* Enable vertical scrolling */
+        }
+
+
+        .center-button {
+            text-align: right; /* Aligns the button to the right */
+            margin: 20px 0;
+            width: 100%; /* Makes sure the button aligns relative to the full width of the screen */
+        }
+
+        button#toggleButton {
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-right: 20px; /* Add some space from the edge */
+        }
+
+        label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .form-group input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* Header container */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: #f8f9fa;
+            position: relative;
+        }
+
+        /* Centered title */
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 0;
+        }
+
+        .cart-icon {
+                display: flex;
+                justify-content: space-between;
+                position: relative;
+                top: 20px;
+                right: 20px;
+                font-size: 2em;
+                cursor: pointer;
+                color: #007bff;
+            }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Logout button styles */
+        .logout-button {
+            padding: 10px 20px;
+            background-color: #cc716c;
+            color: #333;
+            font-size: 1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            margin-left: auto; /* Pushes the button to the right */
+        }
+
+        .logout-button:hover {
+            background-color: #cc716c;
+        }
+
+        #qr-reader {
+            width: 100%;
+            max-width: 500px;
+            margin: 20px auto;
+            border: 1.5px solid #b2b2b2;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        #qr-result {
+            font-size: 1.2em;
+            color: #007bff;
+            margin-top: 20px;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            .icons {
+                justify-content: flex-end;
+                gap: 15px;
+            }
+
+            .product-list {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .header-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-right {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .search-container {
+                width: 100%;
+            }
+
+            .search-container input[type="text"] {
+                width: 70%;
+            }
+
+            .search-container button {
+                width: 30%;
+            }
+
+            .logout-btn {
+                width: 100%;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script>
+        $(document).ready(function() {
+            $('#prelisted-items-table').DataTable(); // Initialize DataTables on the table
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#000000">
+    <script>
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+            .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+        }
+    </script>
+<body>
+
+    <div class="container_info" id="info-container" style="width: 100%; max-width: 1200px; margin: 0 auto;">
+        <div class="header">
+            <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+                <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;" loading="lazy">
+            </a>
+            <h1>Dragon Tiny Homes Inventory Logs</h1>
+            <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+            <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+        </div>
+
+        <div class="cart-icon" onclick="openCartModal()" style="display: flex; align-items: right; justify-content: right; margin-bottom: 20px;">
+            <i class="fas fa-clipboard-list" style="margin-right: 5px;"></i>
+            <span id="cart-count" class="cart-badge">0</span>
+        </div>
+
+        <!-- Modal for Cart -->
+        <div id="cartModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeCartModal()">&times;</span>
+                <h2>Inventories</h2>
+                <div id="supplier-tables-container">
+                    <!-- Common items table will be here -->
+                    <table id="common-items-table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>SKU Number</th>
+                                <th>Supplier</th>
+                                <th>Supplier SKU Number</th>
+                                <th>Description</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="selected-items">
+                            <!-- Items will be added here -->
+                        </tbody>
+                    </table>
+                    <div class="add-inventory-button">
+                        <button onclick="submitInventory()" class="add-btn">Submit Inventory</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <div style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="languageSelect" class="description data-english">Choose Language:</label>
+            <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言: </label>
+            <select id="languageSelect" onchange="updateDescriptions()" style="margin-left: 10px;">
+                <option value="english">English</option>
+                <option value="chinese">Chinese</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="order-name" class="description data-english" id="order-name" style="text-align: left; align-items: left; justify-content: left; margin-bottom: 20px;">Name:<label>
+            <label for="order-name" class="description data-mandarin" id="order-name" style="display: none; text-align: left; align-items: left; justify-content: left; margin-bottom: 20px;">名称:</label>
+            <input type="text" id="order-name" name="order-name" value="{{ user.name }}" readonly/><br>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="supplierFilter" class="description data-english" style="display: block; text-align: left;">Filter by Supplier:</label>
+            <label for="supplierFilter" class="description data-mandarin" style="display: none; text-align: left;">按供应商筛选:</label>
+            <select id="supplierFilter" onchange="filterTable()" style="margin-left: 10px; width: 200px;">
+                <option value="">All Suppliers</option>
+                {% for supplier in supplier_data %}
+                    <option value="{{ supplier.supplier_name }}">{{ supplier.supplier_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Container for the two tables (side by side layout) -->
+        <div class="container" id="table-container" style="width: 100%; max-width: 900px; margin: 0 auto;">
+            <!-- Prelisted Items Table (Right) -->
+            <table id="prelisted-items-table" style="width: 100%; max-width: 900px; margin: 0 auto;">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">Action</th>
+                        <th onclick="sortTable(1)">SKU Number</th>
+                        <th onclick="sortTable(2)">Supplier</th>
+                        <th onclick="sortTable(2)">Supplier SKU Number</th>
+                        <th onclick="sortTable(3)">Description</th>
+                        <th onclick="sortTable(4)">Price</th>
+                        <th>Image</th>
+                        <th style="display: none;">Keywords</th> <!-- Hidden column -->
+                        <th style="display: none;">Keywords Chinese</th> <!-- Hidden column -->
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in home_depot_items %}
+                    <tr>
+                        <td>
+                            <button onclick="addItem('{{ item.material_id }}', 
+                                                    '{{ item.supplier_name }}', 
+                                                    '{{ item.internet_sku_number }}', 
+                                                    '{{ item.item_desc }}', 
+                                                    '{{ item.item_desc_mandarin }}',
+                                                    '{{ item.item_price }}', 
+                                                    '{{ item.item_image }}')">
+                                                    Add Item
+                            </button>
+                        </td>
+                        <td>{{ item.material_id }}</td>
+                        <td>{{ item.supplier_name }}</td>
+                        <td>{{ item.internet_sku_number }}</td>
+                        <td>
+                            <div class="description data-english" style="width: 100px">{{ item.item_desc }}</div>
+                            <div class="description data-mandarin" style="width: 100px; display: none;">{{ item.item_desc_mandarin }}</div>
+                        </td>
+                        <td>{{ item.item_price }}</td>
+                        <td><img src="{{ item.item_image }}" width="80" height="80" loading="lazy"></td>
+                        <td style="display: none;">{{ item.keywords }}</td>
+                        <td style="display: none;">{{ item.keywords_ch }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+<script>
+    
+    let table;
+
+    $(document).ready(function() {
+        // Initialize DataTables on the table and store a reference to the DataTable instance
+        table = $('#prelisted-items-table').DataTable();
+
+        // Load saved filter if available
+        const savedFilter = localStorage.getItem('selectedSupplier');
+        if (savedFilter) {
+            $('#supplierFilter').val(savedFilter);
+            filterTable(); // Apply the filter when loading the page
+        }
+    });
+
+    // Creating a JavaScript object that maps supplier names to their IDs
+    const supplierData = {};
+    {% for supplier in supplier_data %}
+        supplierData["{{ supplier.supplier_name }}"] = "{{ supplier.id }}";
+    {% endfor %}
+
+    // Function to open the cart modal
+    function openCartModal() {
+        document.getElementById('cartModal').style.display = 'block';
+    }
+
+    // Function to close the cart modal
+    function closeCartModal() {
+        document.getElementById('cartModal').style.display = 'none';
+    }
+
+    function updateDescriptions() {
+        const language = document.getElementById('languageSelect').value;
+
+        // Save the selected language in local storage
+        localStorage.setItem('selectedLanguage', language);
+
+        // Get all elements with class 'data-english' and 'data-mandarin'
+        const englishElements = document.querySelectorAll('.data-english');
+        const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+        if (language === 'english') {
+            englishElements.forEach(element => {
+                element.style.display = 'block';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'none';
+            });
+        } else if (language === 'chinese') {
+            englishElements.forEach(element => {
+                element.style.display = 'none';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'block';
+            });
+        }
+
+    }
+
+    function filterTable() {
+        const filter = $('#supplierFilter').val();
+
+        // Save the selected supplier in local storage
+        localStorage.setItem('selectedSupplier', filter);
+
+        if (filter === "") {
+            table.column(2).search("").draw(); // Reset filter if "All Suppliers" is selected
+        } else {
+            table.column(2).search(filter, true, false).draw(); // Filter the supplier column
+        }
+    }
+
+    function addItem(sku_num, supplier_name, supplier_num, description_english, description_mandarin, price, image) {
+        const tableBody = document.getElementById('selected-items');
+        const rows = tableBody.querySelectorAll('tr');
+
+        // Check if the SKU already exists in the cart
+        let existingRow = null;
+        rows.forEach(row => {
+            const skuCell = row.querySelector('td:nth-child(2)'); // SKU number is in the second column
+            if (skuCell && skuCell.textContent === sku_num) {
+                existingRow = row;
+            }
+        });
+
+        // If the item already exists, increment its quantity
+        if (existingRow) {
+            const quantityInput = existingRow.querySelector('td:nth-child(7) input'); // Quantity input is in the sixth column
+            quantityInput.value = parseInt(quantityInput.value) + 1;
+        } else {
+            // Create a new row if the item doesn't already exist
+            const newRow = document.createElement('tr');
+
+            // Create cells for each column
+            const imageCell = document.createElement('td');
+            const imgElement = document.createElement('img');
+            imgElement.src = image;
+            imgElement.alt = description_english;
+            imgElement.style.width = '80px';
+            imgElement.style.height = '80px';
+            imageCell.appendChild(imgElement);
+
+            const skuCell = document.createElement('td');
+            skuCell.textContent = sku_num;
+
+            const supplierName = document.createElement('td');
+            supplierName.textContent = supplier_name;
+
+            const supplierCell = document.createElement('td');
+            supplierCell.textContent = supplier_num;
+
+            const descriptionCell = document.createElement('td');
+            const descriptionEnglishDiv = document.createElement('div');
+            descriptionEnglishDiv.classList.add('data-english');
+            descriptionEnglishDiv.textContent = description_english;
+            descriptionEnglishDiv.style.display = 'block';
+
+            const descriptionMandarinDiv = document.createElement('div');
+            descriptionMandarinDiv.classList.add('data-mandarin');
+            descriptionMandarinDiv.textContent = description_mandarin;
+            descriptionMandarinDiv.style.display = 'none';
+
+            descriptionCell.appendChild(descriptionEnglishDiv);
+            descriptionCell.appendChild(descriptionMandarinDiv);
+
+            const priceCell = document.createElement('td');
+            priceCell.textContent = parseFloat(price).toFixed(2);
+
+            const quantityCell = document.createElement('td');
+            const quantityInput = document.createElement('input');
+            quantityInput.type = 'number';
+            quantityInput.value = 1;  // Default quantity to 1
+            quantityInput.min = 1;    // Set minimum value
+            quantityInput.style.width = '50px';
+            quantityCell.appendChild(quantityInput);
+
+            // Create a cell for the delete button
+            const deleteCell = document.createElement('td');
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.onclick = function() {
+                // Remove the row
+                tableBody.removeChild(newRow);
+                
+                // Update the cart count after deleting an item
+                updateCartCount();
+            };
+            deleteCell.appendChild(deleteButton);
+
+            newRow.appendChild(imageCell);
+            newRow.appendChild(skuCell);
+            newRow.appendChild(supplierName);
+            newRow.appendChild(supplierCell);
+            newRow.appendChild(descriptionCell);
+            newRow.appendChild(priceCell);
+            newRow.appendChild(quantityCell);
+            newRow.appendChild(deleteCell);
+
+            tableBody.appendChild(newRow);
+        }
+
+        // Update the cart count
+        updateCartCount();
+        updateDescriptions(); // Ensure descriptions update based on current language selection
+    }
+
+    function updateCartCount() {
+        const cartCountElement = document.getElementById('cart-count');
+        let totalQuantity = 0;
+        const rows = document.getElementById('selected-items').querySelectorAll('tr');
+        rows.forEach(row => {
+            const quantityInput = row.querySelector('td:nth-child(7) input');
+            totalQuantity += parseInt(quantityInput.value);
+        });
+        cartCountElement.textContent = totalQuantity;
+    }
+
+    // Function to submit the order data and selected items
+    function submitInventory() {
+        const orderName = "{{ user.name }}";
+
+        // Collect selected items data
+        const selectedItems = [];
+        const rows = document.querySelectorAll('#selected-items tr');
+        
+        rows.forEach(row => {
+            const sku_number = row.querySelector('td:nth-child(2)').textContent;
+            const supplier_name = row.querySelector('td:nth-child(3)').textContent;
+            const internet_sku_number = row.querySelector('td:nth-child(4)').textContent;
+            const description = row.querySelector('td:nth-child(5)').textContent;
+            const price = row.querySelector('td:nth-child(6)').textContent;
+            const image = row.querySelector('td:nth-child(1) img').src;
+            const quantity = row.querySelector('td:nth-child(7) input').value;
+
+            selectedItems.push({
+                material_id: sku_number,
+                supplier_name: supplier_name,
+                internet_sku_number: internet_sku_number,
+                item_desc: description,
+                item_price: price,
+                item_image: image,
+                quantity_used: quantity
+            });
+        });
+
+        // Check if there are selected items
+        if (selectedItems.length === 0) {
+            alert("Please add at least one item.");
+            return;
+        }
+
+        // Send the data to the backend using Fetch API
+        fetch('/add_inventory_used', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                inv_name: orderName,
+                selected_items: selectedItems // Add selected items to the request
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message && data.redirect_url) {
+                alert('Inventory successfully added: ' + data.message);
+                window.location.href = data.redirect_url; // Use the redirect URL from the server response
+            } else {
+                console.error('Invalid response:', data);
+                alert('An error occurred while processing the order.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+</script>
+
+</body>
+</html>

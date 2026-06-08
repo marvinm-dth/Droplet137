@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dragon Tiny Homes: Home Depot Orders</title>
+
+  <!-- Google Font (Poppins) -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css?family=Poppins:400,600,700&display=swap"
+  />
+
+  <!-- DataTables CSS (for desktop/tablet) -->
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css"
+  />
+
+  <!-- Font Awesome (for loading spinner) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  />
+
+  <style>
+    /* ============================
+       Global & Base Styles
+       ============================ */
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      line-height: 1.4;
+    }
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+    h1 {
+      font-size: 2em;
+      font-weight: 700;
+      color: #343a40;
+      margin: 0;
+    }
+
+    /* Container (centers content & adds side padding) */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 16px;
+      box-sizing: border-box;
+    }
+
+    /* ============================
+       Header (Logo, Title, Logout)
+       ============================ */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      background-color: #f8f9fa;
+      position: relative;
+    }
+    .header .logo-link {
+      display: flex;
+      align-items: center;
+    }
+    .header .logo-link img {
+      width: 30px;
+      height: 30px;
+      margin-right: 10px;
+    }
+    /* Center the title */
+    .header h1 {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+    }
+    .logout-button {
+      padding: 10px 20px;
+      background-color: #cc716c;
+      color: #fff;
+      font-size: 1em;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+    }
+    .logout-button:hover {
+      background-color: #b35c58;
+    }
+
+    /* ============================
+       Language Selector
+       ============================ */
+    .language-selector {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .language-selector label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .language-selector select {
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+    }
+
+    /* ============================
+       Form Groups (labels + inputs)
+       ============================ */
+    .form-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap; /* allow wrap on narrow screens */
+    }
+    .form-group label {
+      min-width: 180px;
+      font-weight: bold;
+      margin-bottom: 4px; /* if it wraps, allow spacing */
+      font-size: 1em;
+    }
+    .form-group input[type='text'],
+    .form-group input[type='number'],
+    .form-group select,
+    .form-group textarea {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      min-width: 0; /* prevents overflow */
+      font-size: 1em;
+    }
+    .form-group textarea {
+      resize: vertical;
+    }
+
+    /* ============================
+       Primary Buttons
+       ============================ */
+    .button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      margin: 8px;
+      font-size: 0.9em;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-block;
+    }
+    .button:hover {
+      background-color: #45a049;
+    }
+    /* Smaller font for very compact buttons */
+    .button.small {
+      font-size: 0.8em;
+      padding: 6px 12px;
+      margin: 4px;
+    }
+    /* Loading spinner inside buttons */
+    .loading-spinner {
+      margin-left: 6px;
+      color: #fff;
+    }
+
+    /* ============================
+       “Add Item” Link/Button
+       ============================ */
+    .add-item {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+      margin-top: 8px;
+    }
+    .add-item:hover {
+      background-color: #218838;
+    }
+
+    /* ============================
+       Dropdowns (PDF Files, Other Files)
+       ============================ */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown‐button {
+      background-color: #4CAF50;
+      color: white;
+      font-size: 0.9em;
+      padding: 10px 20px;
+      margin: 8px 4px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-block;
+    }
+    .dropdown‐button:hover {
+      background-color: #218838;
+    }
+    .dropdown‐content {
+      display: none;
+      position: absolute;
+      background-color: #fff;
+      min-width: 160px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .dropdown‐content a {
+      display: block;
+      padding: 10px 20px;
+      color: #000;
+      font-size: 0.9em;
+    }
+    .dropdown‐content a:hover {
+      background-color: #f1f1f1;
+    }
+    .dropdown:hover .dropdown‐content {
+      display: block;
+    }
+
+    /* ============================
+       File List in Dropdown
+       ============================ */
+    .file-list-item {
+      padding: 5px 10px;
+      border-bottom: 1px solid #eee;
+      font-size: 0.9em;
+    }
+    .file-list-item:last-child {
+      border-bottom: none;
+    }
+    .file-list-item a {
+      text-decoration: none;
+      color: #007bff;
+    }
+    .file-list-item a:hover {
+      text-decoration: underline;
+    }
+
+    /* ============================
+       Table Styles (Desktop/Tablet)
+       ============================ */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto; /* fallback scroll on narrow mid‐size screens */
+      margin-bottom: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 0 auto;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-size: 0.85em;
+    }
+    th,
+    td {
+      border: 1px solid #ddd;
+      padding: 10px;
+    }
+    th {
+      background-color: #007bff;
+      color: #ffffff;
+      font-weight: 600;
+      text-align: center;
+      white-space: nowrap;
+    }
+    td {
+      text-align: center;
+      vertical-align: middle;
+      color: #333;
+    }
+    tbody tr:hover {
+      background-color: #f1f1f1;
+    }
+    /* Buttons inside table rows */
+    .update-item,
+    .delete-item,
+    .generate-image {
+      padding: 4px 8px;
+      margin: 2px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      transition: background-color 0.3s ease;
+      font-size: 0.8em;
+      white-space: nowrap;
+    }
+    .update-item:hover,
+    .delete-item:hover,
+    .generate-image:hover {
+      background-color: #0056b3;
+    }
+
+    /* ============================
+       Action Row (Desktop: single line, Mobile: stack)
+       ============================ */
+    .action-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: nowrap;
+      width: 100%;
+      margin: 20px 0;
+      padding: 0 16px; /* horizontal padding to match container */
+      box-sizing: border-box;
+    }
+    .btn-group {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    /* ============================
+       Mobile‐Only Overrides (≤ 480px)
+       ============================ */
+    @media (max-width: 480px) {
+
+      /* Stack Header vertically */
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-bottom: 10px;
+      }
+      .header h1 {
+        position: static;
+        transform: none;
+        margin: 0 0 10px 0;
+        font-size: 1.8em;
+      }
+      .logout-button {
+        width: auto;
+        padding: 10px 20px;
+        margin: 8px auto;
+        display: block;
+        font-size: 0.9em;
+      }
+
+      /* Language selector stacks */
+      .language-selector {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .language-selector label {
+        margin-bottom: 6px;
+      }
+
+      /* Form groups stack vertically */
+      .form-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .form-group label {
+        width: 100%;
+        margin-bottom: 4px;
+        font-size: 0.95em;
+      }
+      .form-group input[type='text'],
+      .form-group input[type='number'],
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        font-size: 1em;
+      }
+
+      /* Buttons shrink/pad for mobile */
+      .button {
+        font-size: 0.9em;
+        padding: 8px 16px;
+        margin: 6px 0;
+      }
+      .button.small {
+        font-size: 0.8em;
+        padding: 6px 12px;
+        margin: 4px 0;
+      }
+      .dropdown‐button {
+        font-size: 0.9em;
+        padding: 8px 16px;
+        margin: 6px auto;
+      }
+
+      /* Stack the three btn-group sub-groups vertically */
+      .action-row {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0 8px;
+        gap: 12px;
+      }
+      .btn-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      /* File upload group stacks */
+      .file-upload-group {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .file-upload-group .button {
+        width: auto;
+        margin: 6px auto;
+        font-size: 0.9em;
+      }
+      .file-upload-group .dropdown‐button {
+        width: auto;
+        margin: 6px auto;
+      }
+      #fileDropdown {
+        position: static;
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 4px;
+        border: 1px solid #ddd;
+      }
+
+      /* Table → “CARD” layout */
+      #prelisted-items-table thead {
+        display: none;
+      }
+      #prelisted-items-table tbody tr {
+        display: block;
+        margin-bottom: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background-color: #fff;
+        padding: 8px;
+      }
+      #prelisted-items-table tbody tr td {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 8px;
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        text-align: left;
+        font-size: 0.9em;
+      }
+      #prelisted-items-table tbody tr td:last-child {
+        border-bottom: none;
+      }
+      #prelisted-items-table tbody tr td::before {
+        content: attr(data-label) ": ";
+        flex-shrink: 0;
+        font-weight: 600;
+        color: #555;
+      }
+      #prelisted-items-table tbody tr td img {
+        max-width: 60px;
+        height: auto;
+        border-radius: 4px;
+      }
+
+      /* Textarea & inputs inside table shrink */
+      #prelisted-items-table tbody tr td input[type='number'] {
+        width: 50px;
+        font-size: 0.9em;
+        padding: 4px;
+      }
+      #prelisted-items-table tbody tr td textarea {
+        width: 100%;
+        font-size: 0.9em;
+        padding: 4px;
+        border: 1px solid #ccc;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- HEADER -->
+    <div class="header">
+      <a href="{{ url_for('main') }}" class="logo-link">
+        <img src="/static/home-logo.png" alt="Home" />
+      </a>
+      <h1>Dragon Tiny Homes Order</h1>
+      <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+      <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <!-- LANGUAGE SELECTOR -->
+    <div class="language-selector">
+      <label for="languageSelect" class="description data-english">Choose Language:</label>
+      <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言:</label>
+      <select id="languageSelect" onchange="updateDescriptions()">
+        <option value="english">English</option>
+        <option value="chinese">Chinese</option>
+      </select>
+    </div>
+
+    <!-- FORM TO UPDATE ORDER INFO -->
+    <form
+      action="/update_order/{{ order_data.order_id }}"
+      method="POST"
+      enctype="multipart/form-data"
+      onsubmit="return confirmSubmit();"
+    >
+      <!-- ORDER NAME -->
+      <div class="form-group">
+        <label for="order-name" class="description data-english"><b>Order Name:</b></label>
+        <label for="order-name" class="description data-mandarin" style="display: none;"><b>订单名称:</b></label>
+        <input
+          type="text"
+          id="order_name"
+          name="order_name"
+          value="{{ order_data.order_name }}"
+          readonly
+        />
+      </div>
+
+      <!-- SUPPLIER -->
+      <div class="form-group">
+        <label for="supplier-name" class="description data-english"><b>Supplier:</b></label>
+        <label for="supplier-name" class="description data-mandarin" style="display: none;"><b>供应商:</b></label>
+        <input
+          type="text"
+          name="supplier_name"
+          value="{{ order_data.supplier_name }}"
+          readonly
+        />
+      </div>
+
+      <!-- TOTAL AMOUNT -->
+      <div class="form-group">
+        <label for="total-amount" class="description data-english"><b>Total Amount:</b></label>
+        <label for="total-amount" class="description data-mandarin" style="display: none;"><b>总金额:</b></label>
+        <input
+          type="number"
+          id="total-amount"
+          name="total_amount"
+          value="{{ order_data.total_amount }}"
+          readonly
+        />
+      </div>
+
+      <!-- SUPPLIER ORDER NUMBER -->
+      <div class="form-group">
+        <label for="supplier-order-number" class="description data-english"><b>Supplier Order Number:</b></label>
+        <label for="supplier-order-number" class="description data-mandarin" style="display: none;"><b>供应商订单编号:</b></label>
+        <input
+          type="text"
+          name="supplier_order_number"
+          value="{{ order_data.supplier_order_number }}"
+        />
+      </div>
+
+      <!-- NOTES -->
+      <div class="form-group">
+        <label for="notes" class="description data-english"><b>Notes:</b></label>
+        <label for="notes" class="description data-mandarin" style="display: none;"><b>备注:</b></label>
+        <textarea
+          name="notes"
+          id="notes"
+          style="width: 100%; height: 100px;"
+        >{{ order_data.notes }}</textarea>
+      </div>
+
+      <!-- ORDER STATUS -->
+      <div class="form-group">
+        <label for="order-status" class="description data-english"><b>Order Status:</b></label>
+        <label for="order-status" class="description data-mandarin" style="display: none;">订单状态:</label>
+        <select name="order_status" id="order_status">
+          <option
+            value="Open Order"
+            {{ "selected" if order_data.order_status == "Open Order" else "" }}
+            >Open Order</option
+          >
+          <option
+            value="Missing Item"
+            {{ "selected" if order_data.order_status == "Missing Item" else "" }}
+            >Missing Item</option
+          >
+          <option
+            value="Done"
+            {{ "selected" if order_data.order_status == "Done" else "" }}
+            >Done</option
+          >
+        </select>
+      </div>
+
+      <!-- ======== ACTION ROW: Buttons stay on one line on desktop ======== -->
+      <div class="action-row">
+        <!-- Left group: Update, Export, PDF Files ▼ -->
+        <div class="btn-group">
+          <button type="submit" class="button data-english">
+            <span class="button-text">Update Order</span>
+            <i class="fas fa-spinner fa-spin loading-spinner" style="display: none;"></i>
+          </button>
+          <button type="button" class="button data-english" onclick="exportToPDF();">
+            Export to PDF
+          </button>
+          <div class="dropdown">
+            <button class="dropdown‐button small data-english">PDF Files ▼</button>
+            <div class="dropdown‐content">
+              <a href="https://inventory.orcagroup.io:5023/order_file/{{ order_data.order_id }}_Internal.pdf" target="_blank">Internal (English)</a>
+              <a href="https://inventory.orcagroup.io:5023/order_file/{{ order_data.order_id }}_Internal_Chinese.pdf" target="_blank">Internal (Chinese)</a>
+              <a href="https://inventory.orcagroup.io:5023/order_file/{{ order_data.order_id }}_External.pdf" target="_blank">External (English)</a>
+              <a href="https://inventory.orcagroup.io:5023/order_file/{{ order_data.order_id }}_External_Chinese.pdf" target="_blank">External (Chinese)</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center group: View Receipt, View Quote -->
+        <div class="btn-group">
+          {% if order_data.supplier_receipt %}
+          <button
+            type="button"
+            class="button data-english small"
+            onclick="window.open('{{ order_data.supplier_receipt }}', '_blank')"
+          >
+            View Receipt
+          </button>
+          {% endif %}
+          {% if order_data.supplier_order_file %}
+          <button
+            type="button"
+            class="button data-english small"
+            onclick="window.open('{{ order_data.supplier_order_file }}', '_blank')"
+          >
+            View Quote
+          </button>
+          {% endif %}
+        </div>
+
+        <!-- Right group: Edit/Add Files -->
+        <div class="btn-group">
+          {% if order_data.supplier_receipt %}
+          <button
+            type="button"
+            class="button data-english small"
+            onclick="document.getElementById('receipt').click();"
+          >
+            Edit Receipt
+          </button>
+          {% else %}
+          <button
+            type="button"
+            class="button data-english small"
+            onclick="document.getElementById('receipt').click();"
+          >
+            Add Receipt
+          </button>
+          {% endif %}
+          <input
+            type="file"
+            name="receipt"
+            id="receipt"
+            accept="application/pdf"
+            style="display: none;"
+          />
+
+          {% if order_data.supplier_order_file %}
+          <button
+            type="button"
+            class="button data-english small"
+            onclick="document.getElementById('order_file').click();"
+          >
+            Edit Quote File
+          </button>
+          {% else %}
+          <button
+            type="button"
+            class="button data-english small"
+            onclick="document.getElementById('order_file').click();"
+          >
+            Add Quote File
+          </button>
+          {% endif %}
+          <input
+            type="file"
+            name="order_file"
+            id="order_file"
+            accept="application/pdf"
+            style="display: none;"
+          />
+
+          {% if other_files|length > 0 %}
+          <button
+            type="button"
+            class="button data-english small"
+            onclick="document.getElementById('other_file').click();"
+            id="addOtherFileBtn"
+          >
+            Edit Other File
+          </button>
+          {% else %}
+          <button
+            type="button"
+            class="button data-english small"
+            onclick="document.getElementById('other_file').click();"
+            id="addOtherFileBtn"
+          >
+            Add Other File
+          </button>
+          {% endif %}
+          <input
+            type="file"
+            name="other_file[]"
+            id="other_file"
+            accept="application/pdf"
+            style="display: none;"
+            multiple
+          />
+          <div class="dropdown‐content" id="fileDropdown" style="display: none;"></div>
+        </div>
+      </div>
+      <!-- ===== END ACTION ROW ===== -->
+
+      <!-- ITEMS TABLE -->
+      <div class="table-responsive">
+        <table id="prelisted-items-table">
+          <thead>
+            <tr>
+              <th>
+                <div class="col data-english">SKU Number</div>
+                <div class="col data-mandarin" style="display: none;">SKU编号</div>
+              </th>
+              <th>
+                <div class="col data-english">Supplier SKU Number</div>
+                <div class="col data-mandarin" style="display: none;">供应商 SKU 编号</div>
+              </th>
+              <th>
+                <div class="col data-english">Description</div>
+                <div class="col data-mandarin" style="display: none;">描述</div>
+              </th>
+              <th>
+                <div class="col data-english">Price</div>
+                <div class="col data-mandarin" style="display: none;">价格</div>
+              </th>
+              <th>
+                <div class="col data-english">Quantity Requested</div>
+                <div class="col data-mandarin" style="display: none;">请求数量</div>
+              </th>
+              <th>
+                <div class="col data-english">Actual Price</div>
+                <div class="col data-mandarin" style="display: none;">实际价格</div>
+              </th>
+              <th>
+                <div class="col data-english">Quantity Confirmed</div>
+                <div class="col data-mandarin" style="display: none;">确认数量</div>
+              </th>
+              <th>
+                <div class="col data-english">Notes</div>
+                <div class="col data-mandarin" style="display: none;">备注</div>
+              </th>
+              <th>
+                <div class="col data-english">Image</div>
+                <div class="col data-mandarin" style="display: none;">图片</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="prelisted-items">
+            {% for item in order_history_data %}
+            <tr>
+              <td data-label="SKU Number">{{ item.material_id }}</td>
+              <td data-label="Supplier SKU Number">{{ item.internet_sku_number }}</td>
+              <td data-label="Description">
+                <div
+                  class="data-english"
+                  style="width: 200px; white-space: normal;"
+                >
+                  {{ item.item_desc }}
+                </div>
+                <div
+                  class="data-mandarin"
+                  style="width: 200px; white-space: normal; display: none;"
+                >
+                  {{ item.item_desc_mandarin }}
+                </div>
+              </td>
+              <td data-label="Price">{{ item.item_price }}</td>
+              <td data-label="Quantity Requested">{{ item.order_qty_requested }}</td>
+
+              <!-- Actual Price input field -->
+              <td data-label="Actual Price">
+                <input
+                  type="number"
+                  name="items[{{ item.internet_sku_number }}][actual_item_price]"
+                  value="{{ item.actual_item_price or 0 }}"
+                  step="0.01"
+                  style="width: 60px; text-align: center; font-size: 0.9em; padding: 4px; border: 1px solid #ccc;"
+                />
+              </td>
+
+              <!-- Quantity Confirmed input field -->
+              <td data-label="Quantity Confirmed">
+                <input
+                  type="number"
+                  name="items[{{ item.internet_sku_number }}][order_qty_confirmed]"
+                  value="{{ item.order_qty_confirmed or 0 }}"
+                  style="width: 50px; text-align: center; font-size: 0.9em; padding: 4px; border: 1px solid #ccc;"
+                />
+              </td>
+
+              <!-- Notes input field -->
+              <td data-label="Notes">
+                <textarea
+                  name="items[{{ item.internet_sku_number }}][notes]"
+                  style="width: 100%; height: 50px; font-size: 0.9em; padding: 4px; border: 1px solid #ccc; resize: none;"
+                >{{ item.notes }}</textarea>
+              </td>
+
+              <!-- Image field -->
+              <td data-label="Image">
+                <img
+                  src="{{ item.item_image }}"
+                  width="100"
+                  height="100"
+                  alt="Item Image"
+                />
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </form>
+  </div>
+
+  <!-- Lightbox (hidden by default; to preview images) -->
+  <div
+    id="lightbox"
+    style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    "
+    onclick="closeLightbox()"
+  >
+    <span
+      id="close-lightbox"
+      style="
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 2em;
+        color: white;
+        cursor: pointer;
+      "
+      >&times;</span
+    >
+    <img
+      id="lightbox-image"
+      src=""
+      alt="Full-Size Image"
+      style="max-width: 90%; max-height: 90%; border-radius: 5px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);"
+    />
+  </div>
+
+  <!-- jQuery & DataTables (for sorting on desktop/tablet) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script
+    type="text/javascript"
+    src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"
+  ></script>
+  <script>
+    $(document).ready(function () {
+      $('#prelisted-items-table').DataTable({
+        responsive: true,
+        paging: false,
+        searching: false,
+        info: false,
+      });
+    });
+  </script>
+
+  <!-- html2canvas & jsPDF (for PDF export) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+  <script>
+    /* ===============================
+       Confirm Submit & Show Spinner
+       =============================== */
+    function showLoading() {
+      // Disable all .button to prevent multiple clicks
+      const buttons = document.querySelectorAll('.button');
+      buttons.forEach((btn) => {
+        btn.disabled = true;
+      });
+      // Hide button text, show spinner icon
+      const buttonTexts = document.querySelectorAll('.button-text');
+      const spinners = document.querySelectorAll('.loading-spinner');
+      buttonTexts.forEach((text) => (text.style.display = 'none'));
+      spinners.forEach((spinner) => (spinner.style.display = 'inline-block'));
+    }
+
+    function confirmSubmit() {
+      if (confirm('Are you sure you want to update the order?')) {
+        showLoading();
+        return true;
+      }
+      return false;
+    }
+
+    /* ===============================
+       Language Toggle (English/Chinese)
+       =============================== */
+    function updateDescriptions() {
+      const language = document.getElementById('languageSelect').value;
+      localStorage.setItem('selectedLanguage', language);
+
+      const englishElements = document.querySelectorAll('.data-english');
+      const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+      if (language === 'english') {
+        englishElements.forEach((el) => (el.style.display = 'block'));
+        mandarinElements.forEach((el) => (el.style.display = 'none'));
+      } else {
+        englishElements.forEach((el) => (el.style.display = 'none'));
+        mandarinElements.forEach((el) => (el.style.display = 'block'));
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedLanguage = localStorage.getItem('selectedLanguage');
+      if (savedLanguage) {
+        document.getElementById('languageSelect').value = savedLanguage;
+        updateDescriptions();
+      }
+    });
+
+    /* ===============================
+       File Upload Dropdown Logic
+       =============================== */
+    const addOtherFileBtn = document.getElementById('addOtherFileBtn');
+    const otherFileInput = document.getElementById('other_file');
+    const fileDropdown = document.getElementById('fileDropdown');
+
+    if (otherFileInput) {
+      otherFileInput.addEventListener('change', () => {
+        const files = otherFileInput.files;
+        fileDropdown.innerHTML = ''; // Clear old list
+        if (!files.length) {
+          fileDropdown.style.display = 'none';
+          return;
+        }
+        // Show the dropdown
+        fileDropdown.style.display = 'block';
+        Array.from(files).forEach((file, idx) => {
+          const fileItem = document.createElement('div');
+          fileItem.className = 'file-list-item';
+          const fileLink = document.createElement('a');
+          fileLink.href = URL.createObjectURL(file);
+          fileLink.target = '_blank';
+          fileLink.textContent = `${idx + 1}. ${file.name}`;
+          fileItem.appendChild(fileLink);
+          fileDropdown.appendChild(fileItem);
+        });
+      });
+    }
+
+    if (addOtherFileBtn) {
+      addOtherFileBtn.addEventListener('mouseenter', () => {
+        if (fileDropdown.innerHTML.trim() !== '') {
+          fileDropdown.style.display = 'block';
+        }
+      });
+      addOtherFileBtn.addEventListener('mouseleave', () => {
+        fileDropdown.style.display = 'none';
+      });
+    }
+    if (fileDropdown) {
+      fileDropdown.addEventListener('mouseenter', () => {
+        fileDropdown.style.display = 'block';
+      });
+      fileDropdown.addEventListener('mouseleave', () => {
+        fileDropdown.style.display = 'none';
+      });
+    }
+
+    /* ===============================
+       Update Total Amount When Fields Change
+       =============================== */
+    function updateTotal() {
+      const rows = document.querySelectorAll('#prelisted-items-table tbody tr');
+      let totalAmount = 0;
+
+      rows.forEach((row) => {
+        const priceCell = row.querySelector('td:nth-child(4)');
+        const qtyCell = row.querySelector('td:nth-child(5)');
+
+        const actPriceInput = row.querySelector('td:nth-child(6) input');
+        const qtyConfInput = row.querySelector('td:nth-child(7) input');
+
+        let price = 0,
+          qty = 0;
+        if (actPriceInput) {
+          price = parseFloat(actPriceInput.value) || 0;
+        } else if (priceCell) {
+          price = parseFloat(priceCell.textContent) || 0;
+        }
+
+        if (qtyConfInput) {
+          qty = parseInt(qtyConfInput.value) || 0;
+        } else if (qtyCell) {
+          qty = parseInt(qtyCell.textContent) || 0;
+        }
+
+        totalAmount += price * qty;
+      });
+
+      const totalField = document.getElementById('total-amount');
+      if (totalField) {
+        totalField.value = totalAmount.toFixed(2);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateTotal();
+      const rows = document.querySelectorAll('#prelisted-items-table tbody tr');
+      rows.forEach((row) => {
+        const actPriceInput = row.querySelector('td:nth-child(6) input');
+        const qtyConfInput = row.querySelector('td:nth-child(7) input');
+        if (actPriceInput) actPriceInput.addEventListener('input', updateTotal);
+        if (qtyConfInput) qtyConfInput.addEventListener('input', updateTotal);
+      });
+    });
+
+    /* ===============================
+       Utilities for PDF Export
+       =============================== */
+    async function arrayBufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      const chunkSize = 1024;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+      }
+      return btoa(binary);
+    }
+
+    async function exportToPDF() {
+      updateTotal();
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const orderName = "{{ order_data.order_name }}";
+      const orderId = "{{ order_data.supplier_order_number }}";
+      const rawOrderDate = "{{ order_data.order_date }}";
+      const orderIdPdf = "{{ order_data.order_id }}";
+      const orderDate = new Date(rawOrderDate).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const totalAmount = document.getElementById('total-amount').value;
+
+      doc.setFontSize(16);
+      doc.text(`Order Date: ${orderDate}`, 10, 10);
+      doc.text(`Order Name: ${orderName}`, 10, 20);
+      doc.text(`Order Number: ${orderId}`, 10, 30);
+      doc.text(`Total Amount: $${totalAmount}`, 10, 40);
+
+      const rows = [];
+      const rows_chinese = [];
+      const rows_external = [];
+      const rows_externalChinese = [];
+      const imagePositions = [];
+
+      document.querySelectorAll('#prelisted-items-table tbody tr').forEach((row, idx) => {
+        const cells = row.querySelectorAll('td');
+        const sku_number = cells[0].textContent.trim();
+        const internet_sku_number = cells[1].textContent.trim();
+        const description = cells[2].querySelector('.data-english').textContent.trim();
+        const description_chinese = cells[2].querySelector('.data-mandarin').textContent.trim();
+        const price = parseFloat(cells[3].textContent) || 0;
+        const quantity = parseFloat(cells[4].textContent) || 0;
+        const total_per_sku = parseFloat((price * quantity).toFixed(2));
+        const image = cells[8].querySelector('img');
+
+        rows.push([sku_number, internet_sku_number, description, price, quantity, total_per_sku]);
+        rows_chinese.push([
+          sku_number,
+          internet_sku_number,
+          description_chinese,
+          price,
+          quantity,
+          total_per_sku,
+        ]);
+        rows_external.push([sku_number, internet_sku_number, description, quantity]);
+        rows_externalChinese.push([sku_number, internet_sku_number, description_chinese, quantity]);
+
+        if (image) {
+          imagePositions.push({ src: image.src, index: idx });
+        }
+      });
+
+      // Internal PDF (English)
+      doc.autoTable({
+        head: [['SKU Number', 'Internet SKU Number', 'Description', 'Price', 'Quantity', 'Total Amount', 'Image']],
+        body: rows,
+        startY: 50,
+        didDrawCell: (data) => {
+          if (data.section === 'body' && data.column.index === 6) {
+            const imgInfo = imagePositions.find((i) => i.index === data.row.index);
+            if (imgInfo) {
+              const { cell } = data;
+              doc.addImage(imgInfo.src, 'JPEG', cell.x + 2, cell.y + 2, cell.width - 4, cell.height - 4);
+            }
+          }
+        },
+      });
+      doc.save(`${orderId}_Internal.pdf`);
+      const internalBlob = doc.output('blob');
+      await uploadPDF(internalBlob, `${orderIdPdf}_Internal.pdf`);
+
+      // External PDF (English)
+      const externalDoc = new jsPDF();
+      externalDoc.setFontSize(16);
+      externalDoc.text(`Order Date: ${orderDate}`, 10, 10);
+      externalDoc.text(`Order Name: ${orderName}`, 10, 20);
+      externalDoc.text(`Order Number: ${orderId}`, 10, 30);
+
+      externalDoc.autoTable({
+        head: [['SKU Number', 'Internet SKU Number', 'Description', 'Quantity', 'Image']],
+        body: rows_external,
+        startY: 50,
+        didDrawCell: (data) => {
+          if (data.section === 'body' && data.column.index === 4) {
+            const imgInfo = imagePositions.find((i) => i.index === data.row.index);
+            if (imgInfo) {
+              const { cell } = data;
+              externalDoc.addImage(imgInfo.src, 'JPEG', cell.x + 2, cell.y + 2, cell.width - 4, cell.height - 4);
+            }
+          }
+        },
+      });
+      externalDoc.save(`${orderId}_External.pdf`);
+      const externalBlob = externalDoc.output('blob');
+      await uploadPDF(externalBlob, `${orderIdPdf}_External.pdf`);
+
+      // Internal Chinese PDF
+      const internalChDoc = new jsPDF();
+      const fontUrl = 'https://inventory.orcagroup.io:5023/font/NotoSansSC-Regular.ttf';
+      const fontResp = await fetch(fontUrl);
+      if (!fontResp.ok) throw new Error(`Failed to fetch font: ${fontResp.statusText}`);
+      const fontArr = await fontResp.arrayBuffer();
+      const b64Font = await arrayBufferToBase64(fontArr);
+
+      internalChDoc.addFileToVFS('NotoSansSC.ttf', b64Font);
+      internalChDoc.addFont('NotoSansSC.ttf', 'NotoSansSC', 'normal');
+      internalChDoc.setFont('NotoSansSC');
+      internalChDoc.setFontSize(16);
+      internalChDoc.text(`订单日期: ${orderDate}`, 10, 10);
+      internalChDoc.text(`订单名称: ${orderName}`, 10, 20);
+      internalChDoc.text(`订单编号: ${orderId}`, 10, 30);
+      internalChDoc.text(`总金额: $${totalAmount}`, 10, 40);
+
+      internalChDoc.autoTable({
+        head: [['SKU编号', '互联网SKU编号', '描述', '价格', '数量', '总金额', '图片']],
+        body: rows_chinese,
+        startY: 50,
+        styles: { font: 'NotoSansSC', fontSize: 10 },
+        didDrawCell: (data) => {
+          if (data.section === 'body' && data.column.index === 6) {
+            const imgInfo = imagePositions.find((i) => i.index === data.row.index);
+            if (imgInfo) {
+              const { cell } = data;
+              internalChDoc.addImage(imgInfo.src, 'JPEG', cell.x + 2, cell.y + 2, cell.width - 4, cell.height - 4);
+            }
+          }
+        },
+      });
+      internalChDoc.save(`${orderId}_Internal_Chinese.pdf`);
+      const internalChBlob = internalChDoc.output('blob');
+      await uploadPDF(internalChBlob, `${orderIdPdf}_Internal_Chinese.pdf`);
+
+      // External Chinese PDF
+      const externalChDoc = new jsPDF();
+      externalChDoc.addFileToVFS('NotoSansSC.ttf', b64Font);
+      externalChDoc.addFont('NotoSansSC.ttf', 'NotoSansSC', 'normal');
+      externalChDoc.setFont('NotoSansSC');
+      externalChDoc.setFontSize(16);
+      externalChDoc.text(`订单日期: ${orderDate}`, 10, 10);
+      externalChDoc.text(`订单名称: ${orderName}`, 10, 20);
+      externalChDoc.text(`订单编号: ${orderId}`, 10, 30);
+
+      externalChDoc.autoTable({
+        head: [['SKU编号', '互联网SKU编号', '描述', '数量', '图片']],
+        body: rows_externalChinese,
+        startY: 50,
+        styles: { font: 'NotoSansSC', fontSize: 10 },
+        didDrawCell: (data) => {
+          if (data.section === 'body' && data.column.index === 4) {
+            const imgInfo = imagePositions.find((i) => i.index === data.row.index);
+            if (imgInfo) {
+              const { cell } = data;
+              externalChDoc.addImage(imgInfo.src, 'JPEG', cell.x + 2, cell.y + 2, cell.width - 4, cell.height - 4);
+            }
+          }
+        },
+      });
+      externalChDoc.save(`${orderId}_External_Chinese.pdf`);
+      const externalChBlob = externalChDoc.output('blob');
+      await uploadPDF(externalChBlob, `${orderIdPdf}_External_Chinese.pdf`);
+
+      alert('Export complete!');
+    }
+
+    /* ===============================
+       Upload PDF Helper
+       ============================ */    
+    async function uploadPDF(pdfBlob, fileName) {
+      const formData = new FormData();
+      formData.append('file', pdfBlob, fileName);
+      try {
+        const response = await fetch('/upload_order_pdf', {
+          method: 'POST',
+          body: formData,
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to upload ${fileName}: ${response.statusText}`);
+        }
+        console.log(`${fileName} uploaded successfully.`);
+      } catch (err) {
+        console.error(`Error uploading ${fileName}:`, err);
+      }
+    }
+
+    /* ===============================
+       Lightbox Open/Close Logic
+       ============================ */
+    function openLightbox(imageUrl) {
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImage = document.getElementById('lightbox-image');
+      lightboxImage.src = imageUrl;
+      lightbox.style.display = 'flex';
+    }
+    function closeLightbox() {
+      const lightbox = document.getElementById('lightbox');
+      lightbox.style.display = 'none';
+      document.getElementById('lightbox-image').src = '';
+    }
+  </script>
+</body>
+</html>

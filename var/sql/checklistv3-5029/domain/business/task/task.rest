@@ -1,0 +1,77 @@
+### RESTFUL ###
+
+### index
+GET http://localhost:5030/api/v1/tasks
+
+### create
+POST http://localhost:5030/api/v1/tasks
+Content-Type: application/json
+
+{ "project_id": 1, "name_en": "task Name" }
+
+### show
+GET http://localhost:5030/api/v1/tasks/10
+
+### patch
+PUT http://localhost:5030/api/v1/tasks/10
+Content-Type: application/json
+
+{ "name_en": "Renamed task name" }
+
+### Delete one
+DELETE http://localhost:5030/api/v1/tasks/10
+
+
+### USER DELEGATIONS ###
+
+### index
+GET http://localhost:5030/api/v1/tasks/10/users
+
+### create
+POST http://localhost:5030/api/v1/tasks/10/users
+Content-Type: application/json
+
+{ "userId": 25 }
+
+### delete
+DELETE http://localhost:5030/api/v1/tasks/10/users
+Content-Type: application/json
+
+{ "userId": 25 }
+
+
+### DYNAMIC FIELDS ###
+
+### index
+GET http://localhost:5030/api/v1/tasks/10/fields
+
+### create
+POST http://localhost:5030/api/v1/tasks/10/fields
+Content-Type: application/json
+
+{ "label_en": "Dynamic field name", "value": {"type": "text", "content": "text content" } }
+
+### delete
+DELETE http://localhost:5030/api/v1/tasks/10/fields
+Content-Type: application/json
+
+{ "fieldId": 9 }
+
+
+
+### ENTITY RELATIONS ###
+# GET http://localhost:5030/api/v1/tasks/2/blockers
+# GET http://localhost:5030/api/v1/tasks/2/blocking
+GET http://localhost:5030/api/v1/tasks/3/relations
+
+### create
+POST http://localhost:5030/api/v1/tasks/2/blockers
+Content-Type: application/json
+
+{ "blocker": 3 }
+
+### delete
+DELETE http://localhost:5030/api/v1/tasks/3/blockers
+Content-Type: application/json
+
+{ "blocker": 2 }

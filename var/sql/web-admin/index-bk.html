@@ -1,0 +1,490 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Inventory MVP</title>
+    <style>
+      :root{
+        --bg:#f6f8fc;
+        --card:#ffffff;
+        --text:#0f172a;
+        --muted:#64748b;
+        --line:#e6edf7;
+        --pill:#f7f9ff;
+        --pill-line:#dbe6fb;
+        --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        --radius:16px;
+      }
+      *{ box-sizing:border-box; }
+      body{
+        margin:0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        color:var(--text);
+        background:var(--bg);
+      }
+      .wrap{ max-width:1200px; margin:28px auto 60px; padding:0 18px; }
+      .topbar{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+      .kicker{ color:var(--muted); font-size:14px; margin-bottom:6px; }
+      h1{ margin:0 0 10px 0; font-size:30px; letter-spacing:-0.02em; }
+      .chips{ display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
+      .chip{
+        font-size:13px; color:#334155;
+        background:var(--card);
+        border:1px solid var(--line);
+        border-radius:999px;
+        padding:6px 10px;
+        box-shadow: 0 1px 0 rgba(15,23,42,0.02);
+      }
+
+      .actions{ display:flex; align-items:center; gap:12px; }
+      .toggle{
+        display:flex; background:#0b1220; border-radius:999px; padding:4px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+      }
+      .toggle button{
+        border:0; cursor:pointer;
+        padding:8px 14px; border-radius:999px;
+        background:transparent; color:#cbd5e1; font-weight:600; font-size:14px;
+      }
+      /* For the mock, both look "on" */
+      .toggle button.active{
+        background:#ffffff; color:#0b1220;
+      }
+
+      .btn{
+        display:inline-flex; align-items:center; gap:10px;
+        padding:10px 14px;
+        border-radius:12px;
+        border:1px solid #0b1220;
+        background:#0b1220;
+        color:#fff; cursor:pointer;
+        font-weight:650; font-size:14px;
+      }
+      .btn svg{ width:16px; height:16px; }
+
+      .toolbar{
+        display:flex; gap:14px; margin-top:18px;
+        align-items:center; justify-content:space-between;
+      }
+      .search{
+        flex:1;
+        display:flex; align-items:center; gap:10px;
+        background:#fff; border:1px solid var(--line);
+        border-radius:999px; padding:12px 14px;
+        box-shadow: 0 2px 16px rgba(15,23,42,0.05);
+      }
+      .search input{
+        border:0; outline:0; width:100%;
+        font-size:15px; background:transparent; color:var(--text);
+      }
+      .sortCard{
+        width:330px;
+        display:flex; align-items:center; justify-content:space-between;
+        background:#fff; border:1px solid var(--line);
+        border-radius:16px; padding:12px 14px;
+        box-shadow: 0 2px 16px rgba(15,23,42,0.05);
+      }
+      .sortCard .label{ color:var(--muted); font-weight:650; font-size:14px; }
+      .sortBtn{
+        display:flex; align-items:center; gap:10px;
+        background:#fff;
+        border:1px solid var(--line);
+        border-radius:14px;
+        padding:10px 12px;
+        font-weight:650;
+        cursor:pointer;
+      }
+      .sortBtn span{ color:var(--muted); font-weight:650; font-size:13px; }
+      .sortBtn strong{ font-size:14px; }
+
+      .card{
+        margin-top:16px;
+        background:var(--card);
+        border:1px solid var(--line);
+        border-radius:20px;
+        box-shadow: var(--shadow);
+        overflow:hidden;
+      }
+      .cardHeader{
+        padding:18px 18px 12px 18px;
+        display:flex; justify-content:space-between; align-items:center;
+        border-bottom:1px solid var(--line);
+      }
+      .cardHeader h2{ margin:0; font-size:18px; }
+      .cardHeader p{ margin:6px 0 0 0; color:var(--muted); font-size:14px; }
+      .tip{ color:var(--muted); font-size:13px; }
+
+      table{ width:100%; border-collapse:separate; border-spacing:0; }
+      thead th{
+        text-align:left;
+        font-size:12px;
+        letter-spacing:0.09em;
+        color:#475569;
+        padding:14px 18px;
+        background:#f8fbff;
+        border-bottom:1px solid var(--line);
+      }
+      tbody td{
+        padding:12px 18px;
+        border-bottom:1px solid var(--line);
+        vertical-align:middle;
+      }
+
+      .imgCell{
+        display:flex; align-items:center; gap:10px;
+      }
+      .thumb{
+        width:48px; height:48px;
+        border-radius:12px;
+        background:#eef2ff;
+        border:1px solid var(--line);
+        display:flex; align-items:center; justify-content:center;
+        overflow:hidden;
+      }
+      .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+      .miniBtn{
+        display:inline-flex; align-items:center; gap:8px;
+        padding:8px 12px;
+        border-radius:14px;
+        border:1px solid var(--line);
+        background:#fff;
+        cursor:pointer;
+        font-weight:650;
+      }
+      .miniBtn.primary{
+        background:#0b1220; border-color:#0b1220; color:#fff;
+      }
+      .miniBtn svg{ width:14px; height:14px; }
+
+      .pill{
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        background:var(--pill);
+        border:1px solid var(--pill-line);
+        color:#0f172a;
+        border-radius:999px;
+        padding:8px 12px;
+        font-size:14px;
+        max-width: 240px;
+      }
+      .pill.mono{ font-variant-numeric: tabular-nums; }
+      .pill.trunc{
+        overflow:hidden;
+        white-space:nowrap;
+        text-overflow:ellipsis;
+      }
+
+      .updatedCell{
+        color:#0f172a;
+        font-weight:650;
+      }
+      .mutedNote{ color:var(--muted); font-size:13px; line-height:1.3; }
+      .foot{
+        padding:14px 18px;
+        display:flex; justify-content:space-between; align-items:center;
+        color:var(--muted);
+        font-size:13px;
+      }
+
+      @media (max-width: 980px){
+        .sortCard{ display:none; }
+        thead{ display:none; }
+        table, tbody, tr, td{ display:block; width:100%; }
+        tbody td{ border-bottom:0; padding:10px 16px; }
+        tbody tr{ border-bottom:1px solid var(--line); padding:8px 0; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <div class="topbar">
+        <div>
+          <div class="kicker">Inventory MVP</div>
+          <h1>App + Web UI Mock (for screenshots)</h1>
+          <div class="chips">
+            <div class="chip">CSV import</div>
+            <div class="chip">Fast image attach</div>
+            <div class="chip">Qty on hand + updated timestamp</div>
+            <div class="chip">Sort by updated date</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <div class="toggle" aria-label="view toggle">
+            <button class="active" type="button">App</button>
+            <button class="active" type="button">Web</button>
+          </div>
+
+          <button id="uploadCsvBtn" class="btn" type="button" title="Upload CSV">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            </svg>
+            Upload CSV
+          </button>
+          <input id="csvFile" type="file" accept=".csv" style="display:none" />
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="width:18px;height:18px">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="M21 21l-4.3-4.3"></path>
+          </svg>
+          <input id="search" placeholder="Search by item, supplier, ID..." />
+        </div>
+
+        <div class="sortCard">
+          <div class="label">Sort</div>
+          <button id="sortBtn" class="sortBtn" type="button">
+            <span>⇅</span>
+            <strong>Updated date</strong>
+            <span id="sortState">On</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cardHeader">
+          <div>
+            <h2>Web view</h2>
+            <p>More controls + full table columns (admin-ish).</p>
+          </div>
+          <div class="tip">Tip: for screenshots, zoom your browser to 110–125%.</div>
+        </div>
+
+        <div style="overflow:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:200px;">IMG</th>
+                <th style="width:110px;">ITEM ID</th>
+                <th style="width:180px;">SUPPLIER</th>
+                <th style="width:180px;">NAME (EN)</th>
+                <th style="width:180px;">NAME (CN)</th>
+                <th style="width:150px;">QTY ORDERED</th>
+                <th style="width:150px;">QTY ON HAND</th>
+                <th style="width:220px;">UPDATED</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="foot">
+          <div>MVP note: real build should support <b>CSV upsert</b> and should not overwrite existing images on import.</div>
+          <div>(This is a mock — no persistence styling changes required.)</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tbody = document.getElementById("tbody");
+      const searchInput = document.getElementById("search");
+      const uploadCsvBtn = document.getElementById("uploadCsvBtn");
+      const csvFile = document.getElementById("csvFile");
+      const sortBtn = document.getElementById("sortBtn");
+      const sortState = document.getElementById("sortState");
+
+      let items = [];
+      let sortByUpdated = true;
+
+      function shortId(uuid) {
+        if (!uuid) return "—";
+        return uuid.length > 10 ? uuid.slice(0, 8).toUpperCase() : uuid;
+      }
+
+      function fmtDate(s) {
+        if (!s) return "—";
+        const d = new Date(s);
+        if (isNaN(d.getTime())) return "—";
+        return d.toLocaleString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function iconUpload() {
+        return `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          </svg>
+        `;
+      }
+
+      async function loadItems() {
+        const res = await fetch("/api/items");
+        const data = await res.json();
+        items = Array.isArray(data) ? data : [];
+        render();
+      }
+
+      function getFilteredSorted() {
+        const q = (searchInput.value || "").trim().toLowerCase();
+        let list = items;
+
+        if (q) {
+          list = list.filter((it) => {
+            const id = (it.item_id || "").toLowerCase();
+            const supplier = (it.supplier || "").toLowerCase();
+            const en = (it.item_name_english || "").toLowerCase();
+            const cn = (it.item_name_chinese || "").toLowerCase();
+            return id.includes(q) || supplier.includes(q) || en.includes(q) || cn.includes(q);
+          });
+        }
+
+        if (sortByUpdated) {
+          list = [...list].sort((a, b) => {
+            const da = a.on_hand_quantity_updated_date ? new Date(a.on_hand_quantity_updated_date).getTime() : 0;
+            const db = b.on_hand_quantity_updated_date ? new Date(b.on_hand_quantity_updated_date).getTime() : 0;
+            return db - da;
+          });
+        }
+
+        return list;
+      }
+
+      function render() {
+        const list = getFilteredSorted();
+        tbody.innerHTML = "";
+
+        list.forEach((it) => {
+          const tr = document.createElement("tr");
+
+          // IMG cell
+          const imgTd = document.createElement("td");
+          const imgWrap = document.createElement("div");
+          imgWrap.className = "imgCell";
+
+          const thumb = document.createElement("div");
+          thumb.className = "thumb";
+          if (it.image_url) {
+            const im = document.createElement("img");
+            im.src = it.image_url;
+            im.alt = "item image";
+            thumb.appendChild(im);
+          } else {
+            thumb.innerHTML = `
+              <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="width:18px;height:18px">
+                <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+                <path d="M7 14l3-3 4 4 3-3 3 3"></path>
+                <circle cx="9" cy="9" r="1"></circle>
+              </svg>
+            `;
+          }
+
+          const file = document.createElement("input");
+          file.type = "file";
+          file.accept = "image/*";
+          file.style.display = "none";
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "miniBtn " + (it.image_url ? "" : "primary");
+          btn.innerHTML = `${iconUpload()} ${it.image_url ? "Change" : "Add"}`;
+          btn.onclick = () => file.click();
+
+          file.onchange = async () => {
+            if (!file.files || !file.files[0]) return;
+            const fd = new FormData();
+            fd.append("image", file.files[0]);
+
+            btn.disabled = true;
+            btn.style.opacity = "0.7";
+
+            const r = await fetch(`/api/items/${it.item_id}/image`, { method: "POST", body: fd });
+            const out = await r.json();
+
+            btn.disabled = false;
+            btn.style.opacity = "1";
+
+            if (!r.ok) return alert(out.error || "Upload failed");
+            await loadItems();
+          };
+
+          imgWrap.appendChild(thumb);
+          imgWrap.appendChild(btn);
+          imgWrap.appendChild(file);
+          imgTd.appendChild(imgWrap);
+
+          const idTd = document.createElement("td");
+          idTd.innerHTML = `<span class="pill mono">${shortId(it.item_id)}</span>`;
+
+          const supplierTd = document.createElement("td");
+          supplierTd.innerHTML = `<span class="pill trunc" title="${it.supplier || ""}">${it.supplier || "—"}</span>`;
+
+          const enTd = document.createElement("td");
+          enTd.innerHTML = `<span class="pill trunc" title="${it.item_name_english || ""}">${it.item_name_english || "—"}</span>`;
+
+          const cnTd = document.createElement("td");
+          cnTd.innerHTML = `<span class="pill trunc" title="${it.item_name_chinese || ""}">${it.item_name_chinese || "—"}</span>`;
+
+          const qoTd = document.createElement("td");
+          qoTd.innerHTML = `<span class="pill mono">${(it.quantity_ordered ?? "—")}</span>`;
+
+          const qhTd = document.createElement("td");
+          qhTd.innerHTML = `<span class="pill mono">${(it.quantity_on_hand ?? "—")}</span>`;
+
+          const updTd = document.createElement("td");
+          updTd.innerHTML = `<div class="updatedCell">${fmtDate(it.on_hand_quantity_updated_date)}</div>
+                             <div class="mutedNote">auto<br/>timestamps</div>`;
+
+          tr.appendChild(imgTd);
+          tr.appendChild(idTd);
+          tr.appendChild(supplierTd);
+          tr.appendChild(enTd);
+          tr.appendChild(cnTd);
+          tr.appendChild(qoTd);
+          tr.appendChild(qhTd);
+          tr.appendChild(updTd);
+
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Upload CSV button -> file picker -> POST /api/upload-csv
+      uploadCsvBtn.onclick = () => csvFile.click();
+
+      csvFile.onchange = async () => {
+        const f = csvFile.files?.[0];
+        if (!f) return;
+
+        const fd = new FormData();
+        fd.append("file", f);
+
+        uploadCsvBtn.disabled = true;
+        uploadCsvBtn.style.opacity = "0.75";
+
+        const res = await fetch("/api/upload-csv", { method: "POST", body: fd });
+        const out = await res.json();
+
+        uploadCsvBtn.disabled = false;
+        uploadCsvBtn.style.opacity = "1";
+        csvFile.value = "";
+
+        if (!res.ok) return alert(out.error || "CSV upload failed");
+        alert(`OK: ${out.inserted_or_updated} rows inserted/updated`);
+        await loadItems();
+      };
+
+      searchInput.addEventListener("input", render);
+
+      sortBtn.onclick = () => {
+        sortByUpdated = !sortByUpdated;
+        sortState.textContent = sortByUpdated ? "On" : "Off";
+        render();
+      };
+
+      loadItems();
+    </script>
+  </body>
+</html>

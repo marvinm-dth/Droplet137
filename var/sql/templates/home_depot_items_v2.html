@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dragon Tiny Homes: Home Depot Orders</title>
+
+  <!-- ============================
+          BEGIN: Base + Responsive Styles
+  ============================ -->
+  <style>
+    /* ======= Base Page Styles ======= */
+    body {
+      font-family: 'Poppins', sans-serif;
+      text-align: center;
+      background-color: #f8f9fa;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      font-size: 2em;
+      font-weight: 700;
+      color: #343a40;
+      margin-top: 20px;
+    }
+
+    /* Container for everything */
+    .containers {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+      padding: 0 10px;  /* small horizontal padding */
+    }
+
+    /* Header row (home icon, title, logout) */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 10px 0;
+    }
+    .header img {
+      width: 30px;
+      height: 30px;
+      margin-right: 10px;
+    }
+    .header h1 {
+      flex-grow: 1;
+      margin: 0;
+      font-size: 1.8em;
+      text-align: center;
+    }
+    .logout-button {
+      padding: 8px 16px;
+      background-color: #cc716c;
+      color: #fff;
+      font-size: 0.9em;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+    }
+    .logout-button:hover {
+      background-color: #b3534e;
+    }
+
+    /* Top buttons (Add Item, Add Supplier, etc.) */
+    .button-container {
+      text-align: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    .button-container a {
+      margin: 5px;
+    }
+    .add-item,
+    .add-supplier {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+      font-size: 0.9em;
+    }
+    .add-item:hover,
+    .add-supplier:hover {
+      background-color: #218838;
+    }
+
+    /* Language selector and supplier filter */
+    .language-select,
+    .filter-select {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0 10px;
+      margin-bottom: 20px;
+    }
+    .language-select label,
+    .filter-select label {
+      margin-right: 10px;
+      font-weight: 500;
+    }
+    .language-select select,
+    .filter-select select {
+      padding: 6px 10px;
+      font-size: 0.9em;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    .filter-select select {
+      width: 180px;
+    }
+
+    /* Wrap the table so it can scroll horizontally on tablets */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin-bottom: 40px;
+    }
+
+    /* Base table styling */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-size: 0.85em;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+    }
+    th {
+      background-color: #007bff;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.9em;
+      text-align: center;
+    }
+    td {
+      text-align: center;
+      vertical-align: middle;
+      word-break: break-word;
+    }
+    tbody tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    /* Small buttons inside Action column */
+    .update-item,
+    .generate-image {
+      padding: 4px 8px;
+      margin: 2px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: #fff;
+      font-size: 0.8em;
+      transition: background-color 0.3s ease;
+    }
+    .update-item:hover,
+    .generate-image:hover {
+      background-color: #0056b3;
+    }
+
+    /* Thumbnail inside “Image” column */
+    img.item-thumb {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    /* Column‐based classes for mobile labels */
+    td.col-sku,
+    td.col-supplier,
+    td.col-sku-num,
+    td.col-desc,
+    td.col-price,
+    td.col-stock,
+    td.col-image,
+    td.col-action {
+      /* purely for :before injection, no extra styles needed */
+    }
+
+    /* =============================
+        Responsive: Tablets ≤768px
+    ============================= */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.8em;
+      }
+      .add-item,
+      .add-supplier {
+        font-size: 0.85em;
+        padding: 8px 16px;
+      }
+      .logout-button {
+        font-size: 0.85em;
+        padding: 6px 12px;
+      }
+      th, td {
+        padding: 8px;
+        font-size: 0.8em;
+      }
+      table {
+        font-size: 0.8em;
+      }
+      /* Tablet still scrolls horizontally if needed */
+      .table-container {
+        overflow-x: auto;
+      }
+    }
+
+    /* =============================
+        Responsive: Phones ≤480px
+    ============================= */
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.5em;
+      }
+      .add-item,
+      .add-supplier {
+        font-size: 0.8em;
+        padding: 6px 12px;
+      }
+      .logout-button {
+        font-size: 0.8em;
+        padding: 5px 10px;
+      }
+      th, td {
+        padding: 6px;
+        font-size: 0.75em;
+      }
+      table {
+        font-size: 0.75em;
+      }
+
+      /* Convert table into “card” layout on phones */
+      #items-table,
+      #items-table thead,
+      #items-table tbody,
+      #items-table th,
+      #items-table td,
+      #items-table tr {
+        display: block;
+      }
+      /* Hide the original header row */
+      #items-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+      }
+      /* Each <tr> becomes a “card” */
+      #items-table tr {
+        border: 1px solid #ccc;
+        margin-bottom: 1rem;
+        background-color: #fff;
+        padding: 0;
+      }
+      /* Each <td> is a block; label appears above value */
+      #items-table td {
+        position: relative;
+        padding: 8px 10px;
+        border: none;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+        white-space: normal;
+        word-wrap: break-word;
+      }
+      #items-table td:before {
+        display: block;
+        position: relative;
+        left: 0;
+        width: auto;
+        margin-bottom: 4px;
+        font-weight: bold;
+        color: #333;
+        content: "";
+      }
+      /* Injected labels via column‐class */
+      #items-table td.col-sku:before       { content: "SKU Number"; }
+      #items-table td.col-supplier:before  { content: "Supplier"; }
+      #items-table td.col-sku-num:before   { content: "DTH SKU"; }
+      #items-table td.col-desc:before      { content: "Description"; }
+      #items-table td.col-price:before     { content: "Item Price"; }
+      #items-table td.col-stock:before     { content: "Stocks Available"; }
+      #items-table td.col-image:before     { content: "Image"; }
+      #items-table td.col-action:before    { content: "Action"; }
+
+      /* Hide the (last two) keyword columns completely */
+      #items-table td.hidden-keywords,
+      #items-table td.hidden-keywords-ch {
+        display: none !important;
+      }
+
+      /* Shrink the thumbnail in “Image” cell */
+      #items-table td.col-image img {
+        max-width: 40px;
+        max-height: 40px;
+      }
+      /* Make the action buttons narrower on phones */
+      #items-table td.col-action .update-item,
+      #items-table td.col-action .generate-image {
+        font-size: 0.75em;
+        padding: 3px 6px;
+      }
+
+      /* Prevent any horizontal scrolling on the table-container itself */
+      .table-container {
+        overflow-x: hidden;
+      }
+    }
+
+    /* ===== Kanban modal (from second code) ===== */
+    #kanbanModal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+    }
+
+    #kanbanModal .kanban-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    #kanbanModal .kanban-content {
+      position: relative;
+      max-width: 90vw;
+      max-height: 90vh;
+      margin: 5vh auto 0 auto;
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px 16px 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #kanbanModal .kanban-close {
+      position: absolute;
+      top: 6px;
+      right: 10px;
+      border: 0;
+      background: transparent;
+      font-size: 1.6rem;
+      cursor: pointer;
+    }
+
+    #kanbanImg {
+      max-width: 100%;
+      max-height: 80vh;
+      display: none; /* hidden until loaded */
+    }
+
+    .kanban-error {
+      color: #b00020;
+      margin-top: 8px;
+    }
+
+    .kanban-spinner {
+      margin: 30px 0;
+      font-size: 0.95rem;
+    }
+  </style>
+  <!-- ============================
+          END: Base + Responsive Styles
+  ============================ -->
+
+  <!-- ============================
+          BEGIN: DataTables CSS & JS
+  ============================ -->
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css"
+  />
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script
+    type="text/javascript"
+    src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"
+  ></script>
+  <!-- ============================
+          END: DataTables CSS & JS
+  ============================ -->
+
+  <!-- ============================
+          (Optional) html2canvas & QRCode JS
+          Keeping them in case you still need elsewhere,
+          but NOT used for Kanban anymore.
+  ============================ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <!-- ============================
+          END: html2canvas & QRCode JS
+  ============================ -->
+</head>
+<body>
+  <div class="containers">
+    <!-- Header -->
+    <div class="header">
+      <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+        <img src="/static/home-logo.png" alt="Home" loading="lazy" />
+      </a>
+      <h1>Dragon Tiny Homes Items</h1>
+      <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+      <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <!-- Buttons (only for non‐"user" roles) -->
+    {% if user.role != "user" %}
+      <div class="button-container">
+        <a href="{{ url_for('select_supplier') }}" class="add-item">
+          <span class="description data-english">Add Item</span>
+          <span class="description data-mandarin" style="display: none;">添加物品</span>
+        </a>
+        <a href="{{ url_for('add_supplier') }}" class="add-supplier">
+          <span class="description data-english">Add Supplier</span>
+          <span class="description data-mandarin" style="display: none;">添加供应商</span>
+        </a>
+        <a href="{{ url_for('bulk_update') }}" class="add-supplier">
+          <span class="description data-english">Bulk Update Item</span>
+          <span class="description data-mandarin" style="display: none;">批量更新物品</span>
+        </a>
+        <a href="{{ url_for('bulk_upc_update') }}" class="add-supplier">
+          <span class="description data-english">Bulk Update UPC</span>
+          <span class="description data-mandarin" style="display: none;">批量更新UPC</span>
+        </a>
+      </div>
+    {% endif %}
+
+    <!-- Language selector -->
+    <div class="language-select">
+      <label for="languageSelect" class="description data-english">Choose Language:</label>
+      <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言:</label>
+      <select id="languageSelect" onchange="updateDescriptions()">
+        <option value="english">English</option>
+        <option value="chinese">Chinese</option>
+      </select>
+    </div>
+
+    <!-- Supplier filter -->
+    <div class="filter-select">
+      <label for="supplierFilter" class="description data-english">Filter by Supplier:</label>
+      <label for="supplierFilter" class="description data-mandarin" style="display: none;">按供应商筛选:</label>
+      <select id="supplierFilter" onchange="filterTable()">
+        <option value="">All Suppliers</option>
+        {% for supplier in supplier_data %}
+          <option value="{{ supplier.supplier_name }}">{{ supplier.supplier_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Wrapped table for horizontal scrolling on tablets -->
+    <div class="table-container">
+      <table id="items-table">
+        <thead>
+          <tr>
+            <th>
+              <span class="description data-english">SKU Number</span>
+              <span class="description data-mandarin" style="display: none;">SKU 编号</span>
+            </th>
+            <th>
+              <span class="description data-english">Supplier</span>
+              <span class="description data-mandarin" style="display: none;">供应商</span>
+            </th>
+            <th>
+              <span class="description data-english">DTH SKU</span>
+              <span class="description data-mandarin" style="display: none;">DTH 库存单位</span>
+            </th>
+            <th>
+              <span class="description data-english">Description</span>
+              <span class="description data-mandarin" style="display: none;">描述</span>
+            </th>
+            <th>
+              <span class="description data-english">Item Price</span>
+              <span class="description data-mandarin" style="display: none;">物品价格</span>
+            </th>
+            <th>
+              <span class="description data-english">Stocks Available</span>
+              <span class="description data-mandarin" style="display: none;">可用库存</span>
+            </th>
+            <th>
+              <span class="description data-english">Image</span>
+              <span class="description data-mandarin" style="display: none;">图片</span>
+            </th>
+            <th>
+              <span class="description data-english">Action</span>
+              <span class="description data-mandarin" style="display: none;">操作</span>
+            </th>
+            <!-- Hidden columns for keywords -->
+            <th style="display: none;">Keywords</th>
+            <th style="display: none;">Keywords Chinese</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in home_depot_data %}
+            <tr>
+              <td class="col-sku">
+                <a href="{{ url_for('get_home_depot_item', material_id=item.material_id) }}">
+                  {{ item.material_id }}
+                </a>
+              </td>
+              <td class="col-supplier">{{ item.supplier_name }}</td>
+              <td class="col-sku-num">{{ item.dth_sku }}</td>
+              <td class="col-desc">
+                <div class="description data-english">{{ item.item_desc }}</div>
+                <div class="description data-mandarin" style="display: none;">
+                  {{ item.item_desc_mandarin }}
+                </div>
+              </td>
+              <td class="col-price">${{ item.item_price }}</td>
+              <td class="col-stock">{{ item.inventory }}</td>
+              <td class="col-image">
+                <img src="{{ item.item_image }}" alt="Thumb" class="item-thumb" loading="lazy" />
+              </td>
+              <td class="col-action">
+                <a href="{{ url_for('update_material', material_id=item.material_id) }}">
+                  <button class="update-item">
+                    <span class="description data-english">Update</span>
+                    <span class="description data-mandarin" style="display: none;">更新</span>
+                  </button>
+                </a>
+                <!-- Kanban button from SECOND CODE (superior) -->
+                <button
+                  class="generate-image"
+                  data-sku="{{ item.material_id }}"
+                  onclick="showKanban(this.dataset.sku)"
+                >
+                  <span class="description data-english">Kanban Image</span>
+                  <span class="description data-mandarin" style="display: none;">看板图片</span>
+                </button>
+              </td>
+              <!-- Hidden columns still present for DataTables indexing -->
+              <td class="hidden-keywords" style="display: none;">{{ item.keywords }}</td>
+              <td class="hidden-keywords-ch" style="display: none;">{{ item.keywords_ch }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Kanban modal (superior) -->
+  <div id="kanbanModal" aria-modal="true" role="dialog" style="display: none">
+    <div class="kanban-backdrop" onclick="closeKanbanModal()"></div>
+    <div class="kanban-content">
+      <button class="kanban-close" onclick="closeKanbanModal()">×</button>
+      <div class="kanban-spinner" id="kanbanSpinner">Loading…</div>
+      <img id="kanbanImg" alt="Kanban Image" />
+      <div id="kanbanError" class="kanban-error" style="display: none"></div>
+    </div>
+  </div>
+
+  <script>
+    let table;
+
+    /* =========================
+       DataTables + page setup
+    ========================= */
+    $(document).ready(function() {
+      // Initialize DataTables on #items-table
+      table = $('#items-table').DataTable();
+
+      // Load saved supplier filter (if any)
+      const savedFilter = localStorage.getItem('selectedSupplier');
+      if (savedFilter) {
+        $('#supplierFilter').val(savedFilter);
+        filterTable();
+      }
+
+      // Restore language
+      const savedLanguage = localStorage.getItem('selectedLanguage');
+      if (savedLanguage) {
+        document.getElementById('languageSelect').value = savedLanguage;
+        updateDescriptions();
+      }
+    });
+
+    function filterTable() {
+      const filter = $('#supplierFilter').val();
+      localStorage.setItem('selectedSupplier', filter);
+
+      if (filter === "") {
+        table.column(1).search("").draw();
+      } else {
+        table.column(1).search(filter, true, false).draw();
+      }
+    }
+
+    function updateDescriptions() {
+      const language = document.getElementById('languageSelect').value;
+      const englishElems = document.querySelectorAll('.data-english');
+      const mandarinElems = document.querySelectorAll('.data-mandarin');
+
+      if (language === 'english') {
+        englishElems.forEach(el => el.style.display = 'block');
+        mandarinElems.forEach(el => el.style.display = 'none');
+      } else {
+        englishElems.forEach(el => el.style.display = 'none');
+        mandarinElems.forEach(el => el.style.display = 'block');
+      }
+      localStorage.setItem('selectedLanguage', language);
+    }
+
+    /* ==========================================
+       NEW / SUPERIOR: Modal popup that shows saved Kanban
+       /kanban-by-material/:material_id
+    ========================================== */
+    (function () {
+      const KANBAN_ENDPOINT_BASE =
+        "https://inventory.orcagroup.io:5024/kanban-by-material"; // adjust if needed
+
+      function escToClose(e) {
+        if (e.key === "Escape") window.closeKanbanModal();
+      }
+
+      window.showKanban = function (materialId) {
+        const modal = document.getElementById("kanbanModal");
+        const imgEl = document.getElementById("kanbanImg");
+        const spinnerEl = document.getElementById("kanbanSpinner");
+        const errorEl = document.getElementById("kanbanError");
+
+        // reset UI
+        imgEl.style.display = "none";
+        spinnerEl.style.display = "block";
+        errorEl.style.display = "none";
+        errorEl.textContent = "";
+
+        modal.style.display = "block";
+
+        const url = `${KANBAN_ENDPOINT_BASE}/${materialId}`;
+
+        const tmp = new Image();
+        tmp.onload = () => {
+          imgEl.src = url;
+          spinnerEl.style.display = "none";
+          imgEl.style.display = "block";
+        };
+        tmp.onerror = () => {
+          spinnerEl.style.display = "none";
+          errorEl.style.display = "block";
+          errorEl.textContent = "Kanban image not found for this item.";
+        };
+        tmp.src = url;
+
+        document.addEventListener("keydown", escToClose, { once: true });
+      };
+
+      window.closeKanbanModal = function () {
+        const modal = document.getElementById("kanbanModal");
+        if (modal) modal.style.display = "none";
+      };
+    })();
+  </script>
+</body>
+</html>

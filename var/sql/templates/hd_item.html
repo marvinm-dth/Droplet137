@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Material Details</title>
+    
+    <!-- ============================
+            BEGIN: Base + Responsive Styles
+    ============================ -->
+    <style>
+        /* ======= Base Page Styles ======= */
+        body {
+        font-family: 'Poppins', sans-serif;
+        background-color: #f8f9fa;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+        }
+    
+        /* Fluid container that shrinks on mobile */
+        .container {
+        width: 90%;
+        max-width: 1000px;
+        margin: 20px auto;
+        background-color: #fff;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-sizing: border-box;
+        }
+    
+        /* Page header */
+        .header {
+        font-size: 2em;
+        font-weight: bold;
+        margin-bottom: 20px;
+        word-break: break-word;
+        }
+    
+        /* Top section: details on left, image on right */
+        .top-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+        }
+        .product-details {
+        text-align: left;
+        flex: 1 1 60%;
+        min-width: 200px;
+        }
+        .product-details p {
+        margin: 8px 0;
+        font-weight: 600;
+        word-wrap: break-word;
+        font-size: 1em;
+        }
+        .product-image {
+        flex-shrink: 0;
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-top: 10px;
+        cursor: pointer;
+        }
+    
+        /* Section titles above each table or gallery */
+        .section-title {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-top: 30px;
+        margin-bottom: 10px;
+        text-align: left;
+        }
+    
+        /* Table container: always allow horizontal scroll */
+        .table-container {
+        margin-top: 20px;
+        text-align: left;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        }
+    
+        table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        min-width: 600px; /* ensures scroll bar appears on narrow screens */
+        box-sizing: border-box;
+        }
+        th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+        font-size: 0.9em;
+        white-space: nowrap;
+        }
+        th {
+        background-color: #f1f1f1;
+        font-weight: 600;
+        }
+        td {
+        color: #333;
+        }
+    
+        /* Image gallery: flex wrap */
+        .image-gallery {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 10px;
+        margin-bottom: 20px;
+        }
+        .image-gallery img {
+        width: 200px;
+        height: auto;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: transform 0.2s;
+        }
+        .image-gallery img:hover {
+        transform: scale(1.02);
+        }
+    
+        /* Lightbox overlay */
+        #lightbox {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        }
+        #lightbox img {
+        max-width: 90%;
+        max-height: 90%;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        border-radius: 5px;
+        }
+        #close-lightbox {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 2em;
+        color: white;
+        cursor: pointer;
+        }
+    
+        /* Language toggle positioning */
+        .language-select-wrapper {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        margin-bottom: 20px;
+        }
+        .language-select-wrapper label {
+        margin-right: 8px;
+        font-weight: 500;
+        font-size: 0.95em;
+        }
+        .language-select-wrapper select {
+        padding: 4px 8px;
+        font-size: 0.9em;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        }
+    
+        /* =========================================================================
+            Responsive tweaks for tablets and phones
+        ========================================================================== */
+    
+        /* -------- Tablets (≤768px) -------- */
+        @media (max-width: 768px) {
+        .container {
+            width: 95%;
+            padding: 15px;
+        }
+        .header {
+            font-size: 1.8em;
+        }
+        .product-details p {
+            font-size: 0.95em;
+        }
+        .product-image {
+            width: 120px;
+            height: 120px;
+        }
+        th, td {
+            padding: 6px;
+            font-size: 0.85em;
+        }
+        table {
+            min-width: 500px;
+        }
+        .image-gallery img {
+            width: 150px;
+        }
+        }
+    
+        /* -------- Mobile (≤480px) -------- */
+        @media (max-width: 480px) {
+        body {
+            text-align: center;
+        }
+        .container {
+            width: 100%;
+            margin: 0;
+            padding: 10px;
+            box-shadow: none;
+        }
+        .header {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+        /* Stack top-section vertically */
+        .top-section {
+            flex-direction: column;
+            align-items: center;
+        }
+        .product-details {
+            text-align: center;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .product-details p {
+            font-size: 0.9em;
+            margin: 6px 0;
+        }
+        .product-image {
+            width: 100px;
+            height: 100px;
+        }
+        .language-select-wrapper {
+            justify-content: center;
+        }
+        th, td {
+            padding: 5px;
+            font-size: 0.8em;
+        }
+        table {
+            min-width: 100%;
+        }
+        /* Force horizontal scroll off when columns shrink */
+        .table-container {
+            overflow-x: auto;
+        }
+        .image-gallery img {
+            width: 120px;
+        }
+        .section-title {
+            font-size: 1em;
+            margin-top: 20px;
+            margin-bottom: 8px;
+        }
+        }
+    </style>
+    <!-- ============================
+            END: Base + Responsive Styles
+    ============================ -->
+    
+    
+    <!-- ============================
+            BEGIN: DataTables CSS & JS
+    ============================ -->
+    <link
+        rel="stylesheet"
+        type="text/css"
+        href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script
+        type="text/javascript"
+        src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"
+    ></script>
+    <!-- ============================
+            END: DataTables CSS & JS
+    ============================ -->
+    
+    
+    <!-- ============================
+            BEGIN: Chart.js
+    ============================ -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- ============================
+            END: Chart.js
+    ============================ -->  
+    </head>
+<body>
+    <div class="container">
+        <div class="header data-english">{{ item.item_desc }}</div>
+        <div class="header data-mandarin" style="display: none;">>{{ item.item_desc_mandarin }}</div>
+        
+        <div style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="languageSelect" class="description data-english">Choose Language:</label>
+            <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言: </label>
+            <select id="languageSelect" onchange="updateDescriptions()" style="margin-left: 10px;">
+                <option value="english">English</option>
+                <option value="chinese">Chinese</option>
+            </select>
+        </div>
+
+        <div class="top-section">
+            <div class="product-details">
+                <p class="description data-english">Stocks: {{ item.inventory }}</p> 
+                <p class="description data-mandarin" style="display: none;">库存: {{ item.inventory }}</p> 
+                <p class="description data-english">Pack Size: {{ item.pack_size }}</p> 
+                <p class="description data-mandarin" style="display: none;">包装规格: {{ item.pack_size }}</p> 
+                <p class="description data-english">Product Details: {{ item.item_details }}</p>
+                <p class="description data-mandarin" style="display: none;">产品详情: {{ item.item_details_mandarin }}</p> 
+                <p class="description data-english">Inventory Location: {{ item.inventory_location }}</p> 
+                <p class="description data-mandarin" style="display: none;">库存位置: {{ item.inventory_location }}</p> 
+                <p class="description data-english">UPC: {{ item.upc }}</p> 
+                <p class="description data-mandarin" style="display: none;">UPC 通用产品代码: {{ item.upc }}</p> 
+                <p class="description data-english">Supplier SKU: {{ item.internet_sku_number }}</p> 
+                <p class="description data-mandarin" style="display: none;">供应商库存单位: {{ item.internet_sku_number }}</p> 
+            </div>
+            <img src="{{ item.item_image }}" alt="Product Image" class="product-image" onclick="openLightbox('{{ item.item_image }}')">
+        </div>
+
+        <div class="table-container">
+            <div class="section-title">Inventory History</div>
+            <table id="inventory-history-table", class="display">
+                <thead>
+                    <tr>
+                        <th style="display: none;"><span style="display: none;">Date (hidden)</span></th>
+                        <th>
+                            <span class="description data-english">Date</span>
+                            <span class="description data-mandarin" style="display: none;">日期</span>
+                        </th>
+                        <th>
+                            <span class="description data-english">Description</span>
+                            <span class="description data-mandarin" style="display: none;">描述</span>
+                        </th>
+                        <th>
+                            <span class="description data-english">Name</span>
+                            <span class="description data-mandarin" style="display: none;">名称</span>
+                        </th>
+                        <th>
+                            <span class="description data-english">Previous Quantity</span>
+                            <span class="description data-mandarin" style="display: none;">先前数量</span>
+                        </th>
+                        <th>
+                            <span class="description data-english">Current Quantity</span>
+                            <span class="description data-mandarin" style="display: none;">当前数量</span>
+                        </th>
+                        <th>
+                            <span class="description data-english">Quantity Change</span>
+                            <span class="description data-mandarin" style="display: none;">数量变化</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in inventory_history_data %}
+                    <tr>
+                        <td data-date="{{ inv.log_date }}" style="display: none;">{{ inv.log_date }}</td>
+                        <td data-date="{{ inv.log_date }}" onclick="sortTable(1)">{{ inv.formatted_log_date }}</td>
+                        <td>
+                            <span class="description data-english">{{ inv.log_description }}</span>
+                            <span class="description data-mandarin" style="display: none;">{{ inv.log_description_mandarin }}</span>
+                        </td>
+                        <td>{{ inv.name }}</td>
+                        <td>{{ inv.previous_quantity }}</td>
+                        <td>{{ inv.current_quantity }}</td>
+                        <td>{{ inv.quantity_change }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-container">
+            <div class="section-title">Price History</div>
+            <table id="price-history-table", class="display">
+                <thead>
+                    <tr>
+                        <th style="display: none;"><span style="display: none;">Date (hidden)</span></th>
+                        <th>
+                            <span class="description data-english">Date</span>
+                            <span class="description data-mandarin" style="display: none;">日期</span>
+                        </th>
+                        <th>
+                            <span class="description data-english">Supplier SKU Number</span>
+                            <span class="description data-mandarin" style="display: none;">供应商 SKU 编号</span>
+                        </th>
+                        <th>
+                            <span class="description data-english">Name</span>
+                            <span class="description data-mandarin" style="display: none;">名称</span>
+                        </th>
+                        <th>
+                            <span class="description data-english">Order Number</span>
+                            <span class="description data-mandarin" style="display: none;">订单文件</span>
+                        </th>
+                        <th>
+                            <span class="description data-english">Actual Price</span>
+                            <span class="description data-mandarin" style="display: none;">可用库存</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for price in price_history_data %}
+                    <tr>
+                        <td data-date="{{ price.log_date }}" style="display: none;">{{ price.log_date }}</td>
+                        <td data-date="{{ price.log_date }}">{{ price.formatted_log_date }}</td>
+                        <td>{{ price.internet_sku_number }}</td>
+                        <td>
+                            <span class="description data-english">{{ price.item_desc }}</span>
+                            <span class="description data-mandarin" style="display: none;">{{ price.item_desc_mandarin }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('get_home_depot_order', order_id=price.order_id) }}">{{ price.order_id }}</a>
+                        </td>
+                        <td>{{ price.actual_item_price }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="section-title">Price Graph</div>
+            <canvas id="priceChart" style="margin-top: 20px;"></canvas>
+
+        </div>
+
+        <div class="table-container">
+            <div class="section-title">
+                <span class="description data-english">Item Images</span>
+                <span class="description data-mandarin" style="display: none;">项目图片</span>
+            </div>
+            <div class="image-gallery">
+                {% for image in images %}
+                    <img src="{{ image.image_url }}" alt="Material Image" style="width: 200px; height: auto; margin: 10px;" onclick="openLightbox('{{ image.image_url }}')">
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div id="lightbox" style="display: none;">
+        <span id="close-lightbox" onclick="closeLightbox()">×</span>
+        <img id="lightbox-image" src="" alt="Zoomed Image">
+    </div>
+<script>
+    function updateDescriptions() {
+         const language = document.getElementById('languageSelect').value;
+ 
+         // Save the selected language in local storage
+         localStorage.setItem('selectedLanguage', language);
+ 
+         // Get all elements with class 'data-english' and 'data-mandarin'
+         const englishElements = document.querySelectorAll('.data-english');
+         const mandarinElements = document.querySelectorAll('.data-mandarin');
+ 
+         if (language === 'english') {
+             englishElements.forEach(element => {
+                 element.style.display = 'block';
+             });
+             mandarinElements.forEach(element => {
+                 element.style.display = 'none';
+             });
+         } else if (language === 'chinese') {
+             englishElements.forEach(element => {
+                 element.style.display = 'none';
+             });
+             mandarinElements.forEach(element => {
+                 element.style.display = 'block';
+             });
+         }
+ 
+     }
+
+     function openLightbox(imageUrl) {
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImage = document.getElementById('lightbox-image');
+        
+        lightboxImage.src = imageUrl; // Set the clicked image URL
+        lightbox.style.display = 'flex'; // Show the lightbox
+    }
+
+    function closeLightbox() {
+        const lightbox = document.getElementById('lightbox');
+        lightbox.style.display = 'none'; // Hide the lightbox
+    }
+
+     function sortTable(columnIndex) {
+        const table = document.getElementById("yourTableID"); // Replace with your table's ID
+        const rows = Array.from(table.rows).slice(1); // Exclude the header row
+        const isAscending = table.getAttribute("data-sort-order") === "asc";
+        const multiplier = isAscending ? 1 : -1;
+
+        rows.sort((rowA, rowB) => {
+            const cellA = rowA.cells[columnIndex].getAttribute("data-date");
+            const cellB = rowB.cells[columnIndex].getAttribute("data-date");
+
+            // Parse dates
+            const dateA = new Date(cellA);
+            const dateB = new Date(cellB);
+
+            // Compare dates
+            return (dateA - dateB) * multiplier;
+        });
+
+        // Append sorted rows back to the table
+        const tbody = table.querySelector("tbody");
+        rows.forEach(row => tbody.appendChild(row));
+
+        // Toggle sort order
+        table.setAttribute("data-sort-order", isAscending ? "desc" : "asc");
+    }
+ 
+     // Function to load the saved language preference on page load
+     document.addEventListener('DOMContentLoaded', () => {
+         // Get the selected language from local storage
+         const savedLanguage = localStorage.getItem('selectedLanguage');
+ 
+         // If there's a saved language, set it in the dropdown and update descriptions
+         if (savedLanguage) {
+             document.getElementById('languageSelect').value = savedLanguage;
+             updateDescriptions();
+         }
+     });
+
+     function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        });
+    }
+
+     document.addEventListener('DOMContentLoaded', () => {
+        // Extract the latest 10 prices from the price history table
+        const tableRows = Array.from(document.querySelectorAll('#price-history-table tbody tr'));
+        const prices = tableRows.slice(0, 10).map(row => ({
+            date: row.cells[1].innerText,
+            price: parseFloat(row.cells[4].innerText),
+        }));
+
+        // Reverse the data to show the latest price first
+        const chartData = prices.reverse();
+
+        // Prepare the chart data
+        const labels = chartData.map(data => data.date); // Dates for the x-axis
+        const dataPoints = chartData.map(data => data.price); // Prices for the y-axis
+
+        // Render the chart using Chart.js
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Actual Price',
+                    data: dataPoints,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    fill: false,
+                }],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date',
+                        },
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Price',
+                        },
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    });
+ </script>
+</body>
+</html>

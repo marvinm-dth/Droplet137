@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <title>Checklist</title>
+</head>
+
+<body>
+    <div class="container-md">
+
+        <h1 class="text-center fw-bolder pt-2 text-decoration-underline">Checklist Manager</h1>
+
+        <div class="accordion accordion-flush mt-3 mb-5 border" id="checklist-accordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#pending-checklists" aria-expanded="false" aria-controls="pending-checklists">
+                        <div id="pending-title">
+                            Pending for Approval (<span class="small">0</span>)
+                            <span class="text-danger small fs-6">*Waiting for a manager to approve.</span>
+                        </div>
+                    </button>
+                </h2>
+                <div id="pending-checklists" class="accordion-collapse collapse" data-bs-parent="#checklist-accordion">
+                    <div class="accordion-body">
+                        <div id="pending-checklists-wrapper" class="d-flex flex-wrap gap-2">
+                            Nothing here yet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#rejected-checklists" aria-expanded="false" aria-controls="rejected-checklists">
+                        <div id="rejected-title">
+                            Rejected (<span class="small">0</span>)
+                            <span class="text-danger small fs-6">*Will be redone and resubmitted.</span>
+                        </div>
+                    </button>
+                </h2>
+                <div id="rejected-checklists" class="accordion-collapse collapse" data-bs-parent="#checklist-accordion">
+                    <div class="accordion-body">
+                        <div id="rejected-checklists-wrapper" class="d-flex flex-wrap gap-2">
+                            Nothing here yet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#inprogress-checklists" aria-expanded="false"
+                        aria-controls="inprogress-checklists">
+                        <div id="inprogress-title">
+                            Inprogress (<span class="small">0</span>)
+                            <span class="text-danger small fs-6">*Actively being completed.</span>
+                        </div>
+                    </button>
+                </h2>
+                <div id="inprogress-checklists" class="accordion-collapse collapse"
+                    data-bs-parent="#checklist-accordion">
+                    <div class="accordion-body">
+                        <div id="inprogress-checklists-wrapper" class="d-flex flex-wrap gap-2">
+                            Nothing here yet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#upcoming-checklists" aria-expanded="false" aria-controls="upcoming-checklists">
+                        <div id="upcoming-title">
+                            Upcoming (<span class="small">0</span>)
+                            <span class="text-danger small fs-6">*Project will start soon.</span>
+                        </div>
+                    </button>
+                </h2>
+                <div id="upcoming-checklists" class="accordion-collapse collapse" data-bs-parent="#checklist-accordion">
+                    <div class="accordion-body">
+                        <div id="upcoming-checklists-wrapper" class="d-flex flex-wrap gap-2">
+                            Nothing here yet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#approved-checklists" aria-expanded="false" aria-controls="approved-checklists">
+                        <div id="approved-title">
+                            Archive (<span class="small">0</span>)
+                            <span class="text-danger small fs-6">*Approved checklist from previous projects.</span>
+                        </div>
+                    </button>
+                </h2>
+                <div id="approved-checklists" class="accordion-collapse collapse" data-bs-parent="#checklist-accordion">
+                    <div class="accordion-body">
+                        <div id="approved-checklists-wrapper" class="d-flex flex-wrap gap-2">
+                            Nothing here yet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#template-checklists" aria-expanded="false" aria-controls="template-checklists">
+                        <div id="template-title">
+                            Templates (<span class="small">0</span>)
+                            <span class="text-danger small fs-6">*</span>
+                        </div>
+                    </button>
+                </h2>
+                <div id="template-checklists" class="accordion-collapse collapse" data-bs-parent="#checklist-accordion">
+                    <div class="accordion-body">
+                        <div id="template-checklists-wrapper" class="d-flex flex-wrap gap-2">
+                            Nothing here yet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let pending;
+        let rejected;
+        let inprogress;
+        let templates;
+
+        const getDate = (datetime) => new Date(datetime).toISOString().slice(0, 10);
+        const getDateTime = (datetime) => new Date(datetime).toISOString().slice(0, 16);
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await refreshEverything();
+        });
+
+        async function refreshEverything() {
+            await fetchPending();
+            // populatePendingWrapper();
+
+            await fetchRejected();
+            // populateRejectedPendingWrapper();
+
+            await fetchInprogress();
+            populateInprogressWrapper();
+
+            await fetchTemplates();
+            populateTemplateWrapper();
+        }
+
+        async function fetchPending() {
+            let res = await fetch(`/api/checklists/status/pending`)
+            pending = await res.json();
+        }
+
+        async function fetchRejected() {
+            let res = await fetch(`/api/checklists/status/rejected`)
+            rejected = await res.json();
+        }
+
+        async function fetchInprogress() {
+            let res = await fetch(`/api/checklists/status/inprogress`)
+            inprogress = await res.json();
+        }
+
+        async function fetchTemplates() {
+            let res = await fetch(`/api/checklist-templates`)
+            templates = await res.json();
+        }
+
+
+        function populatePendingWrapper() {
+            if(pending.length === 0) return;
+            let checklistsDivs = pending.map(checklist => {
+                return `
+                <div class="card bg-warning text-dark" style="width: 200px; ">
+                    <div id="submitted-${checklist.id}"class="card-body small">
+                        <h5 class="card-title">${checklist.all_projects.project_name}</h5>
+                        <p class="card-text">${checklist.all_template_checklists.name}</p>
+                        <p class="card-text">Assigned to: ${checklist.assignee?.employee_name}</p>
+                        <p class="card-text">Submitted on: ${getDate(checklist.submitted_date)}</p>
+
+                        <a class="text-dark" href="/checklists/review?checklist_id=${checklist.id}">Review</a>
+                        <a class="text-dark" href="/checklists/fill?checklist_id=${checklist.id}">Fill up</a>
+                    </div>
+                </div>`;
+            }).join('');
+            document.querySelector("#pending-title span").innerText = pending.length;
+            document.querySelector("#pending-checklists-wrapper").innerHTML = checklistsDivs;
+        }
+
+        function populateRejectedPendingWrapper() {
+            if(rejected.length === 0) return;
+            let checklistsDivs = rejected.map(checklist => {
+                return `
+                <div class="card bg-secondary text-white" style="width: 200px; ">
+                    <div id="submitted-${checklist.id}"class="card-body small">
+                        <h5 class="card-title">${checklist.all_projects.project_name}</h5>
+                        <p class="card-text">${checklist.all_template_checklists.name}</p>
+                        <p class="card-text">Assigned to: ${checklist.assignee?.employee_name}</p>
+                        <p class="card-text">Rejected on: ${getDate(checklist.rejected_date)}</p>
+
+                        <a class="text-white" href="/checklists/review?checklist_id=${checklist.id}">Review Progress</a> <br> 
+                        <a class="text-white" href="/checklists/fill?checklist_id=${checklist.id}">Fill up</a>
+                    </div>
+                </div>`;
+            }).join('');
+            document.querySelector("#rejected-title span").innerText = rejected.length;
+            document.querySelector("#rejected-checklists-wrapper").innerHTML = checklistsDivs;
+        }
+
+        function populateInprogressWrapper() {
+            if(inprogress.length === 0) return;
+            let checklistsDivs = inprogress.map(checklist => {
+                return `
+                <div class="card bg-dark text-white" style="width: 200px; ">
+                    <div id="submitted-${checklist.id}"class="card-body small">
+                        <h5 class="card-title">${checklist.all_projects.project_name}</h5>
+                        <p class="card-text">${checklist.all_template_checklists.name}</p>
+                        <p class="card-text">Assigned to: ${checklist.assignee?.employee_name}</p>
+                        <p class="card-text">Phase start: ${getDate(checklist.phase_start_date)}</p>
+
+                        <a class="text-white" href="/checklists/review?checklist_id=${checklist.id}">Review Progress</a> <br> 
+                        <a class="text-white" href="/checklists/fill?checklist_id=${checklist.id}">Fill up</a>
+                    </div>
+                </div>`;
+            }).join('');
+            document.querySelector("#inprogress-title span").innerText = inprogress.length;
+            document.querySelector("#inprogress-checklists-wrapper").innerHTML = checklistsDivs;
+        }
+
+
+
+        //template populator
+        function populateTemplateWrapper() {
+            if(templates.length === 0) return;
+            let checklistsDivs = templates.map(checklist => {
+                return `
+                <div class="card bg-secondary text-white" style="width: 200px; ">
+                    <div id="template-${checklist.id}"class="card-body small">
+                        <h5 class="card-title">${checklist.name}</h5>
+                        <a class="text-white" href="/checklist-templates/edit?checklist_id=${checklist.id}">Open</a>
+                        <a class="text-white" href="#" onclick="alert('Feature not yet available')">Delete</a>
+                    </div>
+                </div>`;
+            }).join('');
+            checklistsDivs += `
+        <div class="card" style="width: 200px; ">
+            <div id="template"class="card-body small">
+                <h5 class="card-title"><a class="link-secondary" style="text-decoration: none;" href="#">(&#43;) New Checklist </a></h5>
+            </div>
+        </div>`
+            document.querySelector("#template-title span").innerText = templates.length;
+            document.querySelector("#template-checklists-wrapper").innerHTML = checklistsDivs;
+        }
+    </script>
+</body>
+
+
+</html>

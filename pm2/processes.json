@@ -1,0 +1,285 @@
+[
+  {
+    "name": "checklist",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/checklist.py",
+    "args": [],
+    "exec_interpreter": "python3",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "discord-openphone",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/discord-openphone.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "image5081",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/image5081.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "image5091",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/image5091.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "inv3000",
+    "status": "online",
+    "pm_cwd": "/root/vibed/client-server",
+    "pm_exec_path": "/usr/bin/npm",
+    "args": [
+      "start"
+    ],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "inv3001",
+    "status": "online",
+    "pm_cwd": "/root/vibed/server",
+    "pm_exec_path": "/usr/bin/npm",
+    "args": [
+      "start"
+    ],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server-5023",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/server-5023.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5016",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/server5016.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5017",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/server5017.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5019",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/server5019.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5021",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/server5021.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5025",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/server5025.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5027",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/server5027.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5029",
+    "status": "online",
+    "pm_cwd": "/var/sql/checklistv3-5029",
+    "pm_exec_path": "/root/.nvm/versions/node/v23.11.0/bin/npm",
+    "args": [
+      "start"
+    ],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5030",
+    "status": "online",
+    "pm_cwd": "/var/sql/checklistv2",
+    "pm_exec_path": "/var/sql/checklistv2/server5030.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5050",
+    "status": "online",
+    "pm_cwd": "/var/sql/functionality-testing-ngrok",
+    "pm_exec_path": "/var/sql/functionality-testing-ngrok/server5050.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5077",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/server5077.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5078",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/server5078.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5080",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/server5080.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5085",
+    "status": "stopped",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/server5085.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5090",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/server5090.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5091",
+    "status": "stopped",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/server5091.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "server5093",
+    "status": "online",
+    "pm_cwd": "/var/sql/web-admin",
+    "pm_exec_path": "/var/sql/web-admin/server5093.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "ticket-flask",
+    "status": "online",
+    "pm_cwd": "/var/ticketprinter",
+    "pm_exec_path": "/var/ticketprinter/venv/bin/python",
+    "args": [
+      "run.py"
+    ],
+    "exec_interpreter": "none",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  },
+  {
+    "name": "translator5040",
+    "status": "online",
+    "pm_cwd": "/var/sql",
+    "pm_exec_path": "/var/sql/translator5040.js",
+    "args": [],
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "autorestart": true,
+    "watch": false
+  }
+]

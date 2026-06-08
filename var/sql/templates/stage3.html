@@ -1,0 +1,562 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>STAGE 3 / 阶段 3 : FRAMING 构架</title>
+{% endblock %}
+
+
+{% block body %}
+<h1> STAGE 3 / 阶段 3 : FRAMING 构架 </h1>
+<p> 
+    The foundation is the steel framed trailer that the house is built on top of. It is important that everything on the foundation is
+    correct because this is the starting point of a home. If anything is wrong or missing it could cause serious problems down the
+    line. It is always good to double check things during the building process. Even if you think you have checked something check
+    it again to confirm. If something doesn't look right or you have any questions please talk to a manager before signing your name.
+</p>
+<p>
+    基础是建在钢框架拖车上的房子的根基。确保基础的一切都正确是非常重要的，因为这是房屋的起点。如果现在有任何错误或遗漏
+    可能会在后续造成严重问题。在建造过程中始终好好检查事物是明智的。即使你认为已经检查过某些东西，也要再次检查以确认
+    如果有什么看起来不对或者你有任何问题，请在签名前与经理交谈
+</p>
+
+<form action="/stage_3_form_submit" method="POST">
+    <div class="mb-3">
+        <label for="DTH#input" class="form-label">DTH # / 房屋号码</label>
+        <input type="form-control" id="dth_number" name="dth_number"><br><br>
+    </div>
+
+    <h3 style="text-align:center">PRE INSPECTION INFO (预检信息)</h3>
+
+
+    <div class="col-md-6">
+        <label for="DTH#input" class="form-label">PHASE START DATE 阶段开始日期</label><br>
+        <input type="form-control" id="phase_start_date" name="phase_start_date"><br><br>
+    </div>
+
+    <div class="col-md-6">
+        <label for="WorkResponsible" class="form-label">WHO DID THE WORK 谁做的工作?</label><br>
+        <input type="form-control" id="work_did_the_work" name="work_did_the_work"><br><br>
+    </div>
+
+    <div class="col-12">
+        <label for="IssueHappened" class="form-label">ISSUES THAT HAPPENED DURING THE CONSTRUCTION PROCESS 施工过程中发生的问题</label><br>
+        <input type="form-control" id="issue_happened" name="issue_happened"><br><br>
+    </div>
+
+    <div class="col-12">
+        <label for="Changes" class="form-label">CHANGES TO THE DESIGN OR BUILD 设计或建造的变更</label><br>
+        <input type="form-control" id="design_build_changes" name="design_build_changes"><br><br>
+    </div>
+
+    <div class="col-12">
+        <label for="CheckerName" class="form-label">WHO IS CHECKING 谁在检查</label><br>
+        <input type="form-control" id="checker_name" name="checker_name"><br><br>
+    </div>
+
+    <div class="col-12">
+        <label for="CompletedDate" class="form-label">COMPLETED DATE 完成的日期</label><br>
+        <input type="form-control" id="completed_date" name="completed_date"><br><br>
+    </div>
+
+    <div class="col-12">
+        <label for="IsEverythingDone" class="form-label">IS EVERYTHING DONE 都完成了吗</label><br>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="is_everything_done" id="inlineRadio1" value="option1">
+            <label class="form-check-label" for="inlineRadio1">YES/是的</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="is_everything_done" id="inlineRadio2" value="option2">
+            <label class="form-check-label" for="inlineRadio2">NO/不是 </label>
+          </div>
+    </div>
+
+    <div class="col-12">
+        <label for="IsMissingItem" class="form-label">MISSING ITEMS? 缺少的项目</label>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="is_missing_items" id="inlineRadio1" value="option1">
+            <label class="form-check-label" for="inlineRadio1">YES/是的</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="is_missing_items" id="inlineRadio2" value="option2">
+            <label class="form-check-label" for="inlineRadio2">NO/不是 </label>
+          </div>
+    </div>
+
+    <div class="col-12">
+        <label for="NotDoneInfo" class="form-label">IF NO WHAT IS NOT DONE? 如果没有，缺少什么或未完成的部分是什么？</label><br>
+        <input type="form-control" id="what_not_done" name="what_not_done"><br><br>
+    </div>
+
+    <div class="col-12">
+        <label for="IsReadyToInspect" class="form-label">READY TO INSPECT? 准备好检查了吗</label><br>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="is_ready_to_inspect" id="inlineRadio1" value="option1">
+            <label class="form-check-label" for="inlineRadio1">YES/是的</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="is_ready_to_inspect" id="inlineRadio2" value="option2">
+            <label class="form-check-label" for="inlineRadio2">NO/不是 </label>
+          </div>
+    </div>
+
+    <div class="col-12">
+        <label for="RequestedInspectionDate" class="form-label">REQUESTED INSPECTION DATE/TIME 要求的检查日期/时间</label>
+        <input type="form-control" id="requested_inspection_date" name="requested_inspection_date"><br><br>
+    </div>
+
+    <h3 style="text-align:center">STAGE 3: Framing (Exterior Walls)</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Description (English)</th>
+                <th>Description (Chinese)</th>
+                <th>NOTES</th>
+                <th>DONE</th>
+                <th>INSPECTED</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>All framing drawings are ready</td>
+                <td>所有的框架图纸已准备就绪</td>
+                <td><input type="text" name="framing_1_note"></td>
+                <td><input type="checkbox" name="framing_1_done"></td>
+                <td><input type="checkbox" name="framing_1_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>2</td>
+                <td>All framing wood is cut to the correct length</td>
+                <td>所有的框架木材都已经切割到正确的长度</td>
+                <td><input type="text" name="framing_2_note"></td>
+                <td><input type="checkbox" name="framing_2_done"></td>
+                <td><input type="checkbox" name="framing_2_inspected"></td>
+            </tr>
+            
+            <tr>
+                <td>3</td>
+                <td>A side wall framing matches the drawing</td>
+                <td>一侧墙的框架与图纸相匹配</td>
+                <td><input type="text" name="framing_3_note"></td>
+                <td><input type="checkbox" name="framing_3_done"></td>
+                <td><input type="checkbox" name="framing_3_inspected"></td>
+            </tr>
+                        
+            <tr>
+                <td>4</td>
+                <td>B side wall framing matches the drawing</td>
+                <td>B侧墙的框架与图纸相匹配</td>
+                <td><input type="text" name="framing_4_note"></td>
+                <td><input type="checkbox" name="framing_4_done"></td>
+                <td><input type="checkbox" name="framing_4_inspected"></td>
+            </tr>
+                                    
+            <tr>
+                <td>5</td>
+                <td>C side wall framing matches the drawing</td>
+                <td>C侧墙的框架与图纸相匹配</td>
+                <td><input type="text" name="framing_5_note"></td>
+                <td><input type="checkbox" name="framing_5_done"></td>
+                <td><input type="checkbox" name="framing_5_inspected"></td>
+            </tr>
+                                                
+            <tr>
+                <td>6</td>
+                <td>D side wall framing matches the drawing</td>
+                <td>D侧墙的框架与图纸相匹配</td>
+                <td><input type="text" name="framing_6_note"></td>
+                <td><input type="checkbox" name="framing_6_done"></td>
+                <td><input type="checkbox" name="framing_6_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>7</td>
+                <td>7/16 OSB sheathing is installed and the wall is square</td>
+                <td>7/16 OSB覆面板已安装，墙壁是正规形</td>
+                <td><input type="text" name="framing_7_note"></td>
+                <td><input type="checkbox" name="framing_7_done"></td>
+                <td><input type="checkbox" name="framing_7_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>8</td>
+                <td>Nail pattern is 4" going around any opening or any seam where 2 plywood meet </td>
+                <td>在任何开口处或两块胶合板接合处，钉子的间距为4英寸</td>
+                <td><input type="text" name="framing_8_note"></td>
+                <td><input type="checkbox" name="framing_8_done"></td>
+                <td><input type="checkbox" name="framing_8_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>9</td>
+                <td>Nail pattern is 6" in the field of the plywood sheets</td>
+                <td>在胶合板的区域内，钉子的间距为6英寸</td>
+                <td><input type="text" name="framing_9_note"></td>
+                <td><input type="checkbox" name="framing_9_done"></td>
+                <td><input type="checkbox" name="framing_9_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>10</td>
+                <td>Nails are installed on every stud minimum of every 16" on center</td>
+                <td>在每个墙面上至少每16英寸为中心枪打一排钉子</td>
+                <td><input type="text" name="framing_10_note"></td>
+                <td><input type="checkbox" name="framing_10_done"></td>
+                <td><input type="checkbox" name="framing_10_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>11</td>
+                <td>Window openings are routed out </td>
+                <td>窗户开口已经抠出</td>
+                <td><input type="text" name="framing_11_note"></td>
+                <td><input type="checkbox" name="framing_11_done"></td>
+                <td><input type="checkbox" name="framing_11_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>12</td>
+                <td>Door openings are routed out </td>
+                <td>门口已经抠出</td>
+                <td><input type="text" name="framing_12_note"></td>
+                <td><input type="checkbox" name="framing_12_done"></td>
+                <td><input type="checkbox" name="framing_12_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>13</td>
+                <td>Wheel wells are routed out and the 2x4 is cut off</td>
+                <td>车轮毂已经抠出，并且2x4链接已经切断</td>
+                <td><input type="text" name="framing_13_note"></td>
+                <td><input type="checkbox" name="framing_13_done"></td>
+                <td><input type="checkbox" name="framing_13_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>14</td>
+                <td>There is a double top plate on the top of the wall</td>
+                <td>墙顶有双层顶木梁</td>
+                <td><input type="text" name="framing_14_note"></td>
+                <td><input type="checkbox" name="framing_14_done"></td>
+                <td><input type="checkbox" name="framing_14_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>15</td>
+                <td>There is an egress window opening (Needs manager approval)</td>
+                <td>有一个逃生窗口开口（需要经理批准</td>
+                <td><input type="text" name="framing_15_note"></td>
+                <td><input type="checkbox" name="framing_15_done"></td>
+                <td><input type="checkbox" name="framing_15_inspected"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 style="text-align:center">STAGE 3: Framing (Shed Style Roof)</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Description (English)</th>
+                <th>Description (Chinese)</th>
+                <th>NOTES</th>
+                <th>DONE</th>
+                <th>INSPECTED</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>2x6 Rafters are cut to the correct measurement</td>
+                <td>2x6的木梁已切割至正确的尺寸</td>
+                <td><input type="text" name="framing_shed_1_note"></td>
+                <td><input type="checkbox" name="framing_shed_1_done"></td>
+                <td><input type="checkbox" name="framing_shed_1_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>2</td>
+                <td>Rafters are placed 16 inches on center or according to the specifications provided in the roof framing drawing.</td>
+                <td>木梁安放在中心每16英寸，或者根据屋顶框架图纸中提供的规格</td>
+                <td><input type="text" name="framing_shed_2_note"></td>
+                <td><input type="checkbox" name="framing_shed_2_done"></td>
+                <td><input type="checkbox" name="framing_shed_2_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>3</td>
+                <td>Rim Joist is installed and cut to correct dimensions</td>
+                <td>前后面顶棚边框横梁已安装并根据正确的高度进行切割</td>
+                <td><input type="text" name="framing_shed_3_note"></td>
+                <td><input type="checkbox" name="framing_shed_3_done"></td>
+                <td><input type="checkbox" name="framing_shed_3_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>4</td>
+                <td>Rafters are toe-nailed and face-nailed on Rim Joists</td>
+                <td>木梁通过趾钉和面钉固定在边框横梁上</td>
+                <td><input type="text" name="framing_shed_4_note"></td>
+                <td><input type="checkbox" name="framing_shed_4_done"></td>
+                <td><input type="checkbox" name="framing_shed_4_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>5</td>
+                <td>Roof Sheathing is installed on the rafters 7/16</td>
+                <td>屋顶覆盖板安装在椽子上，厚度为7/16英寸</td>
+                <td><input type="text" name="framing_shed_5_note"></td>
+                <td><input type="checkbox" name="framing_shed_5_done"></td>
+                <td><input type="checkbox" name="framing_shed_5_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>6</td>
+                <td>Nail spacing is 3" on the seam and edge</td>
+                <td>钉子间距在接缝和边缘处为4英寸</td>
+                <td><input type="text" name="framing_shed_6_note"></td>
+                <td><input type="checkbox" name="framing_shed_6_done"></td>
+                <td><input type="checkbox" name="framing_shed_6_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>7</td>
+                <td>Nail spacing is 6" in the field</td>
+                <td>在墙板间距内处，钉子间距为6英寸</td>
+                <td><input type="checkbox" name="framing_shed_7_done"></td>
+                <td><input type="checkbox" name="framing_shed_7_inspected"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 style="text-align:center">STAGE 3: Framing (Gabled Roof)</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Description (English)</th>
+                <th>Description (Chinese)</th>
+                <th>NOTES</th>
+                <th>DONE</th>
+                <th>INSPECTED</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>2x6 Rafters are cut to the correct dimensions</td>
+                <td>2x6的木梁已按照正确的尺寸进行切割</td>
+                <td><input type="text" name="framing_gabled_1_note"></td>
+                <td><input type="checkbox" name="framing_gabled_1_done"></td>
+                <td><input type="checkbox" name="framing_gabled_1_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>2</td>
+                <td>Rafters are at 16" on center as per following framing design </td>
+                <td>木梁按照以下框架设计，每16英寸中心放置</td>
+                <td><input type="text" name="framing_gabled_2_note"></td>
+                <td><input type="checkbox" name="framing_gabled_2_done"></td>
+                <td><input type="checkbox" name="framing_gabled_2_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>3</td>
+                <td>Rim Joist is installed and cut to the correct angles and size</td>
+                <td>前后顶棚边框横梁已安装，并按正确的角度和尺寸进行切割</td>
+                <td><input type="text" name="framing_gabled_3_note"></td>
+                <td><input type="checkbox" name="framing_gabled_3_done"></td>
+                <td><input type="checkbox" name="framing_gabled_3_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>4</td>
+                <td>Rafters are face-nailed and toe-nailed</td>
+                <td>木梁已经进行了面钉和侧钉固定</td>
+                <td><input type="text" name="framing_gabled_4_note"></td>
+                <td><input type="checkbox" name="framing_gabled_4_done"></td>
+                <td><input type="checkbox" name="framing_gabled_4_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>5</td>
+                <td>Roof sheathing is installed of the rafters 7/16</td>
+                <td>屋顶覆盖板安装在木梁上，厚度为7/16英寸</td>
+                <td><input type="text" name="framing_gabled_5_note"></td>
+                <td><input type="checkbox" name="framing_gabled_5_done"></td>
+                <td><input type="checkbox" name="framing_gabled_5_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>6</td>
+                <td>Nail spacing is 4" on the seams and edge</td>
+                <td>接缝和边缘处的钉子间距为4英寸</td>
+                <td><input type="text" name="framing_gabled_6_note"></td>
+                <td><input type="checkbox" name="framing_gabled_6_done"></td>
+                <td><input type="checkbox" name="framing_gabled_6_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>7</td>
+                <td>Nail spacing is 6" in the field</td>
+                <td>在顶板间距内，钉子间距为6英寸</td>
+                <td><input type="text" name="framing_gabled_7_note"></td>
+                <td><input type="checkbox" name="framing_gabled_7_done"></td>
+                <td><input type="checkbox" name="framing_gabled_7_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>8</td>
+                <td>Ridge Board is installed and cut to the correct height</td>
+                <td>山脊板已安装并切割到正确的高度</td>
+                <td><input type="text" name="framing_gabled_8_note"></td>
+                <td><input type="checkbox" name="framing_gabled_8_done"></td>
+                <td><input type="checkbox" name="framing_gabled_8_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>9</td>
+                <td>Collar ties are installed per the drawing</td>
+                <td>顶棚大梁双层已按照图纸安装</td>
+                <td><input type="text" name="framing_gabled_9_note"></td>
+                <td><input type="checkbox" name="framing_gabled_9_done"></td>
+                <td><input type="checkbox" name="framing_gabled_9_inspected"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 style="text-align:center">STAGE 3: Framing (Interior Walls)</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Description (English)</th>
+                <th>Description (Chinese)</th>
+                <th>NOTES</th>
+                <th>DONE</th>
+                <th>INSPECTED</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>Interior Bathroom Wall is framed to follow the drawing</td>
+                <td>内部浴室墙已按照图纸进行了框架制作</td>
+                <td><input type="text" name="framing_interior_1_note"></td>
+                <td><input type="checkbox" name="framing_interior_1_done"></td>
+                <td><input type="checkbox" name="framing_interior_1_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>2</td>
+                <td>Bathroom Wall is is installed in correct location</td>
+                <td>浴室墙已安装在正确的位置</td>
+                <td><input type="text" name="framing_interior_2_note"></td>
+                <td><input type="checkbox" name="framing_interior_2_done"></td>
+                <td><input type="checkbox" name="framing_interior_2_inspected"></td>
+            </tr>
+           
+            <tr>
+                <td>3</td>
+                <td>Any Room or extra features are framed</td>
+                <td>任何房间或额外功能都已经进行了框架制作</td>
+                <td><input type="text" name="framing_interior_3_note"></td>
+                <td><input type="checkbox" name="framing_interior_3_done"></td>
+                <td><input type="checkbox" name="framing_interior_3_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>4</td>
+                <td>Lofts are framed using 2x6s in accordance with the drawing.</td>
+                <td>阁楼采用2x6木材按照图纸进行了框架制作</td>
+                <td><input type="text" name="framing_interior_4_note"></td>
+                <td><input type="checkbox" name="framing_interior_4_done"></td>
+                <td><input type="checkbox" name="framing_interior_4_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>5</td>
+                <td>Face Board is doubled and supported on both sides</td>
+                <td>正面板双层加倍，并在两侧支撑</td>
+                <td><input type="text" name="framing_interior_5_note"></td>
+                <td><input type="checkbox" name="framing_interior_5_done"></td>
+                <td><input type="checkbox" name="framing_interior_5_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>6</td>
+                <td>Loft Joist have Hungers on them (Part #)</td>
+                <td>阁楼横梁上有挂钩（第二部分</td>
+                <td><input type="text" name="framing_interior_6_note"></td>
+                <td><input type="checkbox" name="framing_interior_6_done"></td>
+                <td><input type="checkbox" name="framing_interior_6_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>7</td>
+                <td>Metal straps connect King Studs to toe and bottom plates</td>
+                <td>金属条连接主立柱到脚和底板</td>
+                <td><input type="text" name="framing_interior_7_note"></td>
+                <td><input type="checkbox" name="framing_interior_7_done"></td>
+                <td><input type="checkbox" name="framing_interior_7_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>8</td>
+                <td>Metal Bolt down connectors are in correct possition (Part #)</td>
+                <td>正面，后面长墙安装金属螺栓固定连接器处于正确的位置（第1部分）</td>
+                <td><input type="text" name="framing_interior_8_note"></td>
+                <td><input type="checkbox" name="framing_interior_8_done"></td>
+                <td><input type="checkbox" name="framing_interior_8_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>9</td>
+                <td>Gabled Roof has Ridge board straps on top (Part #)</td>
+                <td>山形屋顶顶梁上有脊板带条(第2部分)</td>
+                <td><input type="text" name="framing_interior_9_note"></td>
+                <td><input type="checkbox" name="framing_interior_9_done"></td>
+                <td><input type="checkbox" name="framing_interior_9_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>10</td>
+                <td>Structural screws on all floor Joist on B and D walls</td>
+                <td>左右窄墙B和D墙的所有底部横梁上都有结构螺钉 </td>
+                <td><input type="text" name="framing_interior_10_note"></td>
+                <td><input type="checkbox" name="framing_interior_10_done"></td>
+                <td><input type="checkbox" name="framing_interior_10_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>11</td>
+                <td>Headers above every window and door per drawing</td>
+                <td>根据图纸，在每扇窗户和门上方有横梁 </td>
+                <td><input type="text" name="framing_interior_11_note"></td>
+                <td><input type="checkbox" name="framing_interior_11_done"></td>
+                <td><input type="checkbox" name="framing_interior_11_inspected"></td>
+            </tr>
+
+            <tr>
+                <td>12</td>
+                <td>Lumber is all stumped with a Grade of #2 on better </td>
+                <td>木材上都印有2号或更高等级</td>
+                <td><input type="text" name="framing_interior_12_note"></td>
+                <td><input type="checkbox" name="framing_interior_12_done"></td>
+                <td><input type="checkbox" name="framing_interior_12_inspected"></td>
+            </tr>
+        </tbody>
+    </table>
+</form>
+
+{% endblock %}

@@ -1,0 +1,368 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Inventory</title>
+    <style>
+      :root{
+        --bg:#f6f8fc;
+        --card:#ffffff;
+        --text:#0f172a;
+        --muted:#64748b;
+        --line:#e6edf7;
+        --pill:#f7f9ff;
+        --pill-line:#dbe6fb;
+        --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      }
+      *{ box-sizing:border-box; }
+      body{
+        margin:0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        color:var(--text);
+        background:var(--bg);
+      }
+      .wrap{ max-width:1200px; margin:22px auto 60px; padding:0 18px; }
+
+      /* Header only contains Upload CSV */
+      .topbar{
+        display:flex;
+        justify-content:flex-end;
+        align-items:center;
+        margin-bottom:12px;
+      }
+      .btn{
+        display:inline-flex; align-items:center; gap:10px;
+        padding:10px 14px;
+        border-radius:12px;
+        border:1px solid #0b1220;
+        background:#0b1220;
+        color:#fff; cursor:pointer;
+        font-weight:650; font-size:14px;
+      }
+      .btn svg{ width:16px; height:16px; }
+
+      /* Search row */
+      .searchRow{
+        margin-bottom:14px;
+      }
+      .search{
+        width:100%;
+        display:flex; align-items:center; gap:10px;
+        background:#fff; border:1px solid var(--line);
+        border-radius:999px; padding:12px 14px;
+        box-shadow: 0 2px 16px rgba(15,23,42,0.05);
+      }
+      .search input{
+        border:0; outline:0; width:100%;
+        font-size:15px; background:transparent; color:var(--text);
+      }
+
+      .card{
+        background:var(--card);
+        border:1px solid var(--line);
+        border-radius:20px;
+        box-shadow: var(--shadow);
+        overflow:hidden;
+      }
+
+      table{ width:100%; border-collapse:separate; border-spacing:0; }
+      thead th{
+        text-align:left;
+        font-size:12px;
+        letter-spacing:0.09em;
+        color:#475569;
+        padding:14px 18px;
+        background:#f8fbff;
+        border-bottom:1px solid var(--line);
+      }
+      tbody td{
+        padding:12px 18px;
+        border-bottom:1px solid var(--line);
+        vertical-align:middle;
+      }
+
+      .imgCell{
+        display:flex; align-items:center; gap:10px;
+      }
+      .thumb{
+        width:48px; height:48px;
+        border-radius:12px;
+        background:#eef2ff;
+        border:1px solid var(--line);
+        display:flex; align-items:center; justify-content:center;
+        overflow:hidden;
+      }
+      .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+      .miniBtn{
+        display:inline-flex; align-items:center; gap:8px;
+        padding:8px 12px;
+        border-radius:14px;
+        border:1px solid var(--line);
+        background:#fff;
+        cursor:pointer;
+        font-weight:650;
+      }
+      .miniBtn.primary{
+        background:#0b1220; border-color:#0b1220; color:#fff;
+      }
+      .miniBtn svg{ width:14px; height:14px; }
+
+      .pill{
+        display:inline-flex;
+        align-items:center;
+        background:var(--pill);
+        border:1px solid var(--pill-line);
+        color:#0f172a;
+        border-radius:999px;
+        padding:8px 12px;
+        font-size:14px;
+        max-width: 260px;
+      }
+      .pill.mono{ font-variant-numeric: tabular-nums; }
+      .pill.trunc{
+        overflow:hidden;
+        white-space:nowrap;
+        text-overflow:ellipsis;
+      }
+
+      .updatedCell{
+        color:#0f172a;
+        font-weight:650;
+      }
+
+      @media (max-width: 980px){
+        thead{ display:none; }
+        table, tbody, tr, td{ display:block; width:100%; }
+        tbody td{ border-bottom:0; padding:10px 16px; }
+        tbody tr{ border-bottom:1px solid var(--line); padding:8px 0; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <div class="topbar">
+        <button id="uploadCsvBtn" class="btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          </svg>
+          Upload CSV
+        </button>
+        <input id="csvFile" type="file" accept=".csv" style="display:none" />
+      </div>
+
+      <div class="searchRow">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="width:18px;height:18px">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="M21 21l-4.3-4.3"></path>
+          </svg>
+          <input id="search" placeholder="Search..." />
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="overflow:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:200px;">IMG</th>
+                <th style="width:110px;">ITEM ID</th>
+                <th style="width:180px;">SUPPLIER</th>
+                <th style="width:180px;">NAME (EN)</th>
+                <th style="width:180px;">NAME (CN)</th>
+                <th style="width:150px;">QTY ORDERED</th>
+                <th style="width:150px;">QTY ON HAND</th>
+                <th style="width:220px;">UPDATED</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tbody = document.getElementById("tbody");
+      const uploadCsvBtn = document.getElementById("uploadCsvBtn");
+      const csvFile = document.getElementById("csvFile");
+      const searchInput = document.getElementById("search");
+
+      let items = [];
+
+      function shortId(uuid) {
+        if (!uuid) return "—";
+        return uuid.length > 10 ? uuid.slice(0, 8).toUpperCase() : uuid;
+      }
+
+      function fmtDate(s) {
+        if (!s) return "—";
+        const d = new Date(s);
+        if (isNaN(d.getTime())) return "—";
+        return d.toLocaleString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function iconUpload() {
+        return `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          </svg>
+        `;
+      }
+
+      async function loadItems() {
+        const res = await fetch("/api/items");
+        const data = await res.json();
+        items = Array.isArray(data) ? data : [];
+        render();
+      }
+
+      function matchesSearch(it, q) {
+        if (!q) return true;
+        const id = (it.item_id || "").toLowerCase();
+        const supplier = (it.supplier || "").toLowerCase();
+        const en = (it.item_name_english || "").toLowerCase();
+        const cn = (it.item_name_chinese || "").toLowerCase();
+        return id.includes(q) || supplier.includes(q) || en.includes(q) || cn.includes(q);
+      }
+
+      function render() {
+        const q = (searchInput.value || "").trim().toLowerCase();
+        const list = items.filter((it) => matchesSearch(it, q));
+
+        tbody.innerHTML = "";
+
+        list.forEach((it) => {
+          const tr = document.createElement("tr");
+
+          // IMG cell
+          const imgTd = document.createElement("td");
+          const imgWrap = document.createElement("div");
+          imgWrap.className = "imgCell";
+
+          const thumb = document.createElement("div");
+          thumb.className = "thumb";
+          if (it.image_url) {
+            const im = document.createElement("img");
+            im.src = it.image_url;
+            im.alt = "item image";
+            thumb.appendChild(im);
+          } else {
+            thumb.innerHTML = `
+              <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="width:18px;height:18px">
+                <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+                <path d="M7 14l3-3 4 4 3-3 3 3"></path>
+                <circle cx="9" cy="9" r="1"></circle>
+              </svg>
+            `;
+          }
+
+          const file = document.createElement("input");
+          file.type = "file";
+          file.accept = "image/*";
+          file.style.display = "none";
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "miniBtn " + (it.image_url ? "" : "primary");
+          btn.innerHTML = `${iconUpload()} ${it.image_url ? "Change" : "Add"}`;
+          btn.onclick = () => file.click();
+
+          file.onchange = async () => {
+            if (!file.files || !file.files[0]) return;
+            const fd = new FormData();
+            fd.append("image", file.files[0]);
+
+            btn.disabled = true;
+            btn.style.opacity = "0.7";
+
+            const r = await fetch(`/api/items/${it.item_id}/image`, { method: "POST", body: fd });
+            const out = await r.json();
+
+            btn.disabled = false;
+            btn.style.opacity = "1";
+
+            if (!r.ok) return alert(out.error || "Upload failed");
+            await loadItems();
+          };
+
+          imgWrap.appendChild(thumb);
+          imgWrap.appendChild(btn);
+          imgWrap.appendChild(file);
+          imgTd.appendChild(imgWrap);
+
+          const idTd = document.createElement("td");
+          idTd.innerHTML = `<span class="pill mono">${shortId(it.item_id)}</span>`;
+
+          const supplierTd = document.createElement("td");
+          supplierTd.innerHTML = `<span class="pill trunc" title="${it.supplier || ""}">${it.supplier || "—"}</span>`;
+
+          const enTd = document.createElement("td");
+          enTd.innerHTML = `<span class="pill trunc" title="${it.item_name_english || ""}">${it.item_name_english || "—"}</span>`;
+
+          const cnTd = document.createElement("td");
+          cnTd.innerHTML = `<span class="pill trunc" title="${it.item_name_chinese || ""}">${it.item_name_chinese || "—"}</span>`;
+
+          const qoTd = document.createElement("td");
+          qoTd.innerHTML = `<span class="pill mono">${(it.quantity_ordered ?? "—")}</span>`;
+
+          const qhTd = document.createElement("td");
+          qhTd.innerHTML = `<span class="pill mono">${(it.quantity_on_hand ?? "—")}</span>`;
+
+          const updTd = document.createElement("td");
+          updTd.innerHTML = `<div class="updatedCell">${fmtDate(it.on_hand_quantity_updated_date)}</div>`;
+
+          tr.appendChild(imgTd);
+          tr.appendChild(idTd);
+          tr.appendChild(supplierTd);
+          tr.appendChild(enTd);
+          tr.appendChild(cnTd);
+          tr.appendChild(qoTd);
+          tr.appendChild(qhTd);
+          tr.appendChild(updTd);
+
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Upload CSV
+      uploadCsvBtn.onclick = () => csvFile.click();
+
+      csvFile.onchange = async () => {
+        const f = csvFile.files?.[0];
+        if (!f) return;
+
+        const fd = new FormData();
+        fd.append("file", f);
+
+        uploadCsvBtn.disabled = true;
+        uploadCsvBtn.style.opacity = "0.75";
+
+        const res = await fetch("/api/upload-csv", { method: "POST", body: fd });
+        const out = await res.json();
+
+        uploadCsvBtn.disabled = false;
+        uploadCsvBtn.style.opacity = "1";
+        csvFile.value = "";
+
+        if (!res.ok) return alert(out.error || "CSV upload failed");
+        alert(`OK: ${out.inserted_or_updated} rows inserted/updated`);
+        await loadItems();
+      };
+
+      searchInput.addEventListener("input", render);
+
+      loadItems();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Ensure proper scaling on mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dragon Tiny Homes: Delivery Details</title>
+
+  <!-- Google Font (Poppins) -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css?family=Poppins:400,600,700&display=swap"
+  />
+
+  <!-- DataTables CSS (for desktop/tablet table styling, if desired) -->
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css"
+  />
+
+  <style>
+    /* ============================
+       Global & Base Styles
+       ============================ */
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    h1 {
+      font-size: 1.5em;
+      font-weight: 700;
+      color: #343a40;
+      margin: 0;
+    }
+
+    /* Container to center content and add side padding */
+    .container {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    /* ============================
+       Header
+       ============================ */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      background-color: #f8f9fa;
+      position: relative;
+    }
+    .header .logo-link {
+      display: flex;
+      align-items: center;
+    }
+    .header .logo-link img {
+      width: 30px;
+      height: 30px;
+      margin-right: 10px;
+    }
+
+    /* Center the title */
+    .header h1 {
+      font-size: 1.5em;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+    }
+
+    .logout-button {
+      padding: 10px 20px;
+      background-color: #cc716c;
+      color: #fff;
+      font-size: 1em;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+    }
+    .logout-button:hover {
+      background-color: #b35c58;
+    }
+
+    /* ============================
+       Language Selector
+       ============================ */
+    .language-selector {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .language-selector label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .language-selector select {
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    /* ============================
+       Form Groups (labels + inputs)
+       ============================ */
+    .form-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap; /* allow wrap on narrow screens */
+    }
+    .form-group label {
+      min-width: 180px;
+      font-weight: bold;
+      margin-bottom: 4px; /* if it wraps, allow spacing */
+    }
+    .form-group input[type='text'] {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      min-width: 0; /* prevents overflow */
+    }
+
+    /* ============================
+       “Submit Delivery” Button
+       ============================ */
+    .submit-delivery {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: #fff;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+      margin-top: 8px;
+    }
+    .submit-delivery:hover {
+      background-color: #218838;
+    }
+
+    /* ============================
+       Table Styles (Desktop/Tablet)
+       ============================ */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto; /* fallback scroll on small screens */
+      margin-bottom: 20px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 0 auto;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-size: 0.85em;
+    }
+
+    th,
+    td {
+      border: 1px solid #ddd;
+      padding: 10px;
+    }
+
+    th {
+      background-color: #007bff;
+      color: #ffffff;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    td {
+      text-align: center;
+      vertical-align: middle;
+      color: #333;
+    }
+
+    tbody tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    /* Buttons inside table rows (if any) */
+    .update-item,
+    .delete-item,
+    .generate-image {
+      padding: 4px 8px;
+      margin: 2px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      transition: background-color 0.3s ease;
+      font-size: 0.8em;
+    }
+    .update-item:hover,
+    .delete-item:hover,
+    .generate-image:hover {
+      background-color: #0056b3;
+    }
+
+    /* Delivery‐Image Gallery */
+    .image-gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .image-gallery img {
+      width: 200px;
+      height: auto;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    /* Lightbox (hidden by default) */
+    #lightbox {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #lightbox img {
+      max-width: 90%;
+      max-height: 90%;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+    }
+    #close-lightbox {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 2em;
+      color: white;
+      cursor: pointer;
+    }
+
+    /* ============================
+       Responsive (Mobile) Styles
+       ============================ */
+    @media (max-width: 480px) {
+      /* STACK HEADER VERTICALLY */
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-bottom: 10px;
+      }
+      .header h1 {
+        position: static;
+        transform: none;
+        margin: 0 0 10px 0;
+      }
+      .logout-button {
+        width: auto; 
+        padding: 10px 20px;
+        text-align: center;
+        margin: 8px auto;
+        display: block;
+      }
+
+      /* LANGUAGE SELECTOR STACK */
+      .language-selector {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .language-selector label {
+        margin-bottom: 6px;
+      }
+
+      /* FORM GROUPS STACK */
+      .form-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .form-group label {
+        width: 90%;
+        margin-bottom: 4px;
+      }
+      .form-group input[type='text'] {
+        width: 90%;
+      }
+
+      /* SUBMIT DELIVERY BUTTON SHRINK‐TO‐FIT */
+      .submit-delivery {
+        width: auto;
+        padding: 10px 20px;
+        text-align: center;
+        margin: 12px auto;
+        display: block;
+        font-size: 0.9em;
+      }
+
+      /* TABLE → “CARD” LAYOUT */
+      #prelisted-items-table thead {
+        display: none;
+      }
+      #prelisted-items-table tbody tr {
+        display: block;
+        margin-bottom: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background-color: #fff;
+        padding: 8px;
+      }
+      #prelisted-items-table tbody tr td {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 8px;
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        text-align: left;
+      }
+      #prelisted-items-table tbody tr td:last-child {
+        border-bottom: none;
+      }
+      #prelisted-items-table tbody tr td::before {
+        content: attr(data-label) ": ";
+        flex-shrink: 0;
+        font-weight: 600;
+        color: #555;
+      }
+
+      /* SHRINK TABLE IMAGES IF STILL VISIBLE */
+      #prelisted-items-table tbody tr td img {
+        max-width: 60px;
+        height: auto;
+        border-radius: 4px;
+      }
+
+      /* IMAGE GALLERY IMAGES REDUCE SIZE */
+      .image-gallery img {
+        width: 120px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- HEADER -->
+    <div class="header">
+      <a href="{{ url_for('main') }}" class="logo-link">
+        <img src="/static/home-logo.png" alt="Home" />
+      </a>
+      <h1>Dragon Tiny Homes Delivery</h1>
+      <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+      <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <!-- LANGUAGE SELECTOR -->
+    <div class="language-selector">
+      <label for="languageSelect" class="data-english">Choose Language:</label>
+      <label for="languageSelect" class="data-mandarin" style="display: none;">选择语言:</label>
+      <select id="languageSelect" onchange="updateDescriptions()">
+        <option value="english">English</option>
+        <option value="chinese">Chinese</option>
+      </select>
+    </div>
+
+    <!-- ORDER ID -->
+    <div class="form-group">
+      <label for="order-id" class="data-english"><b>Order ID:</b></label>
+      <label for="order-id" class="data-mandarin" style="display: none;"><b>订单编号:</b></label>
+      <input type="text" id="order_id" name="order_id" value="{{ order_id }}" readonly />
+    </div>
+
+    <!-- RECEIVER NAME -->
+    <div class="form-group">
+      <label for="receiver-name" class="data-english"><b>Receiver Name:</b></label>
+      <label for="receiver-name" class="data-mandarin" style="display: none;"><b>接收人姓名:</b></label>
+      <input
+        type="text"
+        id="receiver_name"
+        name="receiver_name"
+        value="{{ receiver_name }}"
+        readonly
+      />
+    </div>
+
+    <!-- DELIVERY TABLE -->
+    <div class="table-responsive">
+      <table id="prelisted-items-table">
+        <thead>
+          <tr>
+            <th>
+              <div class="col data-english">SKU Number</div>
+              <div class="col data-mandarin" style="display: none;">SKU编号</div>
+            </th>
+            <th>
+              <div class="col data-english">Supplier SKU Number</div>
+              <div class="col data-mandarin" style="display: none;">供应商 SKU 编号</div>
+            </th>
+            <th>
+              <div class="col data-english">Description</div>
+              <div class="col data-mandarin" style="display: none;">描述</div>
+            </th>
+            <th>
+              <div class="col data-english">Actual Price</div>
+              <div class="col data-mandarin" style="display: none;">实际价格</div>
+            </th>
+            <th>
+              <div class="col data-english">Quantity Confirmed</div>
+              <div class="col data-mandarin" style="display: none;">确认数量</div>
+            </th>
+            <th>
+              <div class="col data-english">Quantity Received</div>
+              <div class="col data-mandarin" style="display: none;">接收数量</div>
+            </th>
+            <th>
+              <div class="col data-english">Notes</div>
+              <div class="col data-mandarin" style="display: none;">备注</div>
+            </th>
+            <th>
+              <div class="col data-english">Image</div>
+              <div class="col data-mandarin" style="display: none;">图片</div>
+            </th>
+          </tr>
+        </thead>
+        <tbody id="prelisted-items">
+          {% for item in home_depot_items %}
+          <tr>
+            <td data-label="SKU Number">{{ item.material_id }}</td>
+            <td data-label="Supplier SKU Number">{{ item.internet_sku_number }}</td>
+            <td data-label="Description">
+              <div class="data-english" style="width: 150px; white-space: normal;">
+                {{ item.item_desc }}
+              </div>
+              <div
+                class="data-mandarin"
+                style="width: 150px; white-space: normal; display: none;"
+              >
+                {{ item.item_desc_mandarin }}
+              </div>
+            </td>
+            <td data-label="Actual Price">{{ item.actual_item_price }}</td>
+            <td data-label="Quantity Confirmed">{{ item.order_qty_confirmed }}</td>
+            <td data-label="Quantity Received">{{ item.order_qty_received }}</td>
+            <td data-label="Notes">
+              <div class="data-english" style="width: 150px; white-space: normal;">
+                {{ item.delivery_notes }}
+              </div>
+              <div
+                class="data-mandarin"
+                style="width: 150px; white-space: normal; display: none;"
+              >
+                {{ item.delivery_notes_mandarin }}
+              </div>
+            </td>
+            <td data-label="Image">
+              <img src="{{ item.item_image }}" width="100" height="100" alt="Item Image" />
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- DELIVERY IMAGES SECTION -->
+    <div class="form-group" style="margin-top: 30px; flex-direction: column; align-items: flex-start;">
+      <div class="section-title">
+        <span class="data-english">Delivery Images</span>
+        <span class="data-mandarin" style="display: none;">交货图片</span>
+      </div>
+      <div class="image-gallery">
+        {% for image in images %}
+        <img
+          src="{{ image.image_url }}"
+          alt="Material Image"
+          onclick="openLightbox('{{ image.image_url }}')"
+        />
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- SUBMIT DELIVERY BUTTON (if needed at bottom) -->
+    <!-- <div style="text-align: center; margin: 20px 0;">
+      <a href="{{ url_for('submit_delivery', order_id=order_id) }}" class="submit-delivery">
+        <span class="data-english">Submit Delivery</span>
+        <span class="data-mandarin" style="display: none;">提交交货</span>
+      </a>
+    </div> -->
+  </div>
+
+  <!-- LIGHTBOX -->
+  <div id="lightbox" onclick="closeLightbox()">
+    <span id="close-lightbox">&times;</span>
+    <img id="lightbox-image" src="" alt="Full‐Size Image" />
+  </div>
+
+  <!-- jQuery & DataTables (for desktop/tablet sorting, if desired) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script
+    type="text/javascript"
+    src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"
+  ></script>
+  <script>
+    $(document).ready(function () {
+      $('#prelisted-items-table').DataTable({
+        responsive: true,
+        paging: false,
+        searching: false,
+        info: false,
+      });
+    });
+  </script>
+
+  <!-- Language‐toggle Script -->
+  <script>
+    function updateDescriptions() {
+      const language = document.getElementById('languageSelect').value;
+      localStorage.setItem('selectedLanguage', language);
+
+      const englishElements = document.querySelectorAll('.data-english');
+      const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+      if (language === 'english') {
+        englishElements.forEach((el) => (el.style.display = 'block'));
+        mandarinElements.forEach((el) => (el.style.display = 'none'));
+      } else {
+        englishElements.forEach((el) => (el.style.display = 'none'));
+        mandarinElements.forEach((el) => (el.style.display = 'block'));
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedLanguage = localStorage.getItem('selectedLanguage');
+      if (savedLanguage) {
+        document.getElementById('languageSelect').value = savedLanguage;
+        updateDescriptions();
+      }
+    });
+
+    /* Lightbox open/close logic */
+    function openLightbox(imageUrl) {
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImage = document.getElementById('lightbox-image');
+      lightboxImage.src = imageUrl;
+      lightbox.style.display = 'flex';
+    }
+    function closeLightbox() {
+      const lightbox = document.getElementById('lightbox');
+      lightbox.style.display = 'none';
+      document.getElementById('lightbox-image').src = '';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,294 @@
+// labelPrinter.js  – run:  node labelPrinter.js
+// ────────────────────────────────────────────────────────────────────────────
+// npm i express @supabase/supabase-js qrcode pdfkit dotenv canvas cors
+// ────────────────────────────────────────────────────────────────────────────
+
+const express               = require('express');
+const cors                  = require('cors');
+const { createClient }      = require('@supabase/supabase-js');
+const QRCode                = require('qrcode');
+const PDFDocument           = require('pdfkit');
+const fs                    = require('fs');
+const path                  = require('path');
+const { createCanvas, loadImage, registerFont } = require('canvas');
+require('dotenv').config();
+
+// ─── Fonts (identical glyph metrics to browser’s Inter 400/700) ─────────────
+const INTER_DIR   = '/usr/local/share/fonts/truetype/inter';
+const REGULAR_TTF = path.join(INTER_DIR, 'Inter-Regular.ttf');
+const BOLD_TTF    = path.join(INTER_DIR, 'Inter-Bold.ttf');
+[REGULAR_TTF, BOLD_TTF].forEach(p => {
+  if(!fs.existsSync(p)){ console.error(`❌  Font ${p} missing`); process.exit(1);}
+});
+
+registerFont(REGULAR_TTF,{ family:'Inter', weight:'normal' });
+registerFont(BOLD_TTF,   { family:'Inter', weight:'bold'   });
+
+const PDF_FONTS = { Inter: REGULAR_TTF, 'Inter-Bold': BOLD_TTF };
+console.log('✓  Inter Regular & Bold loaded for canvas & PDFKit');
+
+// ─── App + Supabase ─────────────────────────────────────────────────────────
+const app  = express();
+const port = process.env.PORT || 50;
+app.use(cors());                       // allow calls from any origin
+app.use(express.json({limit:'2mb'}));  // parse JSON bodies
+
+const supabase = createClient(
+  'http://137.184.148.164:8000',
+  process.env.SUPABASE_ANON_KEY
+);
+
+// ─── Geometry constants (203 DPI → 406 × 203 px, 144 × 72 pt) ─────────────
+const DPI = 203,
+      PX_W = 2 * DPI,
+      PX_H = 1 * DPI,
+      PT_W = 144,
+      PT_H = 72;
+
+// ─── Template (editable at runtime) ─────────────────────────────────────────
+let elementsConfig = [
+  {name:'sidebar', type:'text', text:'DTH ITEM', weight:'700', fontSize:0.26, fontColor:'black', fillColor:'white', bounds:{width:0.5,height:1}, position:{x:0,y:1}, rotation:270 },
+  {name:'item_name',type:'text',table:'home_depot_items',lookupColumn:'material_id',returnColumn:'item_desc',truncate:20,weight:'400',fontSize:0.12,fontColor:'black',bounds:{width:0.55,height:0.3},position:{x:0.12,y:0.05}},
+  {name:'order_id', type:'text',table:'home_depot_order_history',lookupColumn:'order_id',returnColumn:'order_id',weight:'400',fontSize:0.12,fontColor:'black',bounds:{width:0.55,height:0.12},position:{x:0.12,y:0.65}},
+  {name:'sku',      type:'text',table:'home_depot_items',lookupColumn:'material_id',returnColumn:'internal_sku',fallbackColumn:'temp_internal_sku',generateFallback:true,weight:'400',fontSize:0.12,fontColor:'black',bounds:{width:0.55,height:0.12},position:{x:0.12,y:0.78}},
+  {name:'location', type:'text',text:'Bay 1 | Shelf 4 | Bin 18',weight:'400',fontSize:0.09,fontColor:'black',bounds:{width:0.55,height:0.12},position:{x:0.12,y:0.90}},
+  {name:'qr_code',  type:'qr', sourceElement:'sku',bounds:{width:0.4,height:0.7},position:{x:0.60,y:0}},
+  {name:'divider',  type:'line',orientation:'vertical',position:{x:0.11,y:0.03},length:0.94,thickness:2,color:'black',style:'solid'}
+];
+
+// ─── Runtime state we want to “remember” ────────────────────────────────────
+let lastOrder   = null;  // {order_id, order_qty_requested, material_id}
+let lastBuffers = [];    // PNG buffers of the most recent render
+let lastPdfPath = null;  // path of the most recent preview-PDF
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+function ensureDirectoryExists(fp){
+  const d = path.dirname(fp);
+  if(!fs.existsSync(d)) fs.mkdirSync(d,{recursive:true});
+}
+
+// ─── Fetch data ────────────────────────────────────────────────────────────
+async function fetchElementData(el, lookupValue){
+  if(!el.table||!el.returnColumn) return el.text||'';
+  const {data} = await supabase.from(el.table)
+                               .select(el.returnColumn)
+                               .eq(el.lookupColumn, lookupValue)
+                               .single();
+  let v = data?.[el.returnColumn] || '';
+  if(!v && el.fallbackColumn){
+    const {data:fb} = await supabase.from(el.table)
+                                    .select(el.fallbackColumn)
+                                    .eq(el.lookupColumn, lookupValue)
+                                    .single();
+    v = fb?.[el.fallbackColumn] || '';
+  }
+  if(!v && el.generateFallback){
+    v = 'DTH' + Math.floor(1e7 + Math.random() * 9e7);
+    await supabase.from(el.table)
+                  .update({[el.fallbackColumn]: v})
+                  .eq(el.lookupColumn,lookupValue);
+  }
+  if(el.truncate && typeof v === 'string' && v.length > el.truncate)
+    v = v.substring(0, el.truncate);
+  return v;
+}
+
+// ─── Draw elements ─────────────────────────────────────────────────────────
+async function drawElements(ctx,cfg,ctxObj){
+  ctx.textBaseline='top'; ctx.textAlign='left';
+  for(const el of cfg){
+    const x = el.position.x * PX_W,
+          y = el.position.y * PX_H,
+          w = (el.bounds?.width  || 0) * PX_W,
+          h = (el.bounds?.height || 0) * PX_H;
+    const content = await fetchElementData(el, ctxObj[el.lookupColumn]);
+    ctxObj[el.name] = content;
+
+    switch(el.type){
+      case 'text': {
+        if(el.fillColor){ ctx.fillStyle = el.fillColor; ctx.fillRect(x,y,w,h); }
+        ctx.save();
+        ctx.fillStyle = el.fontColor || 'black';
+        const wt = (el.weight === '700' || el.fontWeight === 'bold') ? 'bold ' : '';
+        ctx.font = `${wt}${el.fontSize * PX_H}px "Inter"`;
+        if(el.rotation){
+          ctx.translate(x,y);
+          ctx.rotate((el.rotation * Math.PI) / 180);
+          ctx.translate(-x,-y);
+        }
+        ctx.fillText(content, x, y, w);
+        ctx.restore();
+      } break;
+
+      case 'qr': {
+        const qrBuf = await QRCode.toBuffer(content || 'UNKNOWN', {type:'png'});
+        const img   = await loadImage(qrBuf);
+        ctx.drawImage(img, x, y, w, h);
+      } break;
+
+      case 'line': {
+        ctx.save();
+        ctx.strokeStyle = el.color || 'black';
+        ctx.lineWidth   = el.thickness || 1;
+        if(el.style === 'dashed') ctx.setLineDash([3,3]);
+        ctx.beginPath();
+        el.orientation === 'vertical'
+          ? (ctx.moveTo(x,y), ctx.lineTo(x, y + el.length * PX_H))
+          : (ctx.moveTo(x,y), ctx.lineTo(x + el.length * PX_W, y));
+        ctx.stroke();
+        ctx.restore();
+      } break;
+
+      case 'box': {
+        if(el.fillColor){
+          ctx.fillStyle = el.fillColor;
+          ctx.fillRect(x,y,w,h);
+        }
+        if(el.outlineColor){
+          ctx.strokeStyle = el.outlineColor;
+          ctx.lineWidth   = el.outlineThickness || 1;
+          ctx.strokeRect(x,y,w,h);
+        }
+      } break;
+    }
+  }
+}
+
+// ─── 1. Create PNG buffers ─────────────────────────────────────────────────
+async function createImageBuffers(order){
+  const bufs = [];
+  for(let i=0; i<order.order_qty_requested; i++){
+    const canvas = createCanvas(PX_W,PX_H);
+    const ctx    = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0,0,PX_W,PX_H);
+    await drawElements(ctx, elementsConfig, order);
+    bufs.push(canvas.toBuffer('image/png'));
+  }
+  return bufs;
+}
+
+// ─── 2. Package buffers into a PDF (scaled to 144×72 pt) ───────────────────
+async function createPdf(bufs, orderId){
+  const filePath = path.join('pdf', `${orderId}.pdf`);
+  ensureDirectoryExists(filePath);
+
+  const doc = new PDFDocument({ size:[PT_W,PT_H], margin:0 });
+  Object.entries(PDF_FONTS).forEach(([n,f]) => doc.registerFont(n,f));
+  const stream = fs.createWriteStream(filePath);
+  doc.pipe(stream);
+
+  bufs.forEach((b, i) => {
+    if(i) doc.addPage({ size:[PT_W,PT_H], margin:0 });
+    doc.image(b, 0, 0, { width: PT_W, height: PT_H });  // ← scaled correctly
+  });
+
+  doc.end();
+  await new Promise(r => stream.on('finish', r));
+  return filePath;
+}
+
+// ─── 3. Send PNGs to the print bridge ──────────────────────────────────────
+async function printBuffers(bufs){
+  const endpoint='http://137.184.148.164:5090/api/print-image';
+  for(const b of bufs){
+    const dataUrl = 'data:image/png;base64,' + b.toString('base64');
+    const res = await fetch(endpoint,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({imageData:dataUrl,cut:true})
+    });
+    if(!res.ok) console.error('Print API error:', await res.text());
+  }
+}
+
+// ─── 4. Poll new orders, render, print, archive ────────────────────────────
+async function pollPendingOrders(){
+  const {data:orders,error} = await supabase.from('home_depot_order_history')
+                                            .select('order_id,order_qty_requested,material_id')
+                                            .is('label_pdf_url',null);
+  if(error) return console.error('DB fetch error:', error);
+
+  for(const order of orders){
+    try{
+      console.log('Processing order:', order.order_id);
+      const bufs    = await createImageBuffers(order);
+      const pdfPath = await createPdf(bufs, order.order_id);
+      await printBuffers(bufs);
+      await supabase.from('home_depot_order_history')
+                    .update({label_pdf_url: pdfPath})
+                    .eq('order_id', order.order_id);
+
+      // remember for preview API
+      lastOrder   = order;
+      lastBuffers = bufs;
+      lastPdfPath = pdfPath;
+
+      console.log(`✓  Completed order ${order.order_id}`);
+    }catch(e){
+      console.error(`Error processing order ${order.order_id}:`, e);
+    }
+  }
+}
+setInterval(pollPendingOrders, 2000);
+
+// ════════════════════════════════════════════════════════════════════════════
+// ↓↓↓↓↓     REST API for live editing & preview (unchanged except scaling)  ↓↓↓
+// ════════════════════════════════════════════════════════════════════════════
+
+// read template
+app.get('/elements-config', (_,res)=> res.json(elementsConfig));
+
+// replace entire template
+app.put('/elements-config', (req,res)=>{
+  if(!Array.isArray(req.body)) return res.status(400).json({error:'Body must be an array'});
+  elementsConfig = req.body;
+  res.json({ok:true,count:elementsConfig.length});
+});
+
+// patch single element
+app.patch('/elements-config/:name', (req,res)=>{
+  const idx = elementsConfig.findIndex(e=>e.name === req.params.name);
+  if(idx === -1) return res.status(404).json({error:'Element not found'});
+  elementsConfig[idx] = { ...elementsConfig[idx], ...req.body };
+  res.json(elementsConfig[idx]);
+});
+
+// expose last order for the designer
+app.get('/last-order', (_,res)=>
+  lastOrder ? res.json(lastOrder) : res.status(404).json({error:'No order rendered yet'})
+);
+
+// manual preview
+app.post('/preview', async (req,res)=>{
+  const order = req.body;
+  if(!order?.order_id || !order?.material_id || !order?.order_qty_requested)
+    return res.status(400).json({error:'order_id, material_id, order_qty_requested required'});
+  try{
+    const bufs    = await createImageBuffers(order);
+    const pdfPath = await createPdf(bufs, order.order_id + '_preview');
+    lastOrder   = order;
+    lastBuffers = bufs;
+    lastPdfPath = pdfPath;
+    res.json({pages: bufs.length, pdf:'/preview/pdf', png:'/preview/image/0'});
+  }catch(err){
+    res.status(500).json({error:String(err)});
+  }
+});
+
+// fetch N-th PNG of last render
+app.get('/preview/image/:index?', (req,res)=>{
+  const i = parseInt(req.params.index || 0, 10);
+  if(!lastBuffers[i]) return res.status(404).send('No preview available');
+  res.type('png').send(lastBuffers[i]);
+});
+
+// download last preview PDF
+app.get('/preview/pdf', (req,res)=>{
+  if(!lastPdfPath || !fs.existsSync(lastPdfPath))
+    return res.status(404).send('No PDF available');
+  res.download(lastPdfPath);
+});
+
+// start server
+app.listen(port, ()=> console.log(`Label printer + preview API listening on :${port}`));

@@ -1,0 +1,554 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="stack">
+  <div class="card">
+    <div class="toolbar">
+      <div>
+        <div class="section-title">Ticket</div>
+        <h2 style="margin:2px 0 4px;">{{ ticket.template.template_code if ticket.template else "Ticket" }} &middot; {{ ticket.template.name if ticket.template else "" }}</h2>
+        <div class="muted">Project {{ ticket.project.project_code if ticket.project else "None" }} &middot; {{ ticket.template.template_id if ticket.template else "" }}</div>
+      </div>
+      <div class="form-actions">
+        <a class="btn btn-sm" href="{{ url_for('ticket_fill', template_id=ticket.template.template_id if ticket.template else '', project_id=ticket.project.id if ticket.project else '') }}">Edit</a>
+        <form method="get" action="{{ url_for('ticket_detail', uuid=ticket.uuid) }}" style="margin:0;">
+          <input type="hidden" name="action" value="print">
+          <button type="submit" class="btn btn-primary btn-sm">Print</button>
+        </form>
+      </div>
+    </div>
+    {% if message %}
+    <div class="alert alert-success" style="margin-top:10px;">{{ message }}</div>
+    {% endif %}
+  </div>
+
+  <div class="grid" style="grid-template-columns: 1.2fr 1fr; gap:14px;">
+    <div class="card" style="border-color:#1c2c46; padding:14px;">
+      <div class="toolbar" style="align-items:flex-start;">
+        <div>
+          <div class="section-title">Summary</div>
+          <div class="muted">Status and assignment</div>
+        </div>
+      </div>
+      <form method="post" action="{{ url_for('ticket_detail', uuid=ticket.uuid) }}" class="stack" style="gap:10px;">
+        <input type="hidden" name="action" value="update_ticket">
+        <label for="ticket_name">Staff member</label>
+        <input type="text" id="ticket_name" name="ticket_name" value="{{ ticket.name or '' }}" placeholder="Who will do the work">
+
+        <label for="ticket_status">Status</label>
+        <select id="ticket_status" name="ticket_status">
+          {% set statuses = ['upcoming', 'in_progress', 'complete', 'open', 'new'] %}
+          {% for s in statuses %}
+          <option value="{{ s }}" {% if ticket.status == s %}selected{% endif %}>{{ s.replace('_', ' ') }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-actions" style="margin-top:6px;">
+          <button type="submit" class="btn btn-sm">Save</button>
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('projects', project_code=ticket.project.project_code) if ticket.project else url_for('projects') }}">Back to projects</a>
+        </div>
+      </form>
+    </div>
+
+    <div class="card" style="border-color:#1c2c46; padding:14px;">
+      <div class="section-title">Job</div>
+      <div class="muted">{{ ticket.template.job_type_en if ticket.template else "" }} / {{ ticket.template.job_type_cn if ticket.template else "" }}</div>
+      <div style="margin-top:10px;">
+        <div class="section-title">Notes (EN)</div>
+        <div>{{ ticket.notes_en or "No notes" }}</div>
+      </div>
+      <div style="margin-top:10px;">
+        <div class="section-title">Notes (CN)</div>
+        <div>{{ ticket.notes_cn or "No notes" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="border-color:#1c2c46; padding:14px;">
+    <div class="toolbar" style="align-items:center;">
+      <div class="section-title" style="margin:0;">Checklist</div>
+    </div>
+    {% if ticket.checklist_statuses %}
+    <form method="post" action="{{ url_for('ticket_detail', uuid=ticket.uuid) }}">
+      <input type="hidden" name="action" value="update_checklist">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>English</th>
+            <th>Chinese</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set cs_statuses = ['not_started', 'in_progress', 'complete', 'pending'] %}
+          {% for cs in ticket.checklist_statuses %}
+          <tr>
+            <td>{{ cs.checklist_item.text_en }}</td>
+            <td>{{ cs.checklist_item.text_cn }}</td>
+            <td>
+              <input type="hidden" name="cs_id[]" value="{{ cs.id }}">
+              <select name="cs_status[]" class="inline-select">
+                {% for s in cs_statuses %}
+                <option value="{{ s }}" {% if cs.status == s %}selected{% endif %}>{{ s.replace('_', ' ') }}</option>
+                {% endfor %}
+              </select>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="form-actions" style="margin-top:10px;">
+        <button type="submit" class="btn btn-sm">Update checklist</button>
+      </div>
+    </form>
+    {% else %}
+    <p class="muted">No checklist items.</p>
+    {% endif %}
+  </div>
+
+  <div class="card" style="border-color:#1c2c46; padding:14px;">
+    <div class="section-title">Images</div>
+    {% if ticket.images %}
+    {% set initial_count = 5 %}
+    {% set total_images = ticket.images | length %}
+    <div class="grid" id="ticket-image-grid" data-initial-count="{{ initial_count }}" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px;">
+      {% for img in ticket.images %}
+      {% set is_hidden = loop.index0 >= initial_count %}
+      <div class="card js-ticket-image" style="padding:8px; border-color: var(--border); box-shadow:none;{% if is_hidden %} display:none;{% endif %}">
+        <div class="muted truncate" title="{{ img.file_path }}">{{ img.file_path }}</div>
+        {% if img.file_path %}
+        {% set full_src = url_for('image_thumb', path=img.file_path) %}
+        {% if img.thumbnail_path %}
+        {% set thumb_src = url_for('image_thumb', path=img.thumbnail_path) %}
+        <div style="margin-top:6px; display:flex; justify-content:center;">
+          {% if is_hidden %}
+          <img class="js-image-thumb js-image-lazy" data-full="{{ full_src }}" data-src="{{ thumb_src }}" alt="Image" loading="lazy" style="max-width: 100%; max-height: 140px; border-radius:8px; border:1px solid var(--border); object-fit: contain; cursor: zoom-in;">
+          {% else %}
+          <img class="js-image-thumb" data-full="{{ full_src }}" src="{{ thumb_src }}" alt="Image" loading="lazy" style="max-width: 100%; max-height: 140px; border-radius:8px; border:1px solid var(--border); object-fit: contain; cursor: zoom-in;">
+          {% endif %}
+        </div>
+        {% else %}
+        <div style="margin-top:6px; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px; border:1px dashed var(--border); border-radius:8px;">
+          <div class="muted" style="font-size:12px;">Thumbnail queued</div>
+          <button type="button" class="btn btn-ghost btn-sm js-image-thumb" data-full="{{ full_src }}">Open full image</button>
+        </div>
+        {% endif %}
+        {% endif %}
+        {% if img.caption %}
+        <div class="muted" style="margin-top:6px;">{{ img.caption }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="form-actions" style="margin-top:10px;">
+      <button type="button" class="btn btn-ghost btn-sm" id="js-load-more-images" data-step="{{ initial_count }}" style="display:none;">Load more images</button>
+    </div>
+    {% else %}
+    <p class="muted">No images.</p>
+    {% endif %}
+    {% set attachment_initial_count = 5 %}
+    {% set cs_with_attachments = ticket.checklist_statuses | selectattr("attachments") | list %}
+    {% if cs_with_attachments or ticket.attachments_unassigned %}
+    <div class="section-title" style="margin-top:12px;">Attachments</div>
+    {% for cs in cs_with_attachments %}
+    {% set total_attachments = cs.attachments | length %}
+    <div class="card" style="padding:8px; border-color: var(--border); box-shadow:none; margin-top:8px;">
+      <div class="muted">{{ cs.checklist_item.text_en }} / {{ cs.checklist_item.text_cn }}</div>
+      <div class="js-attachment-group">
+      <div class="grid js-attachment-grid" data-step="{{ attachment_initial_count }}" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px; margin-top:6px;">
+        {% for att in cs.attachments %}
+        {% set att_hidden = loop.index0 >= attachment_initial_count %}
+        <div class="card js-attachment-item" style="padding:8px; border-color: var(--border); box-shadow:none;{% if att_hidden %} display:none;{% endif %}">
+          <div class="muted truncate" title="{{ att.file_path }}">{{ att.file_name or att.file_path }}</div>
+          {% if att.file_path %}
+            {% set attachment_ref = att.uuid or att.id %}
+            {% set file_src = url_for('attachment_file', attachment_ref=attachment_ref) %}
+            {% if att.is_video %}
+            {% set video_src = file_src %}
+            {% set poster_src = url_for('image_thumb', path=att.thumbnail_path) if att.thumbnail_path else '' %}
+            <div style="margin-top:6px; display:flex; justify-content:center;">
+              {% if att_hidden %}
+              <video controls preload="metadata" playsinline {% if poster_src %}data-poster="{{ poster_src }}"{% endif %} style="max-width: 100%; max-height: 180px; border-radius:8px; border:1px solid var(--border); background:#0b1422;">
+                <source data-src="{{ video_src }}" type="{{ att.mime_type or '' }}">
+              </video>
+              {% else %}
+              <video controls preload="metadata" playsinline {% if poster_src %}poster="{{ poster_src }}"{% endif %} style="max-width: 100%; max-height: 180px; border-radius:8px; border:1px solid var(--border); background:#0b1422;">
+                <source src="{{ video_src }}" type="{{ att.mime_type or '' }}">
+              </video>
+              {% endif %}
+            </div>
+            {% elif att.thumbnail_path %}
+            {% set full_src = file_src %}
+            {% set thumb_src = url_for('image_thumb', path=att.thumbnail_path) %}
+            <div style="margin-top:6px; display:flex; justify-content:center;">
+              {% if att_hidden %}
+              <img class="js-image-thumb js-image-lazy" data-full="{{ full_src }}" data-src="{{ thumb_src }}" alt="Attachment" loading="lazy" style="max-width: 100%; max-height: 140px; border-radius:8px; border:1px solid var(--border); object-fit: contain; cursor: zoom-in;">
+              {% else %}
+              <img class="js-image-thumb" data-full="{{ full_src }}" src="{{ thumb_src }}" alt="Attachment" loading="lazy" style="max-width: 100%; max-height: 140px; border-radius:8px; border:1px solid var(--border); object-fit: contain; cursor: zoom-in;">
+              {% endif %}
+            </div>
+            {% elif att.is_image %}
+            {% set full_src = file_src %}
+            <div style="margin-top:6px; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px; border:1px dashed var(--border); border-radius:8px;">
+              <div class="muted" style="font-size:12px;">Thumbnail queued</div>
+              <button type="button" class="btn btn-ghost btn-sm js-image-thumb" data-full="{{ full_src }}">Open full image</button>
+            </div>
+            {% else %}
+            <div style="margin-top:6px;">
+              <a class="btn btn-ghost btn-sm" href="{{ file_src }}" target="_blank" rel="noopener">Open attachment</a>
+            </div>
+            {% endif %}
+          {% endif %}
+          {% if att.description %}
+          <div class="muted" style="margin-top:6px;">{{ att.description }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="form-actions" style="margin-top:10px;">
+        <button type="button" class="btn btn-ghost btn-sm js-attachment-load-more" data-step="{{ attachment_initial_count }}" style="display:none;">Load more attachments</button>
+      </div>
+      </div>
+    </div>
+    {% endfor %}
+    {% if ticket.attachments_unassigned %}
+    {% set total_unassigned = ticket.attachments_unassigned | length %}
+    <div class="card" style="padding:8px; border-color: var(--border); box-shadow:none; margin-top:8px;">
+      <div class="muted">Other attachments</div>
+      <div class="js-attachment-group">
+      <div class="grid js-attachment-grid" data-step="{{ attachment_initial_count }}" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px; margin-top:6px;">
+        {% for att in ticket.attachments_unassigned %}
+        {% set att_hidden = loop.index0 >= attachment_initial_count %}
+        <div class="card js-attachment-item" style="padding:8px; border-color: var(--border); box-shadow:none;{% if att_hidden %} display:none;{% endif %}">
+          <div class="muted truncate" title="{{ att.file_path }}">{{ att.file_name or att.file_path }}</div>
+          {% if att.file_path %}
+            {% set attachment_ref = att.uuid or att.id %}
+            {% set file_src = url_for('attachment_file', attachment_ref=attachment_ref) %}
+            {% if att.is_video %}
+            {% set video_src = file_src %}
+            {% set poster_src = url_for('image_thumb', path=att.thumbnail_path) if att.thumbnail_path else '' %}
+            <div style="margin-top:6px; display:flex; justify-content:center;">
+              {% if att_hidden %}
+              <video controls preload="metadata" playsinline {% if poster_src %}data-poster="{{ poster_src }}"{% endif %} style="max-width: 100%; max-height: 180px; border-radius:8px; border:1px solid var(--border); background:#0b1422;">
+                <source data-src="{{ video_src }}" type="{{ att.mime_type or '' }}">
+              </video>
+              {% else %}
+              <video controls preload="metadata" playsinline {% if poster_src %}poster="{{ poster_src }}"{% endif %} style="max-width: 100%; max-height: 180px; border-radius:8px; border:1px solid var(--border); background:#0b1422;">
+                <source src="{{ video_src }}" type="{{ att.mime_type or '' }}">
+              </video>
+              {% endif %}
+            </div>
+            {% elif att.thumbnail_path %}
+            {% set full_src = file_src %}
+            {% set thumb_src = url_for('image_thumb', path=att.thumbnail_path) %}
+            <div style="margin-top:6px; display:flex; justify-content:center;">
+              {% if att_hidden %}
+              <img class="js-image-thumb js-image-lazy" data-full="{{ full_src }}" data-src="{{ thumb_src }}" alt="Attachment" loading="lazy" style="max-width: 100%; max-height: 140px; border-radius:8px; border:1px solid var(--border); object-fit: contain; cursor: zoom-in;">
+              {% else %}
+              <img class="js-image-thumb" data-full="{{ full_src }}" src="{{ thumb_src }}" alt="Attachment" loading="lazy" style="max-width: 100%; max-height: 140px; border-radius:8px; border:1px solid var(--border); object-fit: contain; cursor: zoom-in;">
+              {% endif %}
+            </div>
+            {% elif att.is_image %}
+            {% set full_src = file_src %}
+            <div style="margin-top:6px; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px; border:1px dashed var(--border); border-radius:8px;">
+              <div class="muted" style="font-size:12px;">Thumbnail queued</div>
+              <button type="button" class="btn btn-ghost btn-sm js-image-thumb" data-full="{{ full_src }}">Open full image</button>
+            </div>
+            {% else %}
+            <div style="margin-top:6px;">
+              <a class="btn btn-ghost btn-sm" href="{{ file_src }}" target="_blank" rel="noopener">Open attachment</a>
+            </div>
+            {% endif %}
+          {% endif %}
+          {% if att.description %}
+          <div class="muted" style="margin-top:6px;">{{ att.description }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="form-actions" style="margin-top:10px;">
+        <button type="button" class="btn btn-ghost btn-sm js-attachment-load-more" data-step="{{ attachment_initial_count }}" style="display:none;">Load more attachments</button>
+      </div>
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
+<div id="image-viewer" style="position:fixed; inset:0; background:rgba(8, 12, 18, 0.9); display:none; align-items:center; justify-content:center; z-index:1000;">
+  <div id="image-viewer-backdrop" style="position:absolute; inset:0;"></div>
+  <img id="image-viewer-img" src="" alt="Full size" style="max-width:92vw; max-height:92vh; border-radius:10px; border:1px solid rgba(255,255,255,0.2); box-shadow:0 12px 40px rgba(0,0,0,0.45); background:#0b1422; position:relative; z-index:1;">
+</div>
+<script>
+  (function () {
+    var viewer = document.getElementById("image-viewer");
+    var viewerImg = document.getElementById("image-viewer-img");
+    var backdrop = document.getElementById("image-viewer-backdrop");
+    if (!viewer || !viewerImg || !backdrop) return;
+    function openViewer(src) {
+      viewerImg.src = src;
+      viewer.style.display = "flex";
+    }
+    function closeViewer() {
+      viewer.style.display = "none";
+      viewerImg.src = "";
+    }
+    document.addEventListener("click", function (event) {
+      var target = event.target;
+      if (!target) return;
+      var img = target.closest(".js-image-thumb");
+      if (!img) return;
+      var fullSrc = img.getAttribute("data-full");
+      if (!fullSrc) return;
+      event.preventDefault();
+      openViewer(fullSrc);
+    });
+    backdrop.addEventListener("click", closeViewer);
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") closeViewer();
+    });
+  })();
+  (function () {
+    var grid = document.getElementById("ticket-image-grid");
+    var button = document.getElementById("js-load-more-images");
+    if (!grid || !button) return;
+    var step = parseInt(
+      button.getAttribute("data-step") ||
+        grid.getAttribute("data-initial-count") ||
+        "5",
+      10
+    );
+    if (!step || step < 1) step = 5;
+    var items = Array.prototype.slice.call(grid.querySelectorAll(".js-ticket-image"));
+    if (!items.length) {
+      button.style.display = "none";
+      return;
+    }
+
+    function revealLazyImages(container) {
+      var lazy = container.querySelectorAll("img[data-src]");
+      for (var i = 0; i < lazy.length; i++) {
+        var src = lazy[i].getAttribute("data-src");
+        if (src && !lazy[i].getAttribute("src")) {
+          lazy[i].setAttribute("src", src);
+        }
+      }
+    }
+
+    function deferLazyImages(container) {
+      var imgs = container.querySelectorAll("img");
+      for (var i = 0; i < imgs.length; i++) {
+        var img = imgs[i];
+        var src = img.getAttribute("src");
+        if (src && !img.getAttribute("data-src")) {
+          img.setAttribute("data-src", src);
+          img.removeAttribute("src");
+        }
+      }
+    }
+
+    function collapseToStep() {
+      var visible = 0;
+      var hidden = 0;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].style.display === "none") {
+          deferLazyImages(items[i]);
+          hidden += 1;
+          continue;
+        }
+        if (visible >= step) {
+          items[i].style.display = "none";
+          deferLazyImages(items[i]);
+          hidden += 1;
+          continue;
+        }
+        visible += 1;
+      }
+      return hidden;
+    }
+
+    function remainingCount() {
+      var remaining = 0;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].style.display === "none") {
+          remaining += 1;
+        }
+      }
+      return remaining;
+    }
+
+    function updateButton() {
+      var remaining = remainingCount();
+      if (remaining <= 0) {
+        button.style.display = "none";
+        return;
+      }
+      button.style.display = "";
+      button.textContent = "Load more images (" + remaining + " remaining)";
+    }
+
+    function showNext() {
+      var revealed = 0;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].style.display === "none") {
+          items[i].style.display = "";
+          revealLazyImages(items[i]);
+          revealed += 1;
+          if (revealed >= step) break;
+        }
+      }
+      updateButton();
+    }
+
+    button.addEventListener("click", function () {
+      showNext();
+    });
+    collapseToStep();
+    updateButton();
+  })();
+  (function () {
+    var groups = document.querySelectorAll(".js-attachment-group");
+    if (!groups.length) return;
+
+    function revealLazyAssets(container) {
+      var lazyImages = container.querySelectorAll("img[data-src]");
+      for (var i = 0; i < lazyImages.length; i++) {
+        var img = lazyImages[i];
+        var src = img.getAttribute("data-src");
+        if (src && !img.getAttribute("src")) {
+          img.setAttribute("src", src);
+        }
+      }
+
+      var lazyVideos = container.querySelectorAll("video[data-poster]");
+      for (var j = 0; j < lazyVideos.length; j++) {
+        var video = lazyVideos[j];
+        var poster = video.getAttribute("data-poster");
+        if (poster && !video.getAttribute("poster")) {
+          video.setAttribute("poster", poster);
+        }
+      }
+
+      var lazySources = container.querySelectorAll("source[data-src]");
+      for (var k = 0; k < lazySources.length; k++) {
+        var source = lazySources[k];
+        var sourceSrc = source.getAttribute("data-src");
+        if (sourceSrc && !source.getAttribute("src")) {
+          source.setAttribute("src", sourceSrc);
+        }
+        var parentVideo = source.parentElement;
+        if (parentVideo && parentVideo.load) {
+          parentVideo.load();
+        }
+      }
+    }
+
+    function deferLazyAssets(container) {
+      var imgs = container.querySelectorAll("img");
+      for (var i = 0; i < imgs.length; i++) {
+        var img = imgs[i];
+        var src = img.getAttribute("src");
+        if (src && !img.getAttribute("data-src")) {
+          img.setAttribute("data-src", src);
+          img.removeAttribute("src");
+        }
+      }
+
+      var videos = container.querySelectorAll("video");
+      for (var j = 0; j < videos.length; j++) {
+        var video = videos[j];
+        var poster = video.getAttribute("poster");
+        if (poster && !video.getAttribute("data-poster")) {
+          video.setAttribute("data-poster", poster);
+          video.removeAttribute("poster");
+        }
+      }
+
+      var sources = container.querySelectorAll("source");
+      for (var k = 0; k < sources.length; k++) {
+        var source = sources[k];
+        var sourceSrc = source.getAttribute("src");
+        if (sourceSrc && !source.getAttribute("data-src")) {
+          source.setAttribute("data-src", sourceSrc);
+          source.removeAttribute("src");
+        }
+      }
+    }
+
+    function initGroup(group) {
+      var grid = group.querySelector(".js-attachment-grid");
+      var button = group.querySelector(".js-attachment-load-more");
+      if (!grid || !button) return;
+      var step = parseInt(button.getAttribute("data-step") || grid.getAttribute("data-step") || "5", 10);
+      if (!step || step < 1) step = 5;
+      var items = Array.prototype.slice.call(grid.querySelectorAll(".js-attachment-item"));
+      if (!items.length) {
+        button.style.display = "none";
+        return;
+      }
+
+      function collapseToStep() {
+        var visible = 0;
+        var hidden = 0;
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].style.display === "none") {
+            deferLazyAssets(items[i]);
+            hidden += 1;
+            continue;
+          }
+          if (visible >= step) {
+            items[i].style.display = "none";
+            deferLazyAssets(items[i]);
+            hidden += 1;
+            continue;
+          }
+          visible += 1;
+        }
+        return hidden;
+      }
+
+      function remainingCount() {
+        var remaining = 0;
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].style.display === "none") {
+            remaining += 1;
+          }
+        }
+        return remaining;
+      }
+
+      function updateButton() {
+        var remaining = remainingCount();
+        if (remaining <= 0) {
+          button.style.display = "none";
+          return;
+        }
+        button.style.display = "";
+        button.textContent = "Load more attachments (" + remaining + " remaining)";
+      }
+
+      function showNext() {
+        var revealed = 0;
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].style.display === "none") {
+            items[i].style.display = "";
+            revealLazyAssets(items[i]);
+            revealed += 1;
+            if (revealed >= step) break;
+          }
+        }
+        updateButton();
+      }
+
+      button.addEventListener("click", function () {
+        showNext();
+      });
+      collapseToStep();
+      updateButton();
+    }
+
+    for (var idx = 0; idx < groups.length; idx++) {
+      initGroup(groups[idx]);
+    }
+  })();
+</script>
+{% endblock %}

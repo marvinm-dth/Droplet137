@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dragon Tiny Homes – Inventory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
+    <style>
+      /* --- Global typography tweaks (smaller, tighter, more consistent) --- */
+      :root {
+        --base-font: 15px; /* default desktop base */
+        --lh: 1.4; /* comfortable line-height */
+      }
+
+      html {
+        font-size: var(--base-font);
+      }
+      body {
+        font-family: Poppins, system-ui, -apple-system, Segoe UI, Roboto,
+          "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        line-height: var(--lh);
+        -webkit-text-size-adjust: 100%;
+        text-rendering: optimizeLegibility;
+      }
+
+      /* Scale down on smaller screens to avoid overflow/overlap */
+      @media (max-width: 1024px) {
+        html {
+          font-size: 14.5px;
+        }
+      }
+      @media (max-width: 640px) {
+        html {
+          font-size: 14px;
+        }
+      }
+
+      /* Headings: clamp to prevent giant titles */
+      h1 {
+        font-weight: 700;
+        line-height: 1.2;
+        font-size: clamp(1.25rem, 1rem + 1.2vw, 1.75rem);
+      }
+      h2 {
+        font-weight: 600;
+        line-height: 1.25;
+        font-size: clamp(1.125rem, 0.95rem + 0.9vw, 1.5rem);
+      }
+      h3 {
+        font-weight: 600;
+        line-height: 1.3;
+        font-size: clamp(1rem, 0.9rem + 0.6vw, 1.25rem);
+      }
+      h4,
+      h5,
+      h6 {
+        line-height: 1.35;
+      }
+
+      /* Utility overrides for common Tailwind sizes (tame the big ones) */
+      .text-xl {
+        font-size: 1.1rem;
+        line-height: 1.35;
+      }
+      .text-lg {
+        font-size: 1rem;
+        line-height: 1.35;
+      }
+
+      /* Tighten general spacing & fix overlaps caused by long words/IDs */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        min-width: 0; /* prevents flex children from overflowing */
+      }
+      p,
+      .pill,
+      .badge,
+      .truncate,
+      .card,
+      td,
+      th {
+        overflow-wrap: anywhere; /* prevents text overlap on narrow screens */
+        word-break: break-word;
+      }
+
+      /* Buttons & pills: slightly smaller by default; compact on mobile */
+      button,
+      .btn {
+        line-height: 1.2;
+      }
+      .navbtn {
+        padding: 0.4rem 0.65rem;
+      }
+      .pill {
+        font-size: 0.75rem;
+        line-height: 1;
+        padding: 0.25rem 0.5rem;
+      }
+
+      @media (max-width: 640px) {
+        .navbtn {
+          padding: 0.35rem 0.5rem;
+          font-size: 0.9rem;
+        }
+        .pill {
+          font-size: 0.7rem;
+        }
+      }
+
+      /* Cards and sections: consistent spacing that won’t collide */
+      .card {
+        border-radius: 0.75rem;
+        padding: 0.9rem;
+      }
+      .card h3 {
+        margin-bottom: 0.35rem;
+      }
+
+      /* Forms & controls: wrap on small screens to avoid label/input overlap */
+      .controls,
+      .toolbar,
+      .filters,
+      .actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap; /* allow wrapping when there’s not enough width */
+      }
+      input,
+      select,
+      textarea {
+        max-width: 100%;
+        line-height: 1.2;
+      }
+
+      /* Tables: make them behave on narrow screens */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 0.5rem;
+        vertical-align: top;
+      }
+      @media (max-width: 768px) {
+        .table-wrap {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        th,
+        td {
+          white-space: nowrap;
+        }
+      }
+
+      /* Grids: let cards reflow instead of squishing/overlapping */
+      .responsive-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 0.75rem;
+      }
+
+      /* Images & canvases (charts, barcodes): keep inside their boxes */
+      img,
+      canvas,
+      svg {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      /* Badges: readable but compact */
+      .badge-green,
+      .badge-yellow,
+      .badge-red {
+        font-size: 0.72rem;
+        line-height: 1;
+        padding: 0.2rem 0.45rem;
+        border-radius: 9999px;
+      }
+
+      /* Header bar: keep from crowding */
+      .sticky.top-0 .max-w-7xl {
+        gap: 0.5rem;
+      }
+      .sticky.top-0 .font-bold {
+        font-size: 1rem;
+      }
+
+      /* Prevent toast text from spilling out */
+      #toast {
+        line-height: 1.2;
+        white-space: normal;
+        word-break: break-word;
+        max-width: min(92vw, 680px);
+      }
+
+      /* Scan/receive views often have dense controls—ensure wrap */
+      [id*="scanner"],
+      [data-view="scanner"] .flex,
+      [data-view="receiving"] .flex {
+        flex-wrap: wrap;
+      }
+
+      /* Optional: slightly soften overall look */
+      hr {
+        border: none;
+        border-top: 1px solid #e5e7eb;
+      }
+      small,
+      .text-xs {
+        font-size: 0.75rem;
+        line-height: 1.2;
+      }
+
+      /* === Top bar layout: prevent overlap & keep auth buttons aligned === */
+      .bg-white.shadow-sm.sticky.top-0 .max-w-7xl {
+        gap: 0.5rem; /* small breathing room between the 3 zones */
+      }
+
+      /* Left cluster (logo + title): allow truncation instead of pushing nav */
+      .bg-white.shadow-sm.sticky.top-0 .max-w-7xl > div:first-child {
+        min-width: 0;
+      }
+      .bg-white.shadow-sm.sticky.top-0
+        .max-w-7xl
+        > div:first-child
+        .tracking-wide {
+        font-size: 0.95rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
+      }
+
+      /* Middle nav: take available space, center, and scroll horizontally if needed */
+      #nav {
+        flex: 1 1 auto;
+        justify-content: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      #nav::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* Nav buttons: consistent height & spacing; no wrapping */
+      .navbtn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.95rem;
+        line-height: 1;
+        border-radius: 0.5rem;
+        white-space: nowrap;
+      }
+
+      /* Active state already toggled via JS; ensure height stays constant */
+      .navbtn.bg-gray-900 {
+        line-height: 1;
+      }
+
+      /* Right cluster (whoami + auth): keep fixed width, never shrink */
+      .bg-white.shadow-sm.sticky.top-0 .max-w-7xl > div:last-child {
+        flex: 0 0 auto;
+        align-items: center;
+      }
+      #loginBtn,
+      #logoutBtn {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.9rem;
+        line-height: 1;
+      }
+
+      /* Safety on very narrow screens (<= 1024px): slightly smaller type */
+      @media (max-width: 1024px) {
+        #nav .navbtn {
+          font-size: 0.9rem;
+          padding: 0.35rem 0.55rem;
+        }
+      }
+
+      /* If you’re using Tailwind @apply for .navbtn/.card/.pill already, these
+   rules only refine sizes/behavior; no class names must change. */
+    </style>
+  </head>
+  <body class="bg-gray-50">
+    <script>
+      /* ===== Config ===== */
+      window.API_5092 = "https://inventory.orcagroup.io:5092"; // change if needed
+      const AUTH = {
+        get token() {
+          return localStorage.getItem("dth_token") || "";
+        },
+        set token(v) {
+          if (v) localStorage.setItem("dth_token", v);
+          else localStorage.removeItem("dth_token");
+        },
+        headers() {
+          return this.token ? { Authorization: "Bearer " + this.token } : {};
+        },
+      };
+
+      function $(s, r = document) {
+        return r.querySelector(s);
+      }
+      function $$(s, r = document) {
+        return Array.from(r.querySelectorAll(s));
+      }
+      function H(h) {
+        const t = document.createElement("template");
+        t.innerHTML = h.trim();
+        return t.content.firstElementChild;
+      }
+      function toast(msg, kind = "ok") {
+        const t = $("#toast");
+        t.textContent = msg;
+        t.className =
+          "fixed right-4 bottom-4 px-3 py-2 rounded-lg shadow text-white " +
+          (kind === "err" ? "bg-red-600" : "bg-gray-900");
+        t.style.opacity = 1;
+        setTimeout(() => (t.style.opacity = 0), 1800);
+      }
+      async function J(url, opts = {}) {
+        const res = await fetch(url, {
+          ...opts,
+          headers: {
+            "Content-Type": "application/json",
+            ...(opts.headers || {}),
+            ...AUTH.headers(),
+          },
+        });
+        if (!res.ok) {
+          throw new Error(await res.text());
+        }
+        const ct = res.headers.get("content-type") || "";
+        return ct.includes("application/json") ? res.json() : res.text();
+      }
+      function fmt(n) {
+        return new Intl.NumberFormat().format(n || 0);
+      }
+      function fdate(d) {
+        try {
+          return new Date(d).toLocaleString();
+        } catch {
+          return d || "-";
+        }
+      }
+    </script>
+
+    <!-- Top bar -->
+    <div class="bg-white shadow-sm sticky top-0 z-40">
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14"
+      >
+        <div class="flex items-center gap-3">
+          <img
+            src="https://inventory.orcagroup.io:5092/assets/dragon-logo-black-horizontal-768x278.webp"
+            class="h-8 w-auto"
+            onerror="this.style.display='none'"
+          />
+          <div class="font-bold tracking-wide">
+            Dragon Tiny Homes — Inventory
+          </div>
+        </div>
+        <div class="hidden md:flex items-center gap-2" id="nav">
+          <button data-view="items" class="navbtn">Items</button>
+          <button data-view="orders" class="navbtn">Orders</button>
+          <button data-view="deliveries" class="navbtn">Deliveries</button>
+          <button data-view="scanner" class="navbtn">Receiving</button>
+          <button data-view="locations" class="navbtn">Locations</button>
+          <button data-view="inventory" class="navbtn">Inventory</button>
+          <button data-view="requests" class="navbtn">Requests</button>
+          <button data-view="notify" class="navbtn">Notifications</button>
+          <button data-view="admin" class="navbtn">Admin</button>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="whoami" class="text-sm text-gray-600 hidden"></span>
+          <button
+            id="loginBtn"
+            class="px-3 py-1 rounded-md bg-blue-600 text-white text-sm"
+          >
+            Login
+          </button>
+          <button
+            id="logoutBtn"
+            class="px-3 py-1 rounded-md bg-gray-200 text-gray-800 text-sm hidden"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Views -->
+    <main class="max-w-7xl mx-auto p-4 space-y-5">
+      <!-- ITEMS -->
+      <section id="view-items" class="hidden">
+        <div class="flex items-end justify-between">
+          <h2 class="text-xl font-semibold">Item Templates</h2>
+          <div class="flex gap-2">
+            <input
+              id="itemsSearch"
+              placeholder="Search description…"
+              class="px-3 py-2 rounded-md border text-sm"
+            />
+            <button
+              id="addItemBtn"
+              class="px-3 py-2 bg-green-600 text-white rounded-md"
+            >
+              Add Item
+            </button>
+          </div>
+        </div>
+        <div
+          id="itemsWrap"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3"
+        ></div>
+      </section>
+
+      <!-- ORDERS -->
+      <section id="view-orders" class="hidden">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">Orders</h2>
+          <div class="flex gap-2">
+            <select
+              id="orderStatus"
+              class="px-2 py-2 rounded-md border text-sm"
+            >
+              <option value="">All</option>
+              <option>Draft</option>
+              <option>Pending</option>
+              <option>Approved</option>
+              <option>Placed</option>
+              <option>Done</option>
+            </select>
+            <button
+              id="newOrderBtn"
+              class="px-3 py-2 bg-blue-600 text-white rounded-md"
+            >
+              New Order
+            </button>
+          </div>
+        </div>
+        <div id="ordersWrap" class="grid gap-3 mt-3"></div>
+      </section>
+
+      <!-- DELIVERIES -->
+      <section id="view-deliveries" class="hidden">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">Deliveries</h2>
+          <div class="text-sm text-gray-600">
+            Create/print delivery PDFs, schedule by parts, submit received
+            shipments.
+          </div>
+        </div>
+        <div class="card">
+          <!-- Embed adapted deliveries UI -->
+          <div class="mb-3">
+            <label class="text-sm">Order #</label>
+            <input
+              id="delOrderId"
+              type="number"
+              class="px-3 py-2 rounded-md border text-sm w-40"
+              placeholder="Enter order id"
+            />
+            <button
+              id="loadDeliveryBtn"
+              class="px-3 py-2 bg-gray-800 text-white rounded-md"
+            >
+              Load
+            </button>
+          </div>
+          <iframe
+            id="deliveriesFrame"
+            class="w-full h-[72vh] rounded-xl border"
+            srcdoc="Loading…"
+          ></iframe>
+        </div>
+      </section>
+
+      <!-- SCANNER -->
+      <section id="view-scanner" class="hidden">
+        <h2 class="text-xl font-semibold">Receiving Scanner</h2>
+        <div class="card">
+          <iframe
+            id="scannerFrame"
+            class="w-full h-[78vh] rounded-xl border"
+            srcdoc="Loading…"
+          ></iframe>
+        </div>
+      </section>
+
+      <!-- LOCATIONS -->
+      <section id="view-locations" class="hidden">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">Locations</h2>
+          <div class="flex gap-2">
+            <input
+              id="locName"
+              placeholder="New location name"
+              class="px-3 py-2 rounded-md border text-sm"
+            />
+            <button
+              id="addLocBtn"
+              class="px-3 py-2 bg-green-600 text-white rounded-md"
+            >
+              Add
+            </button>
+            <button
+              id="refreshLocBtn"
+              class="px-3 py-2 bg-gray-800 text-white rounded-md"
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+          <div class="card">
+            <h3 class="font-semibold mb-2">Tree</h3>
+            <ul id="locTree" class="space-y-2"></ul>
+          </div>
+          <div class="card">
+            <h3 class="font-semibold mb-2">Print Barcodes</h3>
+            <div id="barcodeArea" class="grid grid-cols-2 gap-3"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- INVENTORY -->
+      <section id="view-inventory" class="hidden">
+        <h2 class="text-xl font-semibold">Inventory Analytics</h2>
+        <div class="grid md:grid-cols-3 gap-4">
+          <div class="card col-span-2">
+            <h3 class="font-semibold mb-2">Usage (last 90 days)</h3>
+            <canvas id="usageChart" height="120"></canvas>
+          </div>
+          <div class="card">
+            <h3 class="font-semibold mb-2">Low stock</h3>
+            <div id="lowStock" class="space-y-2"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REQUESTS -->
+      <section id="view-requests" class="hidden">
+        <h2 class="text-xl font-semibold">Request Materials</h2>
+        <div class="card">
+          <form id="pullForm" class="flex flex-wrap items-end gap-3">
+            <div>
+              <label class="text-sm">Material ID</label>
+              <input
+                id="pullMat"
+                type="number"
+                class="px-3 py-2 rounded-md border text-sm w-40"
+              />
+            </div>
+            <div>
+              <label class="text-sm">Quantity</label>
+              <input
+                id="pullQty"
+                type="number"
+                class="px-3 py-2 rounded-md border text-sm w-32"
+                value="1"
+              />
+            </div>
+            <div>
+              <label class="text-sm">Project</label>
+              <input
+                id="pullProj"
+                class="px-3 py-2 rounded-md border text-sm w-56"
+                placeholder="Project name (optional)"
+              />
+            </div>
+            <button class="px-3 py-2 bg-blue-600 text-white rounded-md">
+              Pull
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- NOTIFICATIONS -->
+      <section id="view-notify" class="hidden">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">Notifications</h2>
+          <button
+            id="refreshNotify"
+            class="px-3 py-2 bg-gray-800 text-white rounded-md"
+          >
+            Refresh
+          </button>
+        </div>
+        <div id="notifyWrap" class="grid gap-3 mt-3"></div>
+      </section>
+
+      <!-- ADMIN -->
+      <section id="view-admin" class="hidden">
+        <h2 class="text-xl font-semibold">Admin</h2>
+        <div class="text-sm text-gray-600 mb-2">
+          User roles, suppliers, system settings will appear here.
+        </div>
+        <div class="card">Coming soon.</div>
+      </section>
+    </main>
+
+    <!-- Login modal -->
+    <div
+      id="loginModal"
+      class="fixed inset-0 bg-black/50 hidden items-center justify-center"
+    >
+      <div class="bg-white rounded-xl shadow-xl p-6 w-[90vw] max-w-sm">
+        <h3 class="font-semibold text-lg mb-3">Sign in</h3>
+        <form id="loginForm" class="space-y-3">
+          <div>
+            <label class="text-sm">Username</label>
+            <input
+              id="lgUser"
+              class="px-3 py-2 rounded-md border w-full"
+              autofocus
+            />
+          </div>
+          <div>
+            <label class="text-sm">Password</label>
+            <input
+              id="lgPass"
+              type="password"
+              class="px-3 py-2 rounded-md border w-full"
+            />
+          </div>
+          <label class="inline-flex items-center gap-2 text-sm"
+            ><input id="lgRemember" type="checkbox" /> Remember me</label
+          >
+          <div class="flex justify-end gap-2">
+            <button
+              type="button"
+              class="px-3 py-2 rounded-md"
+              onclick="hideLogin()"
+            >
+              Cancel
+            </button>
+            <button class="px-3 py-2 bg-blue-600 text-white rounded-md">
+              Login
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" style="opacity: 0"></div>
+
+    <script>
+      /* ===== Nav / auth ===== */
+      const views = [
+        "items",
+        "orders",
+        "deliveries",
+        "scanner",
+        "locations",
+        "inventory",
+        "requests",
+        "notify",
+        "admin",
+      ];
+      function show(v) {
+        views.forEach((k) =>
+          $("#view-" + k).classList.toggle("hidden", k !== v)
+        );
+        $$("#nav button").forEach((b) =>
+          b.classList.toggle("bg-gray-900", b.dataset.view === v)
+        );
+        $$("#nav button").forEach((b) =>
+          b.classList.toggle("text-white", b.dataset.view === v)
+        );
+        localStorage.setItem("v", v);
+        if (v === "scanner") loadScanner();
+        if (v === "deliveries") loadDeliveries();
+        if (v === "items") loadItems();
+        if (v === "orders") loadOrders();
+        if (v === "locations") refreshLocations();
+        if (v === "inventory") loadInventory();
+        if (v === "notify") loadNotifications();
+      }
+      $$("#nav button").forEach(
+        (b) => (b.onclick = () => show(b.dataset.view))
+      );
+
+      function showLogin() {
+        $("#loginModal").classList.remove("hidden");
+        $("#loginModal").classList.add("flex");
+      }
+      function hideLogin() {
+        $("#loginModal").classList.add("hidden");
+        $("#loginModal").classList.remove("flex");
+      }
+      $("#loginBtn").onclick = showLogin;
+      $("#logoutBtn").onclick = async () => {
+        try {
+          await J(API_5092 + "/auth/logout", { method: "POST" });
+        } catch {}
+        AUTH.token = "";
+        $("#whoami").classList.add("hidden");
+        $("#logoutBtn").classList.add("hidden");
+        $("#loginBtn").classList.remove("hidden");
+      };
+      $("#loginForm").onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          const r = await J(API_5092 + "/auth/login", {
+            method: "POST",
+            body: JSON.stringify({
+              username: $("#lgUser").value,
+              password: $("#lgPass").value,
+              remember: $("#lgRemember").checked,
+            }),
+          });
+          AUTH.token = r.token;
+          hideLogin();
+          $("#whoami").textContent =
+            r.username + (r.role ? " · " + r.role : "");
+          $("#whoami").classList.remove("hidden");
+          $("#loginBtn").classList.add("hidden");
+          $("#logoutBtn").classList.remove("hidden");
+          show(localStorage.getItem("v") || "items");
+        } catch (e) {
+          toast("Login failed", "err");
+        }
+      };
+
+      // Restore
+      (async () => {
+        if (AUTH.token) {
+          try {
+            const me = await J(API_5092 + "/auth/me");
+            $("#whoami").textContent =
+              me.username + (me.role ? " · " + me.role : "");
+            $("#whoami").classList.remove("hidden");
+            $("#loginBtn").classList.add("hidden");
+            $("#logoutBtn").classList.remove("hidden");
+            show(localStorage.getItem("v") || "items");
+          } catch {
+            show("items");
+          }
+        } else {
+          show("items");
+        }
+      })();
+
+      /* ===== Items ===== */
+      async function loadItems() {
+        const q = $("#itemsSearch").value.trim();
+        const url =
+          API_5092 + "/items" + (q ? "?q=" + encodeURIComponent(q) : "");
+        try {
+          const arr = await J(url);
+          const wrap = $("#itemsWrap");
+          wrap.innerHTML = "";
+          arr.forEach((it) => {
+            wrap.appendChild(
+              H(`
+            <div class="card">
+              <div class="flex gap-3">
+                <img src="${
+                  it.item_image || ""
+                }" class="w-20 h-20 object-cover rounded-md border" onerror="this.style.display='none'">
+                <div class="flex-1">
+                  <div class="font-semibold">${
+                    it.item_desc || "(no name)"
+                  } <span class="pill ml-1">${
+                it.dth_sku || it.internal_sku || ""
+              }</span></div>
+                  <div class="text-sm text-gray-600">${
+                    it.item_brand || ""
+                  }</div>
+                  <div class="text-sm mt-1">Inventory: <b>${fmt(
+                    it.inventory
+                  )}</b> &middot; Price: $${(it.item_price || 0).toFixed(
+                2
+              )}</div>
+                  <div class="text-xs text-gray-500">Material #${
+                    it.material_id
+                  }</div>
+                </div>
+              </div>
+              <div class="mt-3 flex gap-2">
+                <button class="px-2 py-1 text-sm rounded-md bg-gray-200" onclick="editItem(${
+                  it.material_id
+                })">Edit</button>
+                <button class="px-2 py-1 text-sm rounded-md bg-gray-200" onclick="printItemBarcode('${
+                  it.internal_sku || it.temp_internal_sku || ""
+                }', '${(it.item_desc || "").replace(
+                /\"/g,
+                "&quot;"
+              )}')">Print Label</button>
+              </div>
+            </div>
+          `)
+            );
+          });
+        } catch (e) {
+          toast("Failed to load items", "err");
+        }
+      }
+      $("#itemsSearch").oninput = () => {
+        clearTimeout(window._is);
+        window._is = setTimeout(loadItems, 300);
+      };
+      $("#addItemBtn").onclick = () => editItem(null);
+      async function editItem(material_id) {
+        const data = material_id
+          ? await J(
+              API_5092 + "/items?limit=1&q=&material_id=" + material_id
+            ).catch(() => null)
+          : null;
+        const form = H(`
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div class="bg-white rounded-xl shadow-xl p-5 w-[90vw] max-w-2xl">
+            <div class="flex justify-between items-center mb-3"><h3 class="font-semibold">${
+              material_id ? "Edit" : "Add"
+            } Item</h3><button class="px-2 py-1" onclick="this.closest('.fixed').remove()">✕</button></div>
+            <div class="grid md:grid-cols-2 gap-3">
+              <input id="itName"  placeholder="Description" class="px-3 py-2 rounded-md border"/>
+              <input id="itBrand" placeholder="Brand" class="px-3 py-2 rounded-md border"/>
+              <input id="itPrice" type="number" step="0.01" placeholder="Price" class="px-3 py-2 rounded-md border"/>
+              <input id="itInv"   type="number" placeholder="Inventory" class="px-3 py-2 rounded-md border"/>
+              <input id="itImg"   placeholder="Image URL" class="px-3 py-2 rounded-md border md:col-span-2"/>
+            </div>
+            <div class="flex justify-end gap-2 mt-4">
+              ${
+                material_id
+                  ? '<button id="delBtn" class="px-3 py-2 bg-red-600 text-white rounded-md">Delete</button>'
+                  : ""
+              }
+              <button id="saveBtn" class="px-3 py-2 bg-blue-600 text-white rounded-md">Save</button>
+            </div>
+          </div>
+        </div>`);
+        document.body.appendChild(form);
+        const root = form;
+        if (data && Array.isArray(data) && data.length) {
+          $("#itName", root).value = data[0].item_desc || "";
+          $("#itBrand", root).value = data[0].item_brand || "";
+          $("#itPrice", root).value = data[0].item_price || 0;
+          $("#itInv", root).value = data[0].inventory || 0;
+          $("#itImg", root).value = data[0].item_image || "";
+        }
+        $("#saveBtn", root).onclick = async () => {
+          const payload = {
+            item_desc: $("#itName", root).value,
+            item_brand: $("#itBrand", root).value,
+            item_price: Number($("#itPrice", root).value || 0),
+            inventory: Number($("#itInv", root).value || 0),
+            item_image: $("#itImg", root).value,
+          };
+          try {
+            if (material_id)
+              await J(API_5092 + "/items/" + material_id, {
+                method: "PUT",
+                body: JSON.stringify(payload),
+              });
+            else
+              await J(API_5092 + "/items", {
+                method: "POST",
+                body: JSON.stringify(payload),
+              });
+            root.remove();
+            loadItems();
+            toast("Saved");
+          } catch (e) {
+            toast("Save failed", "err");
+          }
+        };
+        const delBtn = $("#delBtn", root);
+        if (delBtn)
+          delBtn.onclick = async () => {
+            if (!confirm("Delete item?")) return;
+            try {
+              await J(API_5092 + "/items/" + material_id, { method: "DELETE" });
+              root.remove();
+              loadItems();
+            } catch {
+              toast("Delete failed", "err");
+            }
+          };
+      }
+      function printItemBarcode(code, label) {
+        if (!code) {
+          toast("No SKU to print", "err");
+          return;
+        }
+        const w = window.open("", "_blank", "width=640,height=420");
+        const id = "bc" + Math.random().toString(36).slice(2);
+        w.document.write(`
+        <html><head><title>Label</title></head>
+        <body style="font-family:sans-serif;padding:16px">
+          <div>${label || ""}</div>
+          <svg id="${id}"></svg>
+          <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+          <script>JsBarcode(document.getElementById("${id}"), "${code}", {format:"CODE128", width:2, height:60, displayValue:true}); window.onafterprint=()=>window.close(); window.print()<\/script>
+        </body></html>`);
+        w.document.close();
+      }
+
+      /* ===== Orders ===== */
+      async function loadOrders() {
+        const status = $("#orderStatus").value || "";
+        const url = API_5092 + "/orders" + (status ? "?status=" + status : "");
+        try {
+          const arr = await J(url);
+          const wrap = $("#ordersWrap");
+          wrap.innerHTML = "";
+          arr.forEach((o) =>
+            wrap.appendChild(
+              H(`
+          <div class="card">
+            <div class="flex justify-between">
+              <div>
+                <div class="font-semibold">Order #${
+                  o.order_id || "—"
+                } <span class="pill ml-1">${
+                o.order_status || "Draft"
+              }</span></div>
+                <div class="text-sm text-gray-600">Supplier #: ${
+                  o.supplier_order_number || "—"
+                }</div>
+                <div class="text-xs text-gray-500">${fdate(o.created_at)}</div>
+              </div>
+              <div class="flex gap-2">
+                <button class="px-2 py-1 text-sm rounded-md bg-gray-200" onclick="openDeliveries(${
+                  o.order_id
+                })">Deliveries</button>
+                <button class="px-2 py-1 text-sm rounded-md bg-gray-200" onclick="approveOrder(${
+                  o.order_id
+                })">Approve</button>
+              </div>
+            </div>
+          </div>`)
+            )
+          );
+        } catch {
+          toast("Failed to load orders", "err");
+        }
+      }
+      $("#orderStatus").onchange = loadOrders;
+   // NEW
+$("#newOrderBtn").onclick = openNewOrderModal;
+
+      async function approveOrder(orderId) {
+        if (!confirm("Approve order #" + orderId + " ?")) return;
+        try {
+          await J(API_5092 + `/orders/${orderId}/approve`, { method: "POST" });
+          toast("Approved");
+          loadOrders();
+        } catch {
+          toast("Approve failed", "err");
+        }
+      }
+
+      /* ===== Deliveries embed ===== */
+      function openDeliveries(orderId) {
+        show("deliveries");
+        $("#delOrderId").value = orderId || "";
+        loadDeliveries();
+      }
+      async function loadDeliveries() {
+        const orderId = Number($("#delOrderId").value || 0);
+        const src = await (async () => {
+          // Inline a trimmed version of your deliveries page and parameterize order_id
+          return `<!DOCTYPE html><html><head>
+          <meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+          <title>Deliveries</title>
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
+          <style>body{font-family:Poppins,Arial,sans-serif;margin:0;padding:8px;background:#f8f9fa}</style>
+          </head><body>
+            <iframe src="${API_5092.replace(
+              ":5092",
+              ":5023"
+            )}/delivery.html?order_id=${
+            orderId || ""
+          }" style="border:0;width:100%;height:96vh"></iframe>
+          </body></html>`;
+        })();
+        $("#deliveriesFrame").srcdoc = src;
+      }
+      $("#loadDeliveryBtn").onclick = loadDeliveries;
+
+      /* ===== Scanner embed ===== */
+      async function loadScanner() {
+        const src = `<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Scanner</title></head><body>
+        <iframe src="${API_5092.replace(
+          ":5092",
+          ":5023"
+        )}/qrscanner.html" style="border:0;width:100%;height:96vh"></iframe>
+      </body></html>`;
+        $("#scannerFrame").srcdoc = src;
+      }
+
+      /* ===== Locations ===== */
+      async function refreshLocations() {
+        try {
+          const arr = await J(API_5092 + "/locations");
+          const tree = $("#locTree");
+          tree.innerHTML = "";
+          const bar = $("#barcodeArea");
+          bar.innerHTML = "";
+          arr.forEach((loc) => {
+            tree.appendChild(
+              H(`<li class="flex items-center justify-between p-2 rounded border">
+            <div><b>${loc.name}</b><div class="text-xs text-gray-500">#${
+                loc.id
+              } · ${loc.barcode || ""}</div></div>
+            <button class="px-2 py-1 text-sm rounded bg-gray-200" onclick='printBarcode("${
+              loc.barcode || ""
+            }")'>Print</button>
+          </li>`)
+            );
+            if (loc.barcode) {
+              const el = H(
+                `<div><div class="text-sm">${loc.name}</div><svg id="bc_${loc.id}"></svg></div>`
+              );
+              bar.appendChild(el);
+              JsBarcode(el.querySelector("svg"), loc.barcode, {
+                format: "CODE128",
+                width: 2,
+                height: 60,
+                displayValue: true,
+              });
+            }
+          });
+        } catch {
+          toast("Locations unavailable (ensure table exists)", "err");
+        }
+      }
+      $("#addLocBtn").onclick = async () => {
+        const name = $("#locName").value.trim() || "Location";
+        try {
+          await J(API_5092 + "/locations", {
+            method: "POST",
+            body: JSON.stringify({ name }),
+          });
+          $("#locName").value = "";
+          refreshLocations();
+        } catch {
+          toast("Failed to add location", "err");
+        }
+      };
+      $("#refreshLocBtn").onclick = refreshLocations;
+
+      function printBarcode(code) {
+        if (!code) return;
+        const w = window.open("", "_blank", "width=640,height=420");
+        const id = "bc" + Math.random().toString(36).slice(2);
+        w.document
+          .write(`<html><head><title>Barcode</title></head><body style="padding:16px"><svg id="${id}"></svg>
+      <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+      <script>JsBarcode(document.getElementById("${id}"), "${code}", {format:"CODE128", width:2, height:60, displayValue:true}); window.onafterprint=()=>window.close(); window.print()<\/script>
+      </body></html>`);
+        w.document.close();
+      }
+
+      /* ===== Inventory analytics ===== */
+      let usageChart = null;
+      async function loadInventory() {
+        try {
+          const usage = await J(API_5092 + "/inventory/usage");
+          const byMat = {};
+          usage.forEach((r) => {
+            byMat[r.material_id] =
+              (byMat[r.material_id] || 0) + Math.abs(r.quantity_change || 0);
+          });
+          const top = Object.entries(byMat)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 12);
+          const labels = top.map((x) => "#" + x[0]);
+          const vals = top.map((x) => x[1]);
+          const ctx = document.getElementById("usageChart").getContext("2d");
+          if (usageChart) usageChart.destroy();
+          usageChart = new Chart(ctx, {
+            type: "bar",
+            data: { labels, datasets: [{ label: "Qty used", data: vals }] },
+          });
+
+          const inv = await J(API_5092 + "/inventory/summary");
+          const low = inv
+            .filter((x) => (x.inventory || 0) <= (x.reorder_point || 0))
+            .slice(0, 20);
+          const wrap = $("#lowStock");
+          wrap.innerHTML = "";
+          low.forEach((x) =>
+            wrap.appendChild(
+              H(`<div class="p-2 rounded border flex justify-between items-center">
+          <div><div class="font-semibold">${
+            x.item_desc || "(item)"
+          } </div><div class="text-xs text-gray-500">#${
+                x.material_id
+              }</div></div>
+          <div class="pill ${
+            x.inventory <= 0 ? "badge-red" : "badge-yellow"
+          }">Qty ${fmt(x.inventory || 0)}</div>
+        </div>`)
+            )
+          );
+        } catch {
+          toast("Inventory endpoints not ready yet", "err");
+        }
+      }
+
+      /* ===== Requests / Pulls ===== */
+      $("#pullForm").onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          const payload = {
+            material_id: Number($("#pullMat").value),
+            quantity: Number($("#pullQty").value),
+            project_name: $("#pullProj").value || null,
+          };
+          const r = await J(API_5092 + "/inventory/pull", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          toast("Pulled. Current qty: " + r.current_quantity);
+        } catch {
+          toast("Pull failed", "err");
+        }
+      };
+
+      /* ===== Notifications ===== */
+      async function loadNotifications() {
+        try {
+          const arr = await J(API_5092 + "/notifications");
+          const wrap = $("#notifyWrap");
+          wrap.innerHTML = "";
+          if (!arr.length) {
+            wrap.innerHTML =
+              "<div class='card text-sm text-gray-500'>No notifications</div>";
+            return;
+          }
+          arr.forEach((n) =>
+            wrap.appendChild(
+              H(`<div class="card">
+          <div class="flex justify-between">
+            <div>
+              <div class="font-semibold">${n.notification_type || "—"}</div>
+              <div class="text-sm">${
+                n.notification_message || n.message || "—"
+              }</div>
+              <div class="text-xs text-gray-500">${fdate(n.created_at)}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="pill ${
+                n.is_cleared_for ? "badge-green" : "badge-yellow"
+              }">${n.is_cleared_for ? "Cleared" : "Open"}</span>
+              ${
+                n.is_cleared_for
+                  ? ""
+                  : `<button class="px-2 py-1 text-sm rounded bg-gray-200" onclick="clearNotif(${n.id})">Clear</button>`
+              }
+            </div>
+          </div>
+        </div>`)
+            )
+          );
+        } catch {
+          toast("Failed to load notifications", "err");
+        }
+      }
+      window.clearNotif = async (id) => {
+        try {
+          await J(API_5092 + `/notifications/${id}/clear`, { method: "POST" });
+          loadNotifications();
+        } catch {
+          toast("Failed to clear", "err");
+        }
+      };
+      $("#refreshNotify").onclick = loadNotifications;
+
+      /* ===== Embed originals for Deliveries/Scanner ===== */
+      // Make the original pages directly accessible from 5023 (served as static files)
+
+      async function openNewOrderModal() {
+  // modal shell
+  const root = H(`
+  <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl w-[95vw] max-w-5xl p-5">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="font-semibold text-lg">New Order</h3>
+        <button class="px-2 py-1" onclick="this.closest('.fixed').remove()">✕</button>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-4">
+        <!-- Left: item search + results -->
+        <div class="md:col-span-2">
+          <div class="card">
+            <div class="flex items-end gap-2">
+              <div class="flex-1">
+                <label class="text-sm">Search items</label>
+                <input id="no_search" placeholder="eg. tape, screws…" class="px-3 py-2 rounded-md border w-full"/>
+              </div>
+              <button id="no_refresh" class="px-3 py-2 rounded-md bg-gray-200">Search</button>
+            </div>
+            <div id="no_results" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3 max-h-[45vh] overflow-auto"></div>
+          </div>
+        </div>
+
+        <!-- Right: header details -->
+        <div>
+          <div class="card space-y-3">
+            <div>
+              <label class="text-sm">Supplier</label>
+              <select id="no_supplier" class="px-3 py-2 rounded-md border w-full"></select>
+            </div>
+            <div>
+              <label class="text-sm">PO / Supplier Order # (optional)</label>
+              <input id="no_supplier_num" class="px-3 py-2 rounded-md border w-full"/>
+            </div>
+            <div>
+              <label class="text-sm">Approver</label>
+              <select id="no_approver" class="px-3 py-2 rounded-md border w-full"></select>
+            </div>
+            <div>
+              <label class="text-sm">Notes (optional)</label>
+              <textarea id="no_notes" rows="3" class="px-3 py-2 rounded-md border w-full"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cart -->
+      <div class="card mt-4">
+        <div class="flex items-center justify-between">
+          <h4 class="font-semibold">Cart</h4>
+          <button id="no_clear" class="px-2 py-1 text-sm rounded-md bg-gray-200">Clear</button>
+        </div>
+        <div class="table-wrap mt-2">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left">
+                <th class="w-[40%]">Item</th>
+                <th>SKU</th>
+                <th class="text-right">In Stock</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Price</th>
+                <th class="text-right">Line Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="no_cart"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="5" class="text-right font-semibold">Subtotal</td>
+                <td id="no_subtotal" class="text-right font-semibold">$0.00</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-3">
+          <button class="px-3 py-2 rounded-md" onclick="this.closest('.fixed').remove()">Cancel</button>
+          <button id="no_submit" class="px-3 py-2 rounded-md bg-blue-600 text-white">Submit for approval</button>
+        </div>
+      </div>
+    </div>
+  </div>`);
+
+  document.body.appendChild(root);
+
+  // state
+  const cart = []; // {material_id, item_desc, internal_sku, temp_internal_sku, item_price, inventory, qty}
+
+  // populate suppliers & approvers
+  try {
+    const [suppliers, approvers] = await Promise.all([
+      J(API_5092 + "/suppliers").catch(()=>[]),
+      J(API_5092 + "/approvers").catch(()=>[])
+    ]);
+    const supSel = $("#no_supplier", root);
+    supSel.innerHTML = suppliers.map(s => `<option value="${s.id}">${s.supplier_name}</option>`).join("") || "<option value=''>—</option>";
+    const appSel = $("#no_approver", root);
+    appSel.innerHTML = approvers.map(a => `<option value="${a.id}">${a.username} (${a.role||'mgr'})</option>`).join("") || "<option value=''>—</option>";
+  } catch { /* ignore */ }
+
+  // search and results
+  async function runSearch() {
+    const q = $("#no_search", root).value.trim();
+    const url = API_5092 + "/items" + (q ? "?q="+encodeURIComponent(q) : "");
+    const arr = await J(url).catch(()=>[]);
+    const wrap = $("#no_results", root);
+    wrap.innerHTML = "";
+    arr.forEach(it => {
+      const sku = it.internal_sku || it.temp_internal_sku || "";
+      wrap.appendChild(H(`
+        <div class="p-2 rounded-lg border flex gap-2">
+          <img src="${it.item_image||''}" class="w-16 h-16 object-cover rounded-md border" onerror="this.style.display='none'">
+          <div class="flex-1">
+            <div class="font-semibold">${it.item_desc || '(item)'} <span class="pill">${sku}</span></div>
+            <div class="text-xs text-gray-600">Inventory: <b>${fmt(it.inventory)}</b> · $${(it.item_price||0).toFixed(2)}</div>
+            <div class="flex gap-2 mt-2">
+              <input type="number" min="1" value="1" class="px-2 py-1 border rounded w-20" data-qty>
+              <button class="px-2 py-1 rounded bg-gray-900 text-white" data-add>Add</button>
+            </div>
+          </div>
+        </div>
+      `).withSelf((el)=>{
+        el.querySelector("[data-add]").onclick = () => {
+          const qty = Math.max(1, Number(el.querySelector("[data-qty]").value||1));
+          const existing = cart.find(c => c.material_id === it.material_id);
+          if (existing) existing.qty += qty;
+          else cart.push({
+            material_id: it.material_id,
+            item_desc: it.item_desc,
+            internal_sku: it.internal_sku,
+            temp_internal_sku: it.temp_internal_sku,
+            item_price: Number(it.item_price || 0),
+            inventory: Number(it.inventory || 0),
+            qty
+          });
+          renderCart();
+        };
+      }));
+    });
+  }
+  Element.prototype.withSelf = function(fn){ fn(this); return this; };
+
+  $("#no_refresh", root).onclick = runSearch;
+  $("#no_search", root).oninput = ()=>{
+    clearTimeout(window._no_deb);
+    window._no_deb = setTimeout(runSearch, 250);
+  };
+  runSearch();
+
+  // cart render
+  function renderCart(){
+    const tb = $("#no_cart", root);
+    tb.innerHTML = "";
+    let subtotal = 0;
+    cart.forEach((c, i)=>{
+      const price = Number(c.item_price||0);
+      const line = price * (c.qty||0);
+      subtotal += line;
+      const sku = c.internal_sku || c.temp_internal_sku || "";
+      const low = typeof c.inventory === "number" && c.qty > c.inventory;
+      tb.appendChild(H(`
+        <tr class="${low ? 'bg-yellow-50' : ''}">
+          <td>${c.item_desc}</td>
+          <td class="text-xs">${sku}</td>
+          <td class="text-right ${low ? 'text-red-600 font-semibold' : ''}">${fmt(c.inventory)}</td>
+          <td class="text-right">
+            <input type="number" min="1" value="${c.qty}" class="px-2 py-1 border rounded w-20 text-right" data-q>
+          </td>
+          <td class="text-right">$${price.toFixed(2)}</td>
+          <td class="text-right">$${line.toFixed(2)}</td>
+          <td class="text-right">
+            <button class="px-2 py-1 text-sm rounded bg-gray-200" data-rm>Remove</button>
+          </td>
+        </tr>
+      `).withSelf((row)=>{
+        row.querySelector("[data-q]").onchange = (e)=>{
+          c.qty = Math.max(1, Number(e.target.value||1));
+          renderCart();
+        };
+        row.querySelector("[data-rm]").onclick = ()=>{
+          cart.splice(i,1);
+          renderCart();
+        };
+      }));
+    });
+    $("#no_subtotal", root).textContent = "$" + subtotal.toFixed(2);
+  }
+  $("#no_clear", root).onclick = ()=>{ cart.length = 0; renderCart(); };
+
+  // submit
+  $("#no_submit", root).onclick = async ()=>{
+    if (!cart.length) { toast("Cart is empty", "err"); return; }
+    const supplier_id = $("#no_supplier", root).value || null;
+    const supplier_order_number = $("#no_supplier_num", root).value || null;
+    const approver_id = $("#no_approver", root).value || null;
+    const notes = $("#no_notes", root).value || null;
+
+    try {
+      // 1) Create order header as Pending (awaiting approval)
+      const order = await J(API_5092 + "/orders", {
+        method: "POST",
+        body: JSON.stringify({
+          order_status: "Pending",
+          supplier_id,
+          supplier_order_number,
+          notes,
+          approver_id: approver_id ? Number(approver_id) : null
+        })
+      });
+
+      // 2) Persist line items into order history + allocate tracking rows
+      for (const line of cart) {
+        // write a single row in order_history for visibility
+        await J(API_5092 + "/order-history", {
+          method: "POST",
+          body: JSON.stringify({
+            order_id: order.order_id,
+            material_id: line.material_id,
+            internal_sku: line.internal_sku || line.temp_internal_sku || null,
+            item_desc: line.item_desc,
+            delivery_qty: line.qty
+          })
+        }).catch(()=>{ /* non-fatal */ });
+
+        // allocate N tracking rows to support receiving workflow
+        const sku = line.internal_sku || line.temp_internal_sku;
+        if (sku) {
+          await J(API_5092 + "/tracking/alloc", {
+            method: "POST",
+            body: JSON.stringify({
+              order_id: order.order_id,
+              internal_sku: sku,
+              qty: Math.max(0, Number(line.qty)||0)
+            })
+          }).catch(()=>{ /* non-fatal */ });
+        }
+      }
+
+      // 3) Notify approvers (Managers)
+      await J(API_5092 + "/notifications", {
+        method: "POST",
+        body: JSON.stringify({
+          notification_type: "order_created",
+          user_lists: "managers",
+          notification_message: `New order ${order.order_id} pending approval`
+        })
+      }).catch(()=>{ /* non-fatal */ });
+
+      // done
+      toast("Order created: #" + order.order_id);
+      root.remove();
+      show("orders");
+      loadOrders();
+    } catch (e) {
+      toast("Failed to create order", "err");
+      console.error(e);
+    }
+  };
+}
+
+    </script>
+  </body>
+</html>

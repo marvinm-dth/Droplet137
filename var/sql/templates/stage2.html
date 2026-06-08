@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>STAGE 2 / 阶段 2 : DRY IN 干燥中</title>
+{% endblock %}
+
+
+{% block body %}
+<h1> STAGE 2 / 阶段 2 : DRY IN 干燥中 </h1>
+<p> 
+    The foundation is the steel framed trailer that the house is built on top of. It is important that everything on the foundation is
+    correct because this is the starting point of a home. If anything is wrong or missing it could cause serious problems down the
+    line. It is always good to double check things during the building process. Even if you think you have checked something check
+    it again to confirm. If something doesn't look right or you have any questions please talk to a manager before signing your name.
+</p>
+<p>
+    基础是建在钢框架拖车上的房子的根基。确保基础的一切都正确是非常重要的，因为这是房屋的起点。如果现在有任何错误或遗漏
+    可能会在后续造成严重问题。在建造过程中始终好好检查事物是明智的。即使你认为已经检查过某些东西，也要再次检查以确认
+    如果有什么看起来不对或者你有任何问题，请在签名前与经理交谈
+</p>
+
+<form action="/stage_2_form_submit" method="POST">
+    <div class="mb-3">
+        <label for="DTH#input" class="form-label">DTH # / 房屋号码</label>
+        <input type="form-control" id="dth_number" name="dth_number"><br><br>
+    </div>
+
+    <h3 style="text-align:center">PRE INSPECTION INFO (预检信息)</h3>
+
+
+    <div class="col-md-6">
+        <label for="DTH#input" class="form-label">PHASE START DATE 阶段开始日期</label><br>
+        <input type="form-control" id="phase_start_date" name="phase_start_date"><br><br>
+    </div>
+
+    <div class="col-md-6">
+        <label for="WorkResponsible" class="form-label">WHO DID THE WORK 谁做的工作?</label><br>
+        <input type="form-control" id="work_did_the_work" name="work_did_the_work"><br><br>
+    </div>
+
+    <div class="col-12">
+        <label for="IssueHappened" class="form-label">ISSUES THAT HAPPENED DURING THE CONSTRUCTION PROCESS 施工过程中发生的问题</label><br>
+        <input type="form-control" id="issue_happened" name="issue_happened"><br><br>
+    </div>
+
+    <div class="col-12">
+        <label for="Changes" class="form-label">CHANGES TO THE DESIGN OR BUILD 设计或建造的变更</label><br>
+        <input type="form-control" id="design_build_changes" name="design_build_changes"><br><br>
+    </div>
+
+    <div class="col-12">
+        <label for="CheckerName" class="form-label">WHO IS CHECKING 谁在检查</label><br>
+        <input type="form-control" id="checker_name" name="checker_name"><br><br>
+    </div>
+
+    <div class="col-12">
+        <label for="CompletedDate" class="form-label">COMPLETED DATE 完成的日期</label><br>
+        <input type="form-control" id="completed_date" name="completed_date"><br><br>
+    </div>
+
+    <div class="col-12">
+        <label for="IsEverythingDone" class="form-label">IS EVERYTHING DONE 都完成了吗</label><br>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="is_everything_done" id="inlineRadio1" value="option1">
+            <label class="form-check-label" for="inlineRadio1">YES/是的</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="is_everything_done" id="inlineRadio2" value="option2">
+            <label class="form-check-label" for="inlineRadio2">NO/不是 </label>
+          </div>
+    </div>
+
+    <div class="col-12">
+        <label for="IsMissingItem" class="form-label">MISSING ITEMS? 缺少的项目</label>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="is_missing_items" id="inlineRadio1" value="option1">
+            <label class="form-check-label" for="inlineRadio1">YES/是的</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="is_missing_items" id="inlineRadio2" value="option2">
+            <label class="form-check-label" for="inlineRadio2">NO/不是 </label>
+          </div>
+    </div>
+
+    <div class="col-12">
+        <label for="NotDoneInfo" class="form-label">IF NO WHAT IS NOT DONE? 如果没有，缺少什么或未完成的部分是什么？</label><br>
+        <input type="form-control" id="what_not_done" name="what_not_done"><br><br>
+    </div>
+
+    <div class="col-12">
+        <label for="IsReadyToInspect" class="form-label">READY TO INSPECT? 准备好检查了吗</label><br>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="is_ready_to_inspect" id="inlineRadio1" value="option1">
+            <label class="form-check-label" for="inlineRadio1">YES/是的</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="is_ready_to_inspect" id="inlineRadio2" value="option2">
+            <label class="form-check-label" for="inlineRadio2">NO/不是 </label>
+          </div>
+    </div>
+
+    <div class="col-12">
+        <label for="RequestedInspectionDate" class="form-label">REQUESTED INSPECTION DATE/TIME 要求的检查日期/时间</label>
+        <input type="form-control" id="requested_inspection_date" name="requested_inspection_date"><br><br>
+    </div>
+
+    <h3 style="text-align:center">STAGE 2: Dry In</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Description (English)</th>
+                <th>Description (Chinese)</th>
+                <th>NOTES</th>
+                <th>DONE</th>
+                <th>INSPECTED</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for task in stage_2_tasks %}
+            <tr>
+                <td>{{ task.checklist_num }}</td>
+                <td>{{ task.description }}</td>
+                <td>{{ task.description_chinese }}</td>
+                <td><input type="text" name="dryin_{{ task.checklist_num }}_note"></td>
+                <td><input type="checkbox" name="dryin_{{ task.checklist_num }}_done"></td>
+                <td><input type="checkbox" name="dryin_{{ task.checklist_num }}_inspected"></td>
+            </tr>
+            {% endfor %}
+    </table>
+</form>
+
+{% endblock %}

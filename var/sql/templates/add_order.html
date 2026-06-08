@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Add Items to Cart</title>
+        <style>
+            body {
+                font-family: 'Poppins', sans-serif;
+                text-align: center;
+                background-color: #f8f9fa;
+                color: #333;
+            }
+    
+            .container {
+                display: flex;
+                flex-wrap: nowrap; 
+                justify-content: space-around;
+                align-items: flex-start;
+                padding: 20px;
+                gap: 20px;
+            }
+
+            .header-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                position: relative;
+            }
+    
+            .prelisted-items-table {
+                width: 100%;
+                max-width: 100%;
+                background-color: #fff;
+                padding: 5px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+    
+            h1 {
+                font-size: 2.5em;
+                font-weight: 700;
+                color: #343a40;
+                margin-top: 20px;
+            }
+    
+            .cart-icon {
+                display: flex;       ;
+                justify-content: space-between;
+                position: static;
+                top: 20px;
+                right: 20px;
+                font-size: 2em;
+                cursor: pointer;
+                color: #007bff;
+                align-items: right;
+            }
+
+            /* Modal styles */
+            .modal {
+                display: none;
+                position: fixed;
+                z-index: 1;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                overflow: auto;
+                background-color: rgba(0, 0, 0, 0.4);
+            }
+    
+            .modal-content {
+                background-color: #fefefe;
+                margin: 15% auto;
+                padding: 20px;
+                border: 1px solid #888;
+                width: 80%;
+                max-width: 1200px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            }
+    
+            .close {
+                color: #aaa;
+                float: right;
+                font-size: 28px;
+                font-weight: bold;
+            }
+    
+            .close:hover,
+            .close:focus {
+                color: black;
+                text-decoration: none;
+                cursor: pointer;
+            }
+    
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+    
+            th, td {
+                border: 1px solid #ddd;
+                padding: 15px;
+            }
+    
+            th {
+                background-color: #007bff;
+                color: #fff;
+                font-weight: 600;
+                font-size: 0.8em;
+            }
+    
+            td {
+                text-align: center;
+                font-size: 0.8em;
+            }
+    
+            .add-order-button {
+                margin-top: 20px;
+                text-align: center;
+            }
+    
+            .add-btn {
+                background-color: #28a745;
+                padding: 12px 25px;
+                color: #fff;
+                border: none;
+                border-radius: 12px;
+                cursor: pointer;
+                font-weight: bold;
+                transition: background-color 0.3s ease;
+            }
+
+            .form-group {
+                display: flex;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+            .form-group label {
+                width: 180px;
+                font-weight: bold;
+            }
+            .form-group input {
+                flex: 1;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+            }
+    
+            .add-btn:hover {
+                background-color: #218838;
+            }
+
+            /* Header container */
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px;
+                background-color: #f8f9fa;
+                position: relative;
+            }
+
+            /* Centered title */
+            .header h1 {
+                font-size: 2.5em;
+                font-weight: bold;
+                color: #333;
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                margin: 0;
+            }
+
+            /* Logout button styles */
+            .logout-button {
+                padding: 10px 20px;
+                background-color: #cc716c;
+                color: #333;
+                font-size: 1em;
+                font-weight: bold;
+                border: none;
+                border-radius: 12px;
+                cursor: pointer;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                transition: background-color 0.3s ease;
+                text-decoration: none;
+                margin-left: auto; /* Pushes the button to the right */
+            }
+
+            .logout-button:hover {
+                background-color: #cc716c;
+            }
+
+            /* new wrapper makes a flex row */
+            .icons-container {
+            margin-left: auto;  
+            display: flex;
+            align-items: right;
+            gap: 8px
+            }
+
+            /* size your new logo */
+            .custom-logo {
+            width: 50px;    /* adjust as needed */
+            height: 45px;
+            cursor: 50px;
+            margin-right: 12px; /* space between logo and cart */
+            transition: opacity 0.2s;
+            align-items: right;
+            }
+            .custom-logo:hover {
+            opacity: 0.8;
+            }
+
+            </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script type="text/javascript" src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <script>
+            $(document).ready(function() {
+                $('#prelisted-items-table').DataTable(); // Initialize DataTables on the table
+            });
+        </script>
+        <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+        <meta name="theme-color" content="#000000">
+        <script>
+            if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+                .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                })
+                .catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+            }
+        </script>
+    </head>
+<body>
+
+<div class="container_info" id="info-container" style="width: 100%; max-width: 1200px; margin: 0 auto;">
+    <div class="header">
+        <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+            <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;">
+        </a>
+        <h1>Dragon Tiny Homes Order</h1>
+        <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+        <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <div class="icons-container" style="display: flex; align-items: right; justify-content: right;">
+        <img src="/static/pending.png" class="custom-logo" onclick="openPendingModal()" >
+
+        <div class="cart-icon" onclick="openCartModal()">
+            <i class="fas fa-shopping-cart" style="margin-right: 5px; margin-top: 6px;"></i>
+            <span id="cart-count" class="cart-badge">0</span>
+        </div>
+    </div>
+
+    <!-- Pending Items Modal -->
+    <div id="pendingModal" class="modal">
+        <div class="modal-content">
+        <span class="close" onclick="closePendingModal()">&times;</span>
+        <h2>Pending Items</h2>
+        <table id="pending-items-table" class="pending-items-table">
+            <thead>
+            <tr>
+                <th style="display: none;">ID</th>
+                <th>Image</th>
+                <th>Requesting Party</th>
+                <th>Requesting Party ID</th>
+                <th>Notes</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for req in pending_request_materials %}
+            <tr>
+                <td style="display: none;">{{ req.id }}/td>
+                <td><img src="{{ req.item_image }}" width="80" height="80" loading="lazy"></td>
+                <td>{{ req.requesting_party }}</td>
+                <td>{{ req.requesting_party_id }}</td>
+                <td>{{ req.notes }}</td>
+                <td>
+                    <button class="btn-add" onclick="openManualEntryModal('{{ req.id }}',
+                                                                        '{{ req.item_image }}',
+                                                                          '{{ req.notes }}'
+                    )">Add</button>
+                    <button class="btn-delete" onclick="deletePendingRow('{{ req.id }}')">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <!-- Manual Entry Modal -->
+    <div id="manualEntryModal" class="modal">
+        <div class="modal-content" style="max-width: 500px; margin: 50px auto; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background-color: #fff;">
+        <span class="close" onclick="closeManualEntryModal()" style="float: right; font-size: 20px; cursor: pointer;">&times;</span>
+        <h2 style="text-align: center; margin-top: 0; color: #333;">Enter Product Details</h2>
+        
+        <!-- Image upload and preview -->
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img id="manualImagePreview" src="/static/default-image.png" alt="Product Image" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd;">
+        </div>
+        <div style="margin-bottom: 15px; display: none;">
+            <label for="manualImage" style="display: block; margin-bottom: 5px; color: #555;">Upload Image:</label>
+            <input type="file" id="manualImage" accept="image/*" onchange="previewManualImage(this)" style="width: 100%;">
+        </div>
+        
+        <!-- Input fields for product details -->
+        <div style="margin-bottom: 15px;">
+            <label for="manualSupplierName" style="display: block; margin-bottom: 5px; color: #555;">Supplier Name:</label>
+            <input type="text" id="manualSupplierName" placeholder="Enter Supplier Name" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <div style="margin-bottom: 15px; ">
+            <label for="manualSkuNumber" style="display: block; margin-bottom: 5px; color: #555;">Internet SKU Number:</label>
+            <input type="text" id="manualSkuNumber" placeholder="Enter SKU Number" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <div style="margin-bottom: 15px; ">
+            <label for="manualDescEnglish" style="display: block; margin-bottom: 5px; color: #555;">Description (English):</label>
+            <input type="text" id="manualDescEnglish" placeholder="Enter Description" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <div style="margin-bottom: 15px; ">
+            <label for="manualDescMandarin" style="display: block; margin-bottom: 5px; color: #555;">Description (Mandarin):</label>
+            <input type="text" id="manualDescMandarin" placeholder="Enter Mandarin Description" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <div style="margin-bottom: 15px; ">
+            <label for="manualPrice" style="display: block; margin-bottom: 5px; color: #555;">Price:</label>
+            <input type="number" step="0.01" id="manualPrice" placeholder="Enter Price" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <div style="margin-bottom: 15px;">
+            <label for="manualDefaultQty" style="display: block; margin-bottom: 5px; color: #555;">Default Order Qty:</label>
+            <input type="number" id="manualDefaultQty" placeholder="Enter Order Qty" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <div style="margin-bottom: 20px;">
+            <label for="manualNote" style="display: block; margin-bottom: 5px; color: #555;">Note:</label>
+            <input type="text" id="manualNote" placeholder="Enter any note..." style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        
+        <!-- Submit Button -->
+        <div style="text-align: center;">
+            <button onclick="submitManualEntry()" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+            Submit
+            </button>
+        </div>
+        </div>
+    </div>
+
+    <!-- Modal for Cart -->
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCartModal()">&times;</span>
+            <h2>Orders by Supplier</h2>
+            <div id="supplier-tables-container">
+                <!-- Individual supplier tables will be added here dynamically -->
+            </div>
+            <div class="form-group">
+                <p>Total Amount Across All Suppliers: $<span id="total-amount">0.00</span></p>
+            </div>
+            <div class="add-order-button">
+                <button onclick="submitOrder()" class="add-btn">Add Order</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+        <label for="languageSelect" class="description data-english">Choose Language:</label>
+        <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言: </label>
+        <select id="languageSelect" onchange="updateDescriptions()" style="margin-left: 10px;">
+            <option value="english">English</option>
+            <option value="chinese">Chinese</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="order-name" class="description data-english" id="order-name" style="display: flex; text-align: left; align-items: left; justify-content: left; margin-bottom: 20px;">Name: {{  user.name  }}</label>
+        <label for="order-name" class="description data-mandarin" id="order-name" style="display: none; text-align: left; align-items: left; justify-content: left; margin-bottom: 20px;">名称: {{  user.name  }}</label>
+    </div>
+
+    <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+        <label for="approverFilter" class="description data-english" style="display: block; text-align: left;">Approver:</label>
+        <label for="approverFilter" class="description data-mandarin" style="display: none; text-align: left;">审批人:</label>
+        <select id="approverFilter" style="margin-left: 10px; width: 200px;" multiple>
+            {% for approver in approver_data %}
+                {% if approver.role != "user" %}
+                    <option value="{{ approver.eid }}" data-name="{{ approver.employee_name }}">{{ approver.employee_name }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+
+    
+    <div class="form-group">
+        <label for="notes" class="description data-english"  style="display: flex; text-align: left; align-items: left;" >Notes:</label>
+        <label for="notes" class="description data-mandarin" style="display: none; text-align: left; align-items: left;">备注:</label>
+        <input type="text" name="notes"  style="display: flex; height: 200px; text-align: left; align-items: left; justify-content: left; margin-bottom: 20px; width: 100%; overflow-x: auto; white-space: nowrap;"/>
+    </div>
+
+    <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+        <label for="supplierFilter" class="description data-english" style="display: block; text-align: left;">Filter by Supplier:</label>
+        <label for="supplierFilter" class="description data-mandarin" style="display: none; text-align: left;">按供应商筛选:</label>
+        <select id="supplierFilter" onchange="filterTable()" style="margin-left: 10px; width: 200px;">
+            <option value="">All Suppliers</option>
+            {% for supplier in supplier_data %}
+                <option value="{{ supplier.supplier_name }}">{{ supplier.supplier_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Container for the two tables (side by side layout) -->
+    <div class="container" id="table-container" style="width: 100%; max-width: 1200px;">
+        <!-- Prelisted Items Table (Right) -->
+        <table id="prelisted-items-table" style="width: 100%; max-width: 1200px;">
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>SKU Number</th>
+                    <th>Supplier</th>
+                    <th>Supplier SKU Number</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Image</th>
+                    <th style="display: none;">Keywords</th> <!-- Hidden column -->
+                    <th style="display: none;">Keywords Chinese</th> <!-- Hidden column -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in home_depot_items %}
+                <tr>
+                    <td>
+                        <button onclick="addItem('{{ item.material_id }}', 
+                                                '{{ item.supplier_name }}', 
+                                                '{{ item.internet_sku_number }}', 
+                                                '{{ item.item_desc }}', 
+                                                '{{ item.item_desc_mandarin }}',
+                                                '{{ item.item_price }}', 
+                                                '{{ item.item_image }}',
+                                                '{{ item.default_order_qty }}',
+                                                '{{ user.name }}',
+                                                'None',
+                                                'Added by user')">
+                                                Add Item
+                        </button>
+                    </td>
+                    <td data-order="{{ item.material_id | int }}">{{ item.material_id }}</td>
+                    <td>{{ item.supplier_name }}</td>
+                    <td>{{ item.internet_sku_number }}</td>
+                    <td>
+                        <div class="description data-english" style="width: 300px">{{ item.item_desc }}</div>
+                        <div class="description data-mandarin" style="width: 300px; display: none;">{{ item.item_desc_mandarin }}</div>
+                    </td>
+                    <td data-order="{{ item.item_price | float }}">{{ item.item_price }}</td>
+                    <td><img src="{{ item.item_image }}" width="80" height="80" loading="lazy"></td>
+                    <td style="display: none;">{{ item.keywords }}</td>
+                    <td style="display: none;">{{ item.keywords_ch }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let table;
+
+    $(document).ready(function() {
+        // Initialize DataTables on the table and store a reference to the DataTable instance
+        table = $('#prelisted-items-table').DataTable();
+
+        // Load saved filter if available
+        const savedFilter = localStorage.getItem('selectedSupplier');
+        if (savedFilter) {
+            $('#supplierFilter').val(savedFilter);
+            filterTable(); // Apply the filter when loading the page
+        }
+    });
+
+    function openPendingModal() {
+        // if you want client‑side filtering/sorting via DataTables:
+        if (!$.fn.DataTable.isDataTable('#pending-items-table')) {
+            $('#pending-items-table').DataTable();
+        }
+        document.getElementById('pendingModal').style.display = 'block';
+        }
+
+        function closePendingModal() {
+        document.getElementById('pendingModal').style.display = 'none';
+        }
+
+        function openManualEntryModal(id,image, note) {
+        selectedPendingId = id;
+        document.getElementById('manualImagePreview').src = image;
+        document.getElementById('manualNote').value = note;
+        document.getElementById('manualEntryModal').style.display = 'block';
+    }
+
+    function closeManualEntryModal() {
+        document.getElementById('manualEntryModal').style.display = 'none';
+    }
+
+    function submitManualEntry() {
+        // Confirm before adding
+        if (!confirm('Are you sure you want to add this item?')) {
+            return;
+        }
+
+        const imgSrc = document.getElementById('manualImagePreview').src;
+        const note = document.getElementById('manualNote').value;
+        const manualSupplierName = document.getElementById('manualSupplierName')?.value || '';
+        const manualIntSKU = document.getElementById('manualSkuNumber')?.value || '';
+        const manualSkuEnglish = document.getElementById('manualDescEnglish')?.value || '';
+        const manualSkuMandarin = document.getElementById('manualDescMandarin')?.value || '';
+        const manualSkuPrice = parseFloat(document.getElementById('manualPrice')?.value) || 0;
+        const manualSkuQty = parseInt(document.getElementById('manualDefaultQty')?.value) || 1;
+
+        addItem(
+            0,
+            manualSupplierName,
+            manualIntSKU,
+            manualSkuEnglish,
+            manualSkuMandarin,
+            manualSkuPrice,
+            imgSrc,
+            manualSkuQty,
+            '{{ user.name }}',
+            'None',
+            'Added by user'
+        );
+
+        // mark pending as added in DB
+        fetch('/update_added_cart_pending_material', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: selectedPendingId })
+        }).then(() => {
+            alert('Item has been added to your cart.');
+            closeManualEntryModal();
+        }).catch(err => {
+            console.error(err);
+            alert('Failed to update pending status.');
+        });
+    }
+
+    function previewManualImage(input) {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('manualImagePreview').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function deletePendingRow(id) {
+    if (!confirm('Are you sure you want to delete this item?')) {
+        return;
+    }
+      fetch('/update_discard_pending_material', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id })
+      })
+      .then(() => {
+            alert('Item has been deleted.');
+        }).catch(err => {
+            console.error(err);
+            alert('Failed to update pending status.');
+        });
+    }
+
+    const approverFilter = document.getElementById('approverFilter');
+    const maxApprovers = 5;
+
+    approverFilter.addEventListener('change', () => {
+        // Get all selected options
+        const selectedOptions = Array.from(approverFilter.selectedOptions);
+
+        // If the number of selected options exceeds the limit, deselect the last one
+        if (selectedOptions.length > maxApprovers) {
+            alert(`You can select up to ${maxApprovers} approvers.`);
+            selectedOptions[selectedOptions.length - 1].selected = false;
+        }
+    });
+
+    // Creating a JavaScript object that maps supplier names to their IDs
+    const supplierData = {};
+    {% for supplier in supplier_data %}
+        supplierData["{{ supplier.supplier_name }}"] = "{{ supplier.id }}";
+    {% endfor %}
+
+   function updateDescriptions() {
+        const language = document.getElementById('languageSelect').value;
+
+        // Save the selected language in local storage
+        localStorage.setItem('selectedLanguage', language);
+
+        // Get all elements with class 'data-english' and 'data-mandarin'
+        const englishElements = document.querySelectorAll('.data-english');
+        const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+        if (language === 'english') {
+            englishElements.forEach(element => {
+                element.style.display = 'block';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'none';
+            });
+        } else if (language === 'chinese') {
+            englishElements.forEach(element => {
+                element.style.display = 'none';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'block';
+            });
+        }
+    }
+
+    async function discard_request_material(requestMaterialId) {
+            await fetch('/discard_request_material', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ request_material_id: requestMaterialId })
+            });
+        }
+
+    async function discard_user_order_material(requestMaterialId) {
+        await fetch('/discard_user_order_material', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ request_material_id: requestMaterialId })
+        });
+    }
+
+    async function add_user_order(item) {
+            const response = await fetch('/add_user_order', { // Replace with your backend API or Supabase endpoint
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(item)
+            });
+    };
+
+    function updateTotal() {
+        const supplierTables = document.querySelectorAll('.supplier-table');
+        let totalAmountAcrossAll = 0;
+
+        supplierTables.forEach(supplierTable => {
+            const supplierName = supplierTable.id.replace('supplier-table-', '');
+            const rows = supplierTable.querySelectorAll('tbody tr');
+            let totalAmount = 0;
+
+            rows.forEach(row => {
+                const price = parseFloat(row.querySelector('td:nth-child(6)').textContent.replace('$', ''));
+                const quantity = parseInt(row.querySelector('td:nth-child(7) input').value);
+                totalAmount += price * quantity;
+            });
+
+            document.getElementById(`total-amount-${supplierName}`).textContent = totalAmount.toFixed(2);
+            totalAmountAcrossAll += totalAmount;
+        });
+
+        document.getElementById('total-amount').textContent = totalAmountAcrossAll.toFixed(2);
+    }
+        // Initialize the total amount on page load
+    window.onload = updateTotal;
+
+    // Function to open the cart modal
+    function openCartModal() {
+        document.getElementById('cartModal').style.display = 'block';
+    }
+
+    // Function to close the cart modal
+    function closeCartModal() {
+        document.getElementById('cartModal').style.display = 'none';
+    }
+
+    function filterTable() {
+        const filter = $('#supplierFilter').val();
+
+        // Save the selected supplier in local storage
+        localStorage.setItem('selectedSupplier', filter);
+
+        if (filter === "") {
+            table.column(2).search("").draw(); // Reset filter if "All Suppliers" is selected
+        } else {
+            table.column(2).search(filter, true, false).draw(); // Filter the supplier column
+        }
+    };
+
+    let sortDirection = { sku: true, description: true, price: true, quantity: true }; // Keep track of sort direction
+
+    function addItem(sku_num, supplier_name, internet_num, description_english, description_mandarin, price, image, default_qty, requesting_party, request_material_id, notes) {
+        const supplierContainer = document.getElementById('supplier-tables-container');
+
+        // If the item is not in the cart, create a new item object
+        const newItem = {
+            sku_num,
+            supplier_name,
+            internet_num,
+            description_english,
+            description_mandarin,
+            price,
+            image,
+            default_qty,
+            requesting_party,
+            request_material_id,
+            notes
+        };
+
+        // Check if the requesting party matches the current user's name
+        if (requesting_party !== "Automatic" && request_material_id === 'None'){
+            // Push the new item to the database
+            add_user_order(newItem);
+        } else {
+            // If the requesting party doesn't match, don't add the item
+            console.log("The requesting party does not match the current user. Item not added.");
+        }
+
+        // Check if a table for this supplier already exists
+        let supplierTable = document.querySelector(`#supplier-table-${supplier_name.replace(/\s+/g, '-')}`);
+        if (!supplierTable) {
+            // Create a new table for this supplier if it doesn't exist
+            supplierTable = document.createElement('div');
+            supplierTable.id = `supplier-table-${supplier_name.replace(/\s+/g, '-')}`;
+            supplierTable.classList.add('supplier-table');
+            
+            supplierTable.innerHTML = `
+                <h3 style="display: flex; align-items: left; justify-content: left;">
+                    <span class="description data-english">Supplier: ${supplier_name}</span>
+                    <span class="description data-mandarin" style="display: none;">供应商: ${supplier_name}</span>
+                </h3>
+                <div>
+                    <label for="search-input-${supplier_name.replace(/\s+/g, '-')}" style="margin-right: 10px;">Search: </label>
+                    <input type="text" id="search-input-${supplier_name.replace(/\s+/g, '-')}" placeholder="Search by SKU or description..." oninput="filterTableSelected('${supplier_name.replace(/\s+/g, '-')}')">
+                </div>
+                <table class="supplier-table-content">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Requesting Party</th>
+                            <th id="sku-header" onclick="sortTable('${supplier_name.replace(/\s+/g, '-')}', 'sku')">SKU Number</th>
+                            <th>Supplier SKU Number</th>
+                            <th style="width: 300px" id="description-header" onclick="sortTable('${supplier_name.replace(/\s+/g, '-')}', 'description')">Description</th>
+                            <th id="price-header" onclick="sortTable('${supplier_name.replace(/\s+/g, '-')}', 'price')">Price</th>
+                            <th id="quantity-header" onclick="sortTable('${supplier_name.replace(/\s+/g, '-')}', 'quantity')">Quantity</th>
+                            <th>Notes</th>
+                            <th>Action</th>
+                            <th style='display: none;' class='request-material-${request_material_id}'>Request Material ID</th>
+                        </tr>
+                    </thead>
+                    <tbody id="selected-items-${supplier_name.replace(/\s+/g, '-')}">
+                        <!-- Items will be added here -->
+                    </tbody>
+                </table>
+                <p style="display: flex; align-items: left; justify-content: left; margin-botton: 20px">Total for ${supplier_name}: $<span id="total-amount-${supplier_name.replace(/\s+/g, '-')}">0.00</span></p>
+            `;
+            supplierContainer.appendChild(supplierTable);
+        }
+
+        // Create and append the new row to the table body
+        const tableBody = document.getElementById(`selected-items-${supplier_name.replace(/\s+/g, '-')}`);
+        const newRow = document.createElement('tr');
+        newRow.classList.add(`request-material-${request_material_id}`);
+
+        // Create row cells (image, SKU, description, price, etc.)
+        const imageCell = document.createElement('td');
+        const imgElement = document.createElement('img');
+        imgElement.src = image;
+        imgElement.alt = description_english;
+        imgElement.style.width = '80px';
+        imgElement.style.height = '80px';
+        imageCell.appendChild(imgElement);
+
+        const skuCell = document.createElement('td');
+        skuCell.textContent = sku_num;
+
+        const requestingPartyCell = document.createElement('td');
+        requestingPartyCell.textContent = requesting_party;
+
+        const internetskuCell = document.createElement('td');
+        internetskuCell.textContent = internet_num;
+
+        const descriptionCell = document.createElement('td');
+        const descriptionEnglishDiv = document.createElement('div');
+        descriptionEnglishDiv.classList.add('data-english');
+        descriptionEnglishDiv.textContent = description_english;
+        descriptionEnglishDiv.style.display = 'block';
+
+        const descriptionMandarinDiv = document.createElement('div');
+        descriptionMandarinDiv.classList.add('data-mandarin');
+        descriptionMandarinDiv.textContent = description_mandarin;
+        descriptionMandarinDiv.style.display = 'none';
+
+        descriptionCell.appendChild(descriptionEnglishDiv);
+        descriptionCell.appendChild(descriptionMandarinDiv);
+
+        const priceCell = document.createElement('td');
+        priceCell.textContent = parseFloat(price).toFixed(2);
+
+        const quantityCell = document.createElement('td');
+        const quantityInput = document.createElement('input');
+        quantityInput.type = 'number';
+        quantityInput.value = default_qty;
+        quantityInput.min = 1;
+        quantityInput.style.width = '50px';
+        quantityCell.appendChild(quantityInput);
+
+        const notesCell = document.createElement('td');
+        notesCell.textContent = notes;
+
+        const requestMaterialIdCell = document.createElement('td');
+        requestMaterialIdCell.style.display = 'None';
+        requestMaterialIdCell.textContent = request_material_id;
+
+        const deleteCell = document.createElement('td');
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.onclick = function() {
+            tableBody.removeChild(newRow);
+
+            // If the table body is now empty, remove the supplier table container
+            if (tableBody.childElementCount === 0) {
+                supplierTable.remove();
+            }
+
+            updateTotal();
+            updateCartCount();
+
+            // Extract request_material_id from row class and call discard_request_material
+            if (notes !== "Added by user") { 
+                const requestMaterialId = newRow.classList[0].split('-')[2]; // Extract the request_material_id
+                discard_request_material(requestMaterialId);  // Pass the extracted request_material_id
+            } else if (notes !== "Automatic") {
+                const requestMaterialId = newRow.classList[0].split('-')[2]; // Extract the request_material_id
+                discard_user_order_material(requestMaterialId);  // Pass the extracted request_material_id
+            }
+        };
+        deleteCell.appendChild(deleteButton);
+
+        newRow.appendChild(imageCell);
+        newRow.appendChild(requestingPartyCell);
+        newRow.appendChild(skuCell);
+        newRow.appendChild(internetskuCell);
+        newRow.appendChild(descriptionCell);
+        newRow.appendChild(priceCell);
+        newRow.appendChild(quantityCell);
+        newRow.appendChild(notesCell);
+        newRow.appendChild(deleteCell);
+        newRow.appendChild(requestMaterialIdCell);
+        tableBody.appendChild(newRow);
+
+        updateTotal();
+        updateCartCount();
+        updateDescriptions();
+    }
+
+    // Filter function for searching
+    function filterTableSelected(supplierName) {
+        const searchInput = document.getElementById(`search-input-${supplierName}`);
+        const filterText = searchInput.value.toLowerCase();
+        const tableBody = document.getElementById(`selected-items-${supplierName}`);
+        const rows = tableBody.querySelectorAll('tr');
+
+        rows.forEach(row => {
+            const skuCell = row.querySelector('td:nth-child(3)');
+            const descriptionCell = row.querySelector('td:nth-child(5)');
+            const skuText = skuCell ? skuCell.textContent.toLowerCase() : '';
+            const descriptionText = descriptionCell ? descriptionCell.textContent.toLowerCase() : '';
+
+            if (skuText.includes(filterText) || descriptionText.includes(filterText)) {
+                row.style.display = ''; // Show row
+            } else {
+                row.style.display = 'none'; // Hide row
+            }
+        });
+    }
+
+    // Sorting function
+    function sortTable(supplierName, column) {
+        const tableBody = document.getElementById(`selected-items-${supplierName}`);
+        const rows = Array.from(tableBody.querySelectorAll('tr'));
+        
+        // Sort rows by the selected column
+        rows.sort((rowA, rowB) => {
+            let cellA = rowA.querySelector(`td:nth-child(${getColumnIndex(column)})`).textContent;
+            let cellB = rowB.querySelector(`td:nth-child(${getColumnIndex(column)})`).textContent;
+
+            if (column === 'price' || column === 'quantity') {
+                cellA = parseFloat(cellA);
+                cellB = parseFloat(cellB);
+            }
+
+            if (cellA < cellB) return sortDirection[column] ? -1 : 1;
+            if (cellA > cellB) return sortDirection[column] ? 1 : -1;
+            return 0;
+        });
+
+        // Clear table and append sorted rows
+        rows.forEach(row => tableBody.appendChild(row));
+
+        // Toggle sorting direction
+        sortDirection[column] = !sortDirection[column];
+    }
+
+    // Get the column index based on the column name
+    function getColumnIndex(column) {
+        switch (column) {
+            case 'sku': return 3;
+            case 'description': return 5;
+            case 'price': return 6;
+            case 'quantity': return 7;
+            default: return 3;
+        }
+    }
+
+
+    function updateCartCount() {
+        let totalCount = 0;
+        const rows = document.querySelectorAll('[id^="selected-items-"] tr');
+        rows.forEach(row => {
+            const quantityInput = row.querySelector('td:nth-child(7) input');
+            totalCount += parseInt(quantityInput.value);
+        });
+        document.getElementById('cart-count').textContent = totalCount;
+    }
+
+
+    
+    // Function to submit the order data and selected items
+    function submitOrder() {
+        if (!confirm("Are you sure everything is final? Click OK to continue or Cancel to review your order.")) {
+            return; // Stop execution if the user cancels
+        }
+
+        const orderName = "{{ user.name }}";
+        const totalAmount = document.getElementById('total-amount').textContent;
+        const userId = "{{ user.id | escape }}";
+        const Notes = $('input[name="notes"]').val();
+
+        const approverDropdown = document.getElementById('approverFilter');
+    
+        // Extract the selected approvers' IDs (all selected options)
+        const approverIds = Array.from(approverDropdown.selectedOptions).map(option => option.value);
+
+        // Check if at least one approver is selected
+        if (approverIds.length === 0) {
+            alert("Please select at least one approver.");
+            return; // Stop the submission if no approver is selected
+        }
+
+        // Extract the selected approvers' names
+        const approverNames = Array.from(approverDropdown.selectedOptions).map(option => option.getAttribute('data-name'));
+
+        // Collect selected items data, grouped by supplier
+        const supplierOrders = {};
+        const supplierTables = document.querySelectorAll('.supplier-table');
+        
+        supplierTables.forEach(supplierTable => {
+            const supplierName = supplierTable.querySelector('h3 .data-english').textContent.replace('Supplier: ', '');
+            const supplierId = supplierData[supplierName.trim()];
+            const rows = supplierTable.querySelectorAll('tbody tr');
+
+            if (!supplierOrders[supplierName]) {
+                supplierOrders[supplierName] = {
+                    supplier_name: supplierName,
+                    supplier_id: supplierId,
+                    items: [],
+                    total_amount: 0 // Initialize total amount for the supplier
+                };
+            }
+
+            let supplierTotal = 0;
+
+            rows.forEach(row => {
+                const sku_number = row.querySelector('td:nth-child(3)').textContent;
+                const internet_sku_number = row.querySelector('td:nth-child(4)').textContent;
+                const description = row.querySelector('td:nth-child(5) .data-english').textContent.trim();
+                const price = parseFloat(row.querySelector('td:nth-child(6)').textContent);
+                const image = row.querySelector('td:nth-child(1) img').src;
+                const quantity = parseInt(row.querySelector('td:nth-child(7) input').value);
+                const request_material_id = row.querySelector('td:nth-child(8)').textContent;
+                const request_id = row.querySelector('td:nth-child(10)').textContent;
+
+                // Add item details to the supplier's items list
+                supplierOrders[supplierName].items.push({
+                    material_id: sku_number,
+                    internet_sku_number: internet_sku_number,
+                    item_desc: description,
+                    item_price: price,
+                    item_image: image,
+                    order_qty_requested: quantity,
+                    request_material_id: request_material_id
+                });
+
+                // Update the total amount for the supplier
+                supplierTotal += price * quantity;
+
+                // Extract request_material_id from row class and call discard_request_material
+                if (request_material_id !== "Added by user") { 
+                    discard_request_material(request_id);  // Pass the extracted request_material_id
+                } else if (request_material_id !== "Automatic") {
+                    discard_user_order_material(request_id);  // Pass the extracted request_material_id
+                }
+            });
+
+            // Update the supplier total in the object
+            supplierOrders[supplierName].total_amount = supplierTotal;
+        });
+
+        // Prepare the data payload to send to the backend
+        const orderData = {
+            order_name: orderName,
+            user_id: userId,
+            notes: Notes,
+            approver_names: approverNames,
+            approver_ids: approverIds,
+            total_amount: parseFloat(totalAmount),
+            supplier_orders: Object.values(supplierOrders) // Array of orders per supplier
+        };
+
+        // Check if there are any items to submit
+        if (orderData.supplier_orders.length === 0) {
+            alert("Please add at least one item.");
+            return;
+        }
+
+        console.log(orderData);
+
+        // Send the data to the backend using Fetch API
+        fetch('/submit-order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message && data.redirect_url) {
+                localStorage.removeItem('cartItems');
+                alert('Order successfully added: ' + data.message);
+                window.location.href = data.redirect_url;
+            } else {
+                console.error('Invalid response:', data);
+                alert('An error occurred while processing the order.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+    
+    // Function to load the saved language preference on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Get the selected language from local storage
+        const savedLanguage = localStorage.getItem('selectedLanguage');
+
+        // If there's a saved language, set it in the dropdown and update descriptions
+        if (savedLanguage) {
+            document.getElementById('languageSelect').value = savedLanguage;
+            updateDescriptions();
+        }
+
+        // Automatically add items below reorder point
+        const items = {{ home_depot_items | tojson }};
+        items.forEach(item => {
+            if (item.below_reorder_point && item.order_qty_remaining <= 0) {
+                addItem(
+                    item.material_id,
+                    item.supplier_name,
+                    item.internet_sku_number,
+                    item.item_desc,
+                    item.item_desc_mandarin,
+                    item.item_price,
+                    item.item_image,
+                    item.default_order_qty,
+                    'Automatic',
+                    'Automatic',
+                    'Automatic'
+                );
+            }
+        });
+    });
+
+     // Function to load the saved language preference on page load
+     document.addEventListener('DOMContentLoaded', () => {
+        // Automatically add items below reorder point
+        const items = {{ request_materials | tojson }};
+        items.forEach(item => {
+            if (!item.is_added_to_order && !item.is_discard) {
+                addItem(
+                    item.material_id,
+                    item.supplier_name,
+                    item.internet_sku_number,
+                    item.item_desc,
+                    item.item_desc_mandarin,
+                    item.item_price,
+                    item.item_image,
+                    item.quantity_requested,
+                    item.requesting_party,
+                    item.id,
+                    item.notes
+                );
+            }
+        });
+    });
+
+    // Function to load the saved language preference on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Automatically add items below reorder point
+        const items = {{ user_order_materials | tojson }};
+        items.forEach(item => {
+            if (!item.is_added_to_order && !item.is_discard) {
+                addItem(
+                    item.material_id,
+                    item.supplier_name,
+                    item.internet_sku_number,
+                    item.item_desc,
+                    item.item_desc_mandarin,
+                    item.item_price,
+                    item.item_image,
+                    item.quantity_requested,
+                    item.requesting_party,
+                    item.id,
+                    item.notes
+                );
+            }
+        });
+    });
+</script>
+</body>
+</html>

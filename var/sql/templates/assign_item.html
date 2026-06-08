@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Delivery Assignment Integration</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .item-section {
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .item-header img {
+      max-width: 100px;
+      margin-right: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    .add-assignment-btn {
+      margin-top: 10px;
+    }
+    .submit-container {
+      text-align: center;
+      margin-top: 20px;
+    }
+    input[type="number"] {
+      width: 80px;
+    }
+    .warning {
+      border: 2px solid red;
+    }
+    .warning-message {
+      color: red;
+      font-size: 0.9em;
+    }
+    .form-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      width: 180px;
+      font-weight: bold;
+    }
+    .form-group input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .button {
+      padding: 12px 25px;
+      margin: 0 8px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      color: #fff;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .remove-row {
+      padding: 6px 10px;
+      background-color: #cc716c;
+    }
+    .submit-btn {
+      background-color: #28a745;
+    }
+    #lightbox {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #lightbox img {
+      max-width: 90%;
+      max-height: 90%;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+    }
+    #close-lightbox {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 2em;
+      color: white;
+      cursor: pointer;
+    }
+    /* Header container */
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        background-color: #f8f9fa;
+        position: relative;
+    }
+
+    /* Centered title */
+    .header h1 {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: #333;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        margin: 0;
+    }
+
+    /* Logout button styles */
+    .logout-button {
+        padding: 10px 20px;
+        background-color: #cc716c;
+        color: #333;
+        font-size: 1em;
+        font-weight: bold;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s ease;
+        text-decoration: none;
+        margin-left: auto; /* Pushes the button to the right */
+    }
+
+    .logout-button:hover {
+        background-color: #cc716c;
+    }
+  </style>
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <script>
+    if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+        .then(registration => {
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        })
+        .catch(err => {
+        console.log('ServiceWorker registration failed: ', err);
+        });
+    });
+    }
+</script>
+</head>
+<body>
+  <div class="header">
+    <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+        <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;">
+    </a>
+    <h1>Delivery Assignment</h1>
+    <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+    <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+  </div>
+
+  <!-- Receiver and Date fields -->
+  <div class="form-group">
+    <label for="receiver" class="description data-english"><b>Receiver:</b></label>
+    <input type="text" id="receiver" name="receiver" value="{{ receive_data.receiver_name }}" readonly>
+  </div>
+
+  <div class="form-group">
+    <label for="receive_date" class="description data-english"><b>Date:</b></label>
+    <input type="text" id="receive_date" name="receive_date" value="{{ receive_data.received_date }}" readonly>
+  </div>
+
+  <!-- Hidden field for receive_id -->
+  <input type="hidden" id="receive_id" name="receive_id" value="{{ receive_data.id }}">
+  <input type="hidden" id="user_id" name="user_id" value="{{ user.id }}">
+
+  <!-- Images Section -->
+  <div class="form-group" style="margin-top: 30px;">
+    <label class="description data-english"><b>Images:</b></label>
+    <div class="image-gallery">
+        {% for image in receive_data_photos %}
+            <img src="{{ image.image }}" alt="Material Image" style="width: 200px; height: auto; margin: 10px;" onclick="openLightbox('{{ image.image }}')">
+        {% endfor %}
+    </div>
+  </div>
+    
+  <!-- Container for item sections -->
+  <div id="items-container"></div>
+  
+  <!-- Form wrapper for submission -->
+  <form id="assignmentForm">
+    <div class="submit-container">
+      <button type="submit" class="submit-btn">Submit Assignments</button>
+    </div>
+  </form>
+
+  <!-- Lightbox Markup -->
+  <div id="lightbox">
+    <span id="close-lightbox" onclick="closeLightbox()">X</span>
+    <img id="lightbox-image" src="" alt="Lightbox Image">
+  </div>
+  
+  <script>
+    // =====================================================
+    // STEP 1: Inject Grouped Data from the Backend
+    // =====================================================
+    const grouped_data = {{ grouped_data | tojson }};
+
+    // =====================================================
+    // STEP 2: Helper Functions
+    // =====================================================
+    
+    // Populate a dropdown with order options
+    function populateOrderDropdown(selectElement, ordersData) {
+      selectElement.innerHTML = "";
+      
+      // Add default option: "No Order Number"
+      const defaultOption = document.createElement('option');
+      defaultOption.value = "";
+      defaultOption.textContent = "No Order Number";
+      selectElement.appendChild(defaultOption);
+      
+      // Populate the rest of the orders
+      ordersData.forEach(option => {
+        const opt = document.createElement('option');
+        opt.value = option.order_number;
+        opt.textContent = `${option.order_number} (Expected: ${option.order_qty_remaining})`;
+        opt.setAttribute('data-expected', option.order_qty_remaining);
+        selectElement.appendChild(opt);
+      });
+    }
+    
+    // Attach validation to ensure the assigned quantity does not exceed expected quantity.
+    function attachValidationListeners(row, itemName) {
+      const qtyInput = row.querySelector(`input[name="${itemName}_qty[]"]`);
+      const selectElement = row.querySelector(`select[name="${itemName}_order[]"]`);
+      const warningMsg = row.querySelector('.warning-message');
+      
+      function validate() {
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        const expected = parseInt(selectedOption.getAttribute('data-expected'), 10);
+        const qty = parseInt(qtyInput.value, 10) || 0;
+        if (qty > expected) {
+          qtyInput.classList.add('warning');
+          warningMsg.style.display = 'block';
+          warningMsg.textContent = `Exceeds expected (${expected}).`;
+          return false;
+        } else {
+          qtyInput.classList.remove('warning');
+          warningMsg.style.display = 'none';
+          warningMsg.textContent = '';
+          return true;
+        }
+      }
+      
+      qtyInput.addEventListener('input', validate);
+      selectElement.addEventListener('change', validate);
+    }
+    
+    // Add a new assignment row for a given item section.
+    function addAssignmentRow(section, itemName, ordersData) {
+      const tbody = section.querySelector('.assignment-table tbody');
+      const newRow = document.createElement('tr');
+      newRow.innerHTML = `
+        <td>
+          <select name="${itemName}_order[]" required></select>
+        </td>
+        <td>
+          <input type="number" name="${itemName}_qty[]" min="0" placeholder="0" required>
+          <br>
+          <small class="warning-message" style="display:none;"></small>
+        </td>
+        <td>
+          <button type="button" class="remove-row">Remove</button>
+        </td>
+      `;
+      tbody.appendChild(newRow);
+      const newSelect = newRow.querySelector(`select[name="${itemName}_order[]"]`);
+      populateOrderDropdown(newSelect, ordersData);
+      attachValidationListeners(newRow, itemName);
+    }
+    
+    // =====================================================
+    // STEP 3: Build the Interface Dynamically
+    // =====================================================
+    const container = document.getElementById('items-container');
+    
+    grouped_data.forEach(item => {
+      // Create a section for each item.
+      const section = document.createElement('div');
+      section.className = 'item-section';
+      // Use material_id as the identifier.
+      section.setAttribute('data-item', item.material_id.toString());
+      
+      // Determine the correct receive_item_id from receive_item_photos (if available)
+      let receiveItemId = item.material_id; // default value
+      if (item.receive_item_photos && item.receive_item_photos.length > 0) {
+        // Assuming the correct receive_item_id is in the first photo object.
+        receiveItemId = item.receive_item_photos[0].receive_item_id || receiveItemId;
+      }
+      section.setAttribute('data-receive-item-id', receiveItemId.toString());
+      
+      // Delivered quantity (default to 0 if not provided).
+      const delivered = item.quantity_remaining ? item.quantity_remaining : 0;
+      section.setAttribute('data-delivered', delivered);
+      // Save orders as a JSON string for later use.
+      section.setAttribute('data-orders', JSON.stringify(item.orders));
+      
+      // Build inner HTML using item data.
+      let photosHTML = "";
+      if (item.receive_item_photos && item.receive_item_photos.length > 0) {
+        photosHTML = `<div class="photos">` +
+          item.receive_item_photos.map(photo => `<img src="${photo.image}" alt="Photo ${photo.id}" onclick="openLightbox('${photo.image}')" style="max-width:100px; margin-right:5px;">`).join('') +
+          `</div>`;
+      }
+      
+      section.innerHTML = `
+        <div class="item-header">
+          <div style="display: flex; align-items: center;">
+            <img src="${item.item_image}" alt="${item.item_desc}" onclick="openLightbox('${item.item_image}')">
+            <h2 style="margin-left: 10px;">${item.item_desc}</h2>
+          </div>
+          <div>Delivered Quantity: <strong class="deliveredQty">${delivered}</strong></div>
+        </div>
+        ${photosHTML}
+        <table class="assignment-table">
+          <thead>
+            <tr>
+              <th>Order Number</th>
+              <th>Assigned Quantity</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <select name="${item.material_id}_order[]" required></select>
+              </td>
+              <td>
+                <input type="number" name="${item.material_id}_qty[]" min="0" placeholder="0" required>
+                <br>
+                <small class="warning-message" style="display:none;"></small>
+              </td>
+              <td>
+                <button type="button" class="remove-row">Remove</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" class="add-assignment-btn">Add Assignment</button>
+      `;
+      
+      container.appendChild(section);
+      
+      // Populate dropdowns for this section.
+      const ordersData = item.orders;
+      section.querySelectorAll(`select[name="${item.material_id}_order[]"]`).forEach(select => {
+        populateOrderDropdown(select, ordersData);
+      });
+      
+      // Attach validation listeners for the initial row(s).
+      section.querySelectorAll('tbody tr').forEach(row => {
+        attachValidationListeners(row, item.material_id.toString());
+      });
+    });
+    
+    // =====================================================
+    // STEP 4: Event Listeners for Dynamic Row Management
+    // =====================================================
+    // Delegate remove button event.
+    document.addEventListener('click', function(e) {
+      if (e.target && e.target.classList.contains('remove-row')) {
+        const row = e.target.closest('tr');
+        const tbody = row.parentElement;
+        const section = row.closest('.item-section');
+        const itemName = section.getAttribute('data-item');
+        const ordersData = JSON.parse(section.getAttribute('data-orders'));
+        row.remove();
+        // If no rows remain, add one automatically.
+        if (tbody.rows.length === 0) {
+          addAssignmentRow(section, itemName, ordersData);
+        }
+      }
+    });
+    
+    // Add a new assignment row when "Add Assignment" is clicked.
+    document.querySelectorAll('.add-assignment-btn').forEach(button => {
+      button.addEventListener('click', function() {
+        const section = this.closest('.item-section');
+        const itemName = section.getAttribute('data-item');
+        const ordersData = JSON.parse(section.getAttribute('data-orders'));
+        addAssignmentRow(section, itemName, ordersData);
+      });
+    });
+    
+    // =====================================================
+    // STEP 5: Form Submission & Final JSON Generation
+    // =====================================================
+    // This function groups assignments into the desired JSON structure.
+    function groupAssignments() {
+      if (!confirm("Are you sure everything is final? Click OK to continue or Cancel to review your assigned items.")) {
+            return; // Stop execution if the user cancels
+        }
+
+      const ordersMap = {};
+      document.querySelectorAll('.item-section').forEach(section => {
+        const materialId = section.getAttribute('data-item');
+        // Use the receive_item_id from the section attribute.
+        const receiveItemId = section.getAttribute('data-receive-item-id') || materialId;
+        
+        section.querySelectorAll('tbody tr').forEach(row => {
+          const selectElement = row.querySelector(`select[name="${materialId}_order[]"]`);
+          const orderNumber = selectElement.value;
+          const key = orderNumber || "No Order Number";
+          const qtyInput = row.querySelector(`input[name="${materialId}_qty[]"]`);
+          const qty = parseInt(qtyInput.value, 10) || 0;
+          
+          if (!ordersMap[key]) {
+              ordersMap[key] = {
+                order_id: key,
+                items: []
+              };
+            }
+            ordersMap[key].items.push({
+              material_id: materialId,
+              qty: qty,
+              receive_item_id: receiveItemId
+            });
+          });
+        });
+      // Convert the orders map into an array.
+      return Object.values(ordersMap);
+    }
+    
+    // Form submission event: Validate and output the final JSON.
+    document.getElementById('assignmentForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      let valid = true;
+      
+      // Validate each row's quantity does not exceed its expected value.
+      document.querySelectorAll('.item-section').forEach(section => {
+        const materialId = section.getAttribute('data-item');
+        section.querySelectorAll('tbody tr').forEach(row => {
+          const selectElement = row.querySelector(`select[name="${materialId}_order[]"]`);
+          const expected = parseInt(selectElement.options[selectElement.selectedIndex].getAttribute('data-expected'), 10);
+          const qtyInput = row.querySelector(`input[name="${materialId}_qty[]"]`);
+          const qty = parseInt(qtyInput.value, 10) || 0;
+          if (qty > expected) {
+            valid = false;
+            alert(`For item ${materialId}, assigned quantity (${qty}) exceeds expected (${expected}) for order ${selectElement.value || "No Order Number"}.`);
+          }
+        });
+      });
+      
+      // Validate total assigned quantity does not exceed delivered quantity.
+      document.querySelectorAll('.item-section').forEach(section => {
+        const delivered = parseInt(section.getAttribute('data-delivered'), 10);
+        let sum = 0;
+        section.querySelectorAll(`input[name$="_qty[]"]`).forEach(input => {
+          sum += parseInt(input.value, 10) || 0;
+        });
+        if (sum > delivered) {
+          valid = false;
+          alert(`For item ${section.getAttribute('data-item')}, total assigned quantity (${sum}) exceeds delivered quantity (${delivered}).`);
+        }
+      });
+      
+      if (!valid) return;
+      
+      const orders = groupAssignments();
+      const finalJSON = {
+        receiver_name: document.getElementById('receiver').value,
+        receive_date: document.getElementById('receive_date').value,
+        receive_id: document.getElementById('receive_id').value,
+        receiver_id: document.getElementById('user_id').value,
+        orders: orders
+      };
+      
+      // Send JSON to Flask endpoint using fetch:
+      fetch('/submit_assign_item', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(finalJSON)
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Server response:', data);
+        alert("Assignment submitted successfully!");
+        window.location.href = data.redirect_url;
+      })
+      .catch(error => console.error('Error:', error));
+    });
+
+    // =====================================================
+    // STEP 6: Lightbox Functions
+    // =====================================================
+    function openLightbox(imageUrl) {
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImage = document.getElementById('lightbox-image');
+      lightboxImage.src = imageUrl;
+      lightbox.style.display = 'flex';
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightbox').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

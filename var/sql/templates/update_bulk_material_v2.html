@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Add Items to Cart</title>
+        <style>
+            body {
+                font-family: 'Poppins', sans-serif;
+                text-align: center;
+                background-color: #f8f9fa;
+                color: #333;
+            }
+    
+            .container {
+                display: flex;
+                flex-wrap: nowrap; 
+                justify-content: space-around;
+                align-items: flex-start;
+                padding: 20px;
+                gap: 20px;
+            }
+
+            .header-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                position: relative;
+            }
+    
+            .prelisted-items-table, .supplier-table-content {
+                width: 100%;
+                background-color: #fff;
+                padding: 5px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                border-collapse: collapse;
+            }
+    
+            h1 {
+                font-size: 2.5em;
+                font-weight: 700;
+                color: #343a40;
+                margin-top: 20px;
+            }
+    
+            .cart-icon {
+                font-size: 2em;
+                cursor: pointer;
+                color: #007bff;
+                position: absolute;
+                top: 20px;
+                right: 20px;
+            }
+
+            /* Modal styles */
+            .modal {
+                display: none;
+                position: fixed;
+                z-index: 1;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                overflow: auto;
+                background-color: rgba(0, 0, 0, 0.4);
+            }
+    
+            .modal-content {
+                background-color: #fefefe;
+                margin: 15% auto;
+                padding: 20px;
+                border: 1px solid #888;
+                width: 90%;
+                max-width: 800px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                position: relative;
+            }
+    
+            .close {
+                color: #aaa;
+                position: absolute;
+                top: 10px;
+                right: 20px;
+                font-size: 28px;
+                font-weight: bold;
+                cursor: pointer;
+            }
+    
+            table th, table td {
+                border: 1px solid #ddd;
+                padding: 10px;
+            }
+    
+            th {
+                background-color: #007bff;
+                color: #fff;
+                font-weight: 600;
+                font-size: 0.9em;
+                text-align: center;
+            }
+    
+            td {
+                text-align: center;
+                font-size: 0.9em;
+            }
+    
+            .add-btn {
+                background-color: #28a745;
+                padding: 12px 25px;
+                color: #fff;
+                border: none;
+                border-radius: 12px;
+                cursor: pointer;
+                font-weight: bold;
+                transition: background-color 0.3s ease;
+            }
+            .add-btn:hover { background-color: #218838; }
+
+            .form-group {
+                display: flex;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+            .form-group label {
+                width: 180px;
+                font-weight: bold;
+            }
+            .form-group input, .form-group select {
+                flex: 1;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+            }
+
+            /* Header */
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px;
+                background-color: #f8f9fa;
+                position: relative;
+            }
+            .header h1 {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                margin: 0;
+            }
+            .logout-button {
+                padding: 10px 20px;
+                background-color: #cc716c;
+                color: #333;
+                font-weight: bold;
+                border: none;
+                border-radius: 12px;
+                cursor: pointer;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                transition: background-color 0.3s ease;
+            }
+            .logout-button:hover { background-color: #b35c58; }
+
+            /* Mobile responsive */
+            @media (max-width: 480px) {
+                /* Hide headers on both tables */
+                table#prelisted-items-table thead,
+                .supplier-table-content thead {
+                display: none;
+                }
+
+                /* Card layout for rows */
+                table#prelisted-items-table tbody tr,
+                .supplier-table-content tbody tr {
+                display: block;
+                margin-bottom: 12px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                background: #fff;
+                padding: 8px;
+                }
+
+                /* Card layout for cells */
+                table#prelisted-items-table tbody tr td,
+                .supplier-table-content tbody tr td {
+                display: flex;
+                justify-content: space-between;
+                padding: 6px 8px;
+                border: none;
+                border-bottom: 1px solid #eee;
+                text-align: left;
+                font-size: 0.9em;
+                }
+                table#prelisted-items-table tbody tr td:last-child,
+                .supplier-table-content tbody tr td:last-child {
+                border-bottom: none;
+                }
+
+                /* Show the data-label content for *both* tables */
+                table#prelisted-items-table tbody tr td::before,
+                .supplier-table-content tbody tr td::before {
+                content: attr(data-label) ": ";
+                font-weight: 600;
+                color: #555;
+                margin-right: 5px;
+                }
+
+                /* Images and layout tweaks */
+                td img {
+                max-width: 60px;
+                border-radius: 4px;
+                margin-right: 8px;
+                }
+                .container {
+                flex-direction: column;
+                padding: 10px;
+                gap: 10px;
+                }
+                .header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 10px;
+                }
+                .header h1 {
+                position: static;
+                transform: none;
+                margin: 10px 0;
+                font-size: 1.8em;
+                }
+                .logout-button {
+                width: 100%;
+                margin: 8px 0;
+                }
+                .form-group {
+                flex-direction: column;
+                align-items: stretch;
+                }
+                .form-group label {
+                width: 100%;
+                margin-bottom: 5px;
+                }
+            }
+        </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script type="text/javascript" src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+        <script>
+            $(document).ready(function() {
+                $('#prelisted-items-table').DataTable(); // Initialize DataTables on the table
+            });
+        </script>
+        <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+        <meta name="theme-color" content="#000000">
+        <script>
+            if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+                .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                })
+                .catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+            }
+        </script>
+    </head>
+<body>
+
+<div class="container_info" id="info-container" style="width: 100%; max-width: 1200px; margin: 0 auto;">
+    <div class="header">
+        <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+            <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;">
+        </a>
+        <h1>Update Materials (Bulk)</h1>
+        <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+        <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <div class="cart-icon" onclick="openCartModal()" style="display: flex; align-items: right; justify-content: right; margin-bottom: 20px;">
+        <i class="fas fa-clipboard-list" style="margin-right: 5px;"></i>
+    </div>
+
+    <!-- Modal for Cart -->
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCartModal()">&times;</span>
+            <h2>Orders by Supplier</h2>
+            <div id="supplier-tables-container">
+                <!-- Individual supplier tables will be added here dynamically -->
+            </div>
+            <div class="add-order-button">
+                <button onclick="submitOrder()" class="add-btn">Update Materials</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+        <label for="languageSelect" class="description data-english">Choose Language:</label>
+        <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言: </label>
+        <select id="languageSelect" onchange="updateDescriptions()" style="margin-left: 10px;">
+            <option value="english">English</option>
+            <option value="chinese">Chinese</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="order-name" class="description data-english" id="order-name" style="display: flex; text-align: left; align-items: left; justify-content: left; margin-bottom: 20px;">Name: {{  user.name  }}</label>
+        <label for="order-name" class="description data-mandarin" id="order-name" style="display: none; text-align: left; align-items: left; justify-content: left; margin-bottom: 20px;">名称: {{  user.name  }}</label>
+    </div>
+
+
+    <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+        <label for="supplierFilter" class="description data-english" style="display: block; text-align: left;">Filter by Supplier:</label>
+        <label for="supplierFilter" class="description data-mandarin" style="display: none; text-align: left;">按供应商筛选:</label>
+        <select id="supplierFilter" onchange="filterTable()" style="margin-left: 10px; width: 200px;">
+            <option value="">All Suppliers</option>
+            {% for supplier in supplier_data %}
+                <option value="{{ supplier.supplier_name }}">{{ supplier.supplier_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Container for the two tables (side by side layout) -->
+    <div class="container" id="table-container" style="width: 100%; max-width: 1200px;">
+        <!-- Prelisted Items Table (Right) -->
+        <table id="prelisted-items-table" style="width: 100%; max-width: 1200px;">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">Action</th>
+                    <th onclick="sortTable(1)">SKU Number</th>
+                    <th onclick="sortTable(2)">Supplier</th>
+                    <th onclick="sortTable(3)">Supplier SKU Number</th>
+                    <th onclick="sortTable(4)">Description</th>
+                    <th onclick="sortTable(5)">Price</th>
+                    <th>Image</th>
+                    <th style="display: none;">Keywords</th> <!-- Hidden column -->
+                    <th style="display: none;">Keywords Chinese</th> <!-- Hidden column -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in home_depot_items %}
+                <tr>
+                    <td data-label="Action">
+                        <button class="add-btn"
+                            onclick='addItem(
+                                {{ item.material_id|tojson }},
+                                {{ item.supplier_name|tojson }},
+                                {{ item.internet_sku_number|tojson }},
+                                {{ item.item_desc|tojson }},
+                                {{ item.item_desc_mandarin|tojson }},
+                                {{ item.item_price|tojson }},
+                                {{ item.item_image|tojson }},
+                                {{ item.reorder_point|tojson }},
+                                {{ item.keywords|tojson }},
+                                {{ item.pack_size|tojson }},
+                                {{ item.keywords_ch|tojson }},
+                                {{ item.default_order_qty|tojson }}
+                            )'>
+                            Add Item
+                        </button>
+                    </td>
+                    <td data-label="SKU Number">{{ item.material_id }}</td>
+                    <td data-label="Supplier">{{ item.supplier_name }}</td>
+                    <td data-label="Supplier SKU">{{ item.internet_sku_number }}</td>
+                    <td data-label="Description"><div class="data-english">{{ item.item_desc }}</div><div class="data-mandarin" style="display:none;">{{ item.item_desc_mandarin }}</div></td>
+                    <td data-label="Price">{{ item.item_price }}</td>
+                    <td data-label="Image"><img src="{{ item.item_image }}" width="80" height="80" loading="lazy"/></td>
+                    <td data-label="Keywords" style="display:none;">{{ item.keywords }}</td>
+                    <td data-label="Keywords Chinese" style="display:none;">{{ item.keywords_ch }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let table;
+
+    $(document).ready(function() {
+        // Initialize DataTables on the table and store a reference to the DataTable instance
+        table = $('#prelisted-items-table').DataTable();
+
+        // Load saved filter if available
+        const savedFilter = localStorage.getItem('selectedSupplier');
+        if (savedFilter) {
+            $('#supplierFilter').val(savedFilter);
+            filterTable(); // Apply the filter when loading the page
+        }
+    });
+
+    // Creating a JavaScript object that maps supplier names to their IDs
+    const supplierData = {};
+    {% for supplier in supplier_data %}
+        supplierData["{{ supplier.supplier_name }}"] = "{{ supplier.id }}";
+    {% endfor %}
+
+   function updateDescriptions() {
+        const language = document.getElementById('languageSelect').value;
+
+        // Save the selected language in local storage
+        localStorage.setItem('selectedLanguage', language);
+
+        // Get all elements with class 'data-english' and 'data-mandarin'
+        const englishElements = document.querySelectorAll('.data-english');
+        const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+        if (language === 'english') {
+            englishElements.forEach(element => {
+                element.style.display = 'block';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'none';
+            });
+        } else if (language === 'chinese') {
+            englishElements.forEach(element => {
+                element.style.display = 'none';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'block';
+            });
+        }
+    }
+
+    // Function to open the cart modal
+    function openCartModal() {
+        document.getElementById('cartModal').style.display = 'block';
+    }
+
+    // Function to close the cart modal
+    function closeCartModal() {
+        document.getElementById('cartModal').style.display = 'none';
+    }
+
+    function filterTable() {
+        const filter = $('#supplierFilter').val();
+
+        // Save the selected supplier in local storage
+        localStorage.setItem('selectedSupplier', filter);
+
+        if (filter === "") {
+            table.column(2).search("").draw(); // Reset filter if "All Suppliers" is selected
+        } else {
+            table.column(2).search(filter, true, false).draw(); // Filter the supplier column
+        }
+    }
+
+    function addItem(sku_num, supplier_name, internet_num, description_english, description_mandarin, price, image, reorder_point, keywords, pack_size, keywords_ch, default_order_qty) {
+        const supplierContainer = document.getElementById('supplier-tables-container');
+        let supplierTable = document.querySelector(`#supplier-table-${supplier_name.replace(/\s+/g, '-')}`);
+        if (!supplierTable) {
+        supplierTable = document.createElement('div');
+        supplierTable.id = `supplier-table-${supplier_name.replace(/\s+/g, '-')}`;
+        supplierTable.classList.add('supplier-table');
+        supplierTable.innerHTML = `
+            <table class="supplier-table-content">
+            <thead>
+                <tr>
+                <th>Image</th>
+                <th>SKU Number</th>
+                <th>Supplier SKU Number</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Reorder Point</th>
+                <th>Pack Size</th>
+                <th>Default Order Qty</th>
+                <th>Keywords</th>
+                <th>Keywords Chinese</th>
+                <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="selected-items-${supplier_name.replace(/\s+/g, '-')}" ></tbody>
+            </table>
+        `;
+        supplierContainer.appendChild(supplierTable);
+        }
+
+        const tableBody = document.getElementById(`selected-items-${supplier_name.replace(/\s+/g, '-')}`);
+        let existingRow = Array.from(tableBody.rows).find(r => r.cells[1].textContent === sku_num);
+
+        if (existingRow) {
+        const qtyInput = existingRow.querySelector('td:nth-child(6) input');
+        qtyInput.value = parseInt(qtyInput.value) + 1;
+        return;
+        }
+
+        const newRow = document.createElement('tr');
+
+        // Image
+        const imageCell = document.createElement('td');
+        imageCell.setAttribute('data-label', 'Image');
+        const img = document.createElement('img');
+        img.src = image;
+        img.alt = description_english;
+        img.style.width = '80px';
+        img.style.height = '80px';
+        imageCell.appendChild(img);
+
+        // SKU Number
+        const skuCell = document.createElement('td');
+        skuCell.setAttribute('data-label', 'SKU Number');
+        skuCell.textContent = sku_num;
+
+        // Supplier SKU Number
+        const internetCell = document.createElement('td');
+        internetCell.setAttribute('data-label', 'Supplier SKU Number');
+        internetCell.textContent = internet_num;
+
+        // Description
+        const descCell = document.createElement('td');
+        descCell.setAttribute('data-label', 'Description');
+        const enDiv = document.createElement('div');
+        enDiv.classList.add('data-english'); enDiv.textContent = description_english;
+        const chDiv = document.createElement('div');
+        chDiv.classList.add('data-mandarin'); chDiv.style.display = 'none';
+        chDiv.textContent = description_mandarin;
+        descCell.append(enDiv, chDiv);
+
+        // Price
+        const priceCell = document.createElement('td');
+        priceCell.setAttribute('data-label', 'Price');
+        const priceInput = document.createElement('input');
+        priceInput.type = 'number'; priceInput.value = price; priceInput.style.width = '50px';
+        priceCell.appendChild(priceInput);
+
+        // Reorder Point
+        const reorderCell = document.createElement('td');
+        reorderCell.setAttribute('data-label', 'Reorder Point');
+        const reorderInput = document.createElement('input');
+        reorderInput.type = 'number'; reorderInput.value = reorder_point; reorderInput.min = 1;
+        reorderInput.style.width = '50px';
+        reorderCell.appendChild(reorderInput);
+
+        // Pack Size
+        const packCell = document.createElement('td');
+        packCell.setAttribute('data-label', 'Pack Size');
+        const packInput = document.createElement('input');
+        packInput.type = 'number'; packInput.value = pack_size; packInput.min = 1;
+        packInput.style.width = '50px';
+        packCell.appendChild(packInput);
+
+        // Default Order Qty
+        const defCell = document.createElement('td');
+        defCell.setAttribute('data-label', 'Default Order Qty');
+        const defInput = document.createElement('input');
+        defInput.type = 'number'; defInput.value = default_order_qty; defInput.min = 1;
+        defInput.style.width = '50px';
+        defCell.appendChild(defInput);
+
+        // Keywords
+        const keyCell = document.createElement('td');
+        keyCell.setAttribute('data-label', 'Keywords');
+        const keyInput = document.createElement('input');
+        keyInput.type = 'text'; keyInput.value = keywords;
+        keyInput.style.width = '200px'; keyInput.style.height = '100px';
+        keyCell.appendChild(keyInput);
+
+        // Keywords Chinese
+        const keyChCell = document.createElement('td');
+        keyChCell.setAttribute('data-label', 'Keywords Chinese');
+        const keyChInput = document.createElement('input');
+        keyChInput.type = 'text'; keyChInput.value = keywords_ch;
+        keyChInput.style.width = '200px'; keyChInput.style.height = '100px';
+        keyChCell.appendChild(keyChInput);
+
+        // Action (Delete)
+        const actionCell = document.createElement('td');
+        actionCell.setAttribute('data-label', 'Action');
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Delete';
+        delBtn.onclick = () => {
+        tableBody.removeChild(newRow);
+        if (!tableBody.children.length) supplierContainer.removeChild(supplierTable);
+        };
+        actionCell.appendChild(delBtn);
+
+        newRow.append(imageCell, skuCell, internetCell, descCell, priceCell,
+                reorderCell, packCell, defCell, keyCell, keyChCell, actionCell);
+        tableBody.appendChild(newRow);
+
+        updateDescriptions();
+    }
+
+    
+    // Function to submit the order data and selected items
+    function submitOrder() {
+        if (!confirm("Are you sure everything is final? Click OK to continue or Cancel to review your materials.")) {
+            return; // Stop execution if the user cancels
+        }
+        
+        const orderName = "{{ user.name }}";
+        const userId = "{{ user.id | escape }}";
+
+        // Collect selected items data, grouped by supplier
+        const selectedItems = [];
+        const supplierTables = document.querySelectorAll('.supplier-table');
+        
+        supplierTables.forEach(supplierTable => {
+            const rows = supplierTable.querySelectorAll('tbody tr');
+
+            rows.forEach(row => {
+                const sku_number = row.querySelector('td:nth-child(2)').textContent;
+                const internet_sku_number = row.querySelector('td:nth-child(3)').textContent;
+                const description = row.querySelector('td:nth-child(4) .data-english').textContent.trim();
+                const price = parseFloat(row.querySelector('td:nth-child(5) input').value);
+                const reorder_point = parseInt(row.querySelector('td:nth-child(6) input').value);
+                const pack_size = parseInt(row.querySelector('td:nth-child(7) input').value);
+                const default_order = parseInt(row.querySelector('td:nth-child(8) input').value);
+                const keywords_input = row.querySelector('td:nth-child(9) input').value;
+                const keywords_input_ch = row.querySelector('td:nth-child(10) input').value;
+                const image = row.querySelector('td:nth-child(1) img').src;
+
+
+                selectedItems.push({
+                    material_id: sku_number,
+                    internet_sku_number: internet_sku_number,
+                    item_desc: description,
+                    item_price: price,
+                    reorder_point: reorder_point,
+                    pack_size: pack_size,
+                    default_order_qty: default_order,
+                    keywords: keywords_input,
+                    keywords_ch: keywords_input_ch,
+                    item_image: image,
+                });
+                
+            });
+        });;
+
+        // Prepare the data payload to send to the backend
+        const orderData = {
+            order_name: orderName,
+            user_id: userId,
+            update_materials: selectedItems // Array of orders per supplier
+        };
+
+        // Check if there are any items to submit
+        if (selectedItems.length === 0) {
+            alert("Please add at least one item.");
+            return;
+        }
+
+        // Send the data to the backend using Fetch API
+        fetch('/submit_bulk_material', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message && data.redirect_url) {
+                alert('Order successfully added: ' + data.message);
+                window.location.href = data.redirect_url;
+            } else {
+                console.error('Invalid response:', data);
+                alert('An error occurred while processing the order.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+    
+    // Function to load the saved language preference on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Get the selected language from local storage
+        const savedLanguage = localStorage.getItem('selectedLanguage');
+
+        // If there's a saved language, set it in the dropdown and update descriptions
+        if (savedLanguage) {
+            document.getElementById('languageSelect').value = savedLanguage;
+            updateDescriptions();
+        }
+       
+    });
+
+</script>
+</body>
+</html>

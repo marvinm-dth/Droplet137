@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DTH Receive</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f8f8;
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1a0000;
+        }
+        .menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 200px;
+            height: 50px;
+            background-color: #90ee90;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            color: black;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.2);
+            transition: 0.3s;
+        }
+        .btn:hover {
+            background-color: #77dd77;
+        }
+        .btn img {
+            width: 25px;
+            height: 25px;
+            margin-right: 10px;
+        }
+
+        /* Logout button styles */
+        .logout-button {
+            padding: 10px 20px;
+            background-color: #cc716c;
+            color: #333;
+            font-size: 1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            margin-left: auto; /* Pushes the button to the right */
+        }
+
+        .logout-button:hover {
+            background-color: #cc716c;
+        }
+    </style>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#000000">
+    <script>
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+            .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+        }
+    </script>
+</head>
+<body>
+<div class="container_info" id="info-container" style="width: 100%; max-width: 1200px; margin: 0 auto;">
+    <div class="header">
+        <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+            <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;" loading="lazy">
+        </a>
+        <h1>Dragon Tiny Homes Inventory</h1>
+        <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+        <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <div class="menu">
+        <a href="{{ url_for('inventory') }}" class="btn">
+            Log Inventory Materials
+        </a> 
+        <a href="{{ url_for('return_inventory')}}" class="btn"> 
+            Return Materials
+        </a>
+        <a href="{{ url_for('inventory_location') }}" class="btn">
+            Inventory Location
+        </a> 
+        <a href="{{ url_for('inventory_onhand')}}" class="btn"> 
+            Update Inventory Onhand
+        </a>
+    </div>
+</div>
+</body>
+</html>

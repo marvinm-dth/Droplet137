@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+        integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+        crossorigin="anonymous" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"
+        integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy"
+        crossorigin="anonymous" defer></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        .no-shadow {
+            border: none;
+
+        }
+        .no-shadow:focus {
+            box-shadow: none;
+        }
+
+        .bg-secondary {
+            background-color: #D9D9D9 !important;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="checklist-status" class="container-md py-3 fw-bolder"></div>
+    
+    <!-- PAGE 1 -->
+    <div class="container-md border border-dark small p-0">
+        <div class="accordion accordion-flush" id="accordion-page1-parent">
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#accordion-page1-body" aria-expanded="false"
+                        aria-controls="accordion-page1-body">
+                        PRE INSPECTION FORM 预检表格
+                    </button>
+                </h2>
+                <div id="accordion-page1-body" class="accordion-collapse collapse" data-bs-parent="#accordion-page1-parent">
+                    <div class="accordion-body p-0">
+
+                        <header class="pt-4">
+                            <div class="d-block d-md-flex align-items-center gap-4">
+                                <div class="col-5 col-md-3 mb-3 mb-md-0 ps-0 ps-md-4 mx-auto">
+                                    <img src="/uploads/dth-logo.jpg" alt="tiny-dragon-home-logo" class="img-fluid">
+                                </div>
+                                <div class="col">
+                                    <div class="fs-5">PRE INSPECTION FORM <span>预检表格</span></div>
+                                    <div id="checklist-title" class="fs-3 fw-bolder"></div>
+
+                                    <div class="row g-0">
+                                        <div class="col-6 col-md-6 row align-items-center g-0 border border-dark">
+                                            <div class="col-auto ps-2">Date <span>日期</span>:</div>
+                                            <div class="col"><input type="date" class="form-control no-shadow"></div>
+                                        </div>
+
+                                        <div class="col-6 col-md-6 row align-items-center g-0 border border-dark">
+                                            <div class="col-auto ps-2">DTH #<span>/房屋号码</span>:</div>
+                                            <div class="col d-flex justify-content-center align-items-center">
+                                                <p id="project-parent" class="m-0"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </header>
+
+
+                        <div class="row justify-content-between g-0">
+
+                            <div class="mb-3">
+                                <div class="bg-dark text-light text-center py-1 fs-4">DESCRIPTION <span>描述</span>:</div>
+                                <div class="p-3">The foundation is the steel framed trailer that the house is built on
+                                    top of. It is important that everything on the foundation iscorrect because this is
+                                    the starting point of a home. If anything is wrong or missing it could cause serious
+                                    problems down the line. It is always good to double check things during the building
+                                    process. Even if you think you have checked something check it again to confirm. If
+                                    something doesn't look right or you have any questions please talk to a manager
+                                    before signing your name.
+                                    <span class="d-block mt-3">基础是建在钢框架拖车上的房子的根基。确保基础的一切都正确是非常重要的，因为这是房屋的起点。如果现在有任何错误或遗漏
+                                        可能会在后续造成严重问题。在建造过程中始终好好检查事物是明智的。即使你认为已经检查过某些东西，也要再次检查以确认
+                                        如果有什么看起来不对或者你有任何问题，请在签名前与经理交谈。</span>
+                                </div>
+
+
+                            </div>
+
+                            <div>
+                                <div class="bg-dark text-light text-center py-1 fs-4">PRE INSPECTION INFO
+                                    <span>(预检信息)</span>
+                                </div>
+
+                                <div class="row g-0">
+                                    <div class="col-12 col-md-6 row g-0">
+                                        <div class="col-12 col-md-6 bg-secondary text-center col py-2">PHASE START DATE
+                                            <span class="d-block">阶段开始日期</span>
+                                        </div>
+                                        <div class="col-12 col-md-6 d-flex justify-content-center align-items-center">
+                                            <input id="checklist-phase_start_date" type="date"
+                                                class="form-control no-shadow">
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-6 row g-0">
+                                        <div class="col-12 col-md-6 bg-secondary text-center col py-2">WHO DID THE WORK
+                                            <span class="d-block">谁做的工作?阶段开始日期</span>
+                                        </div>
+                                        <div class="col-12 col-md-6 d-flex justify-content-center py-2 py-md-0">
+                                            <select id="checklist-who_did_the_work"
+                                                class="form-select no-shadow"></select>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+
+                                <div class="border border-dark">
+                                    <div class="bg-secondary text-center col py-2">ISSUES THAT HAPPENED DURING THE
+                                        CONSTRUCTION PROCESS <span class="d-block">施工过程中发生的问题</span></div>
+                                    <div class="col d-flex justify-content-center">
+                                        <textarea id="checklist-issues" class="form-control no-shadow"
+                                            rows="3"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="border border-dark">
+                                    <div class="bg-secondary text-center col py-2">CHANGES TO THE DESIGN OR BUILD <span
+                                            class="d-block">设计或建造的变更</span></div>
+                                    <div class="col d-flex justify-content-center">
+                                        <textarea id="checklist-changes" class="form-control no-shadow"
+                                            rows="3"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="row g-0 border border-dark">
+                                    <div class="col-12 col-md-6 row g-0">
+                                        <div class="col-12 col-md-6 bg-secondary text-center col py-2">WHO IS CHECKING
+                                            <span class="d-block">谁在检查</span>
+                                        </div>
+                                        <div class="col-12 col-md-6 d-flex justify-content-center py-2 py-md-0">
+                                            <select id="checklist-who_is_checking"
+                                                class="form-select no-shadow"></select>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="col-12 col-md-6 row g-0">
+                                        <div class="col-12 col-md-6 bg-secondary text-center col py-2">COMPLETED DATE
+                                            <span class="d-block">完成的日期</span>
+                                        </div>
+                                        <div class="col-12 col-md-6 d-flex justify-content-center">
+                                            <input id="checklist-completed_date" type="date"
+                                                class="form-control no-shadow">
+                                        </div>
+                                    </div>
+                                </div>
+
+
+
+                                <div class="row g-0 border border-dark">
+                                    <div class="col-12 col-md-6 row g-0">
+                                        <div class="col-12 col-md-6 bg-secondary text-center col py-2">IS EVERYTHING
+                                            DONE <span class="d-block">都完成了吗</span></div>
+                                        <div
+                                            class="col-12 col-md-6 d-flex flex-column justify-content-center align-items-center">
+
+                                            <div class="form-group">
+                                                <label for="checklist-is_done_yes">YES<span>/是的</span></label>
+                                                <input id="checklist-is_done_yes" type="checkbox"
+                                                    class="form-check-input" name="group-done">
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="checklist-is_done_no">NO<span>/不是</span></label>
+                                                <input id="checklist-is_done_no" type="checkbox"
+                                                    class="form-check-input" name="group-done">
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="col-12 col-md-6 row g-0">
+                                        <div class="col-12 col-md-6 bg-secondary text-center col py-2">MISSING ITEMS?
+                                            <span class="d-block">缺少的项目</span>
+                                        </div>
+                                        <div
+                                            class="col-12 col-md-6 d-flex flex-column justify-content-center align-items-center">
+
+                                            <div class="form-group">
+                                                <label for="checklist-is_missing_yes">YES<span>/是的</span></label>
+                                                <input id="checklist-is_missing_yes" type="checkbox"
+                                                    class="form-check-input" name="group-missing">
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="checklist-is_missing_no">NO<span>/不是</span></label>
+                                                <input id="checklist-is_missing_no" type="checkbox"
+                                                    class="form-check-input" name="group-missing">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+
+                                <div class="row g-0 border border-dark">
+                                    <div class="col row g-0">
+                                        <div class="bg-secondary text-center col-12 col-md-3 p-2">IF NO, WHAT IS NOT
+                                            DONE?<span class="d-block">如果没有，缺少什么或 未完成的部分是什么？</span></div>
+                                        <div class="col-12 col-md-9 d-flex justify-content-center">
+                                            <textarea id="checklist-what_is_not_done" class="form-control no-shadow"
+                                                rows="3"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="row g-0 border border-dark">
+                                    <div class="col-12 col-md-6 row g-0">
+                                        <div class="bg-secondary text-center col-12 col-md-6 p-2">READY TO INSPECT?<span
+                                                class="d-block">准备好检查了吗</span></div>
+                                        <div class="col d-flex flex-column justify-content-center align-items-center">
+                                            <div class="form-group">
+                                                <label for="is_ready_inspect_yes">YES<span>/是的</span></label>
+                                                <input id="checklist-is_ready_inspect_yes" type="checkbox"
+                                                    class="form-check-input" name="group-inspect">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="checklist-is_ready_inspect_no">NO<span>/不是</span></label>
+                                                <input id="checklist-is_ready_inspect_no" type="checkbox"
+                                                    class="form-check-input" name="group-inspect">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 col-md-6 row g-0">
+                                        <div class="bg-secondary text-center col-12 col-md-8 p-2"> REQUESTED INSPECTION
+                                            DATE/TIME <span class="d-block">要求的检查日期/时间</span></div>
+                                        <div class="col-12 col-md-4 d-flex justify-content-center">
+                                            <input id="checklist-requested_inspection_date" type="datetime-local"
+                                                class="form-control no-shadow">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-0 mt-5">
+                                    <div class="col text-center bg-danger text-white py-2">
+                                        <div>DO NOT SCHEDULE THE INSPECTION UNTIL EVERYTHING IS COMPLETED <span
+                                                class="d-block">在一切没有完成之前不要安排检查。</span></div>
+
+                                    </div>
+                                </div>
+
+                                <div class="row g-0 border border-dark">
+                                    <div class="row g-0">
+                                        <div class="bg-secondary text-center col-12 col-md-3 py-2">INSPECTION DATE/TIME
+                                            <span class="d-block">检查 日期/时间</span>
+                                        </div>
+                                        <div class="col-md-9 d-flex justify-content-center align-items-center">
+                                            <p id="checklist-inspection_date" class="m-0"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                        </div>
+
+                        <div class="d-flex justify-content-center align-items-center p-3">
+
+                            <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#accordion-page1-body" aria-expanded="false" aria-controls="accordion-page1-body" onclick="window.scrollTo({top: 0})">Hide Form</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /PAGE 1 -->
+
+
+
+    <!-- PAGE 2 -->
+    <div class="container-md small p-0">
+
+        <header class="pt-4">
+            <div class="d-block d-md-flex align-items-center gap-4 mb-3">
+                
+                <div class="col-5 col-md-3 mb-3 mb-md-0 ps-0 ps-md-4 mx-auto">
+                    <img src="/uploads/dth-logo.jpg" alt="tiny-dragon-home-logo" class="img-fluid">
+                </div>
+                <div class="col">
+                    <div class="fs-5 ps-2 ps-md-0">INSPECTION FORM</div>
+                    <div id="checklist-name"class="fs-3 ps-2 ps-md-0 fw-bolder"></div>
+                </div>
+                <div class="col row align-items-center">
+                    <div class="text-end">
+                        <button class="btn btn-primary" onclick="redirectToExport()">Export as PDF</button>
+                    </div>
+                    <div>
+                        <div class="fw-bolder">Approval Status</div>
+                        <div class="d-flex justify-content-center">
+                            <select id="checklist-status" class="form-select text-center">
+                                <option value="" selected></option>
+                                <!-- <option value="pass"></option>
+                                <option value="fail">Approved</option>
+                                <option value="fail">Rejected</option>
+                                <option value="fail">Rejected</option> -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>    
+        </header>
+
+        <div class="mb-3">
+            <div class="row g-0">
+                <div class="col-12 col-md-6 row g-0 border border-dark">
+                    <div class="col-12 col-md-6 bg-secondary text-center col py-2">DTH#</div>
+                    <div class="col-12 col-md-6 d-flex justify-content-center align-items-center"><p id="project-parent-2" class="m-0"></p></div>
+                </div>
+
+                <div class="col-12 col-md-6 row g-0 border border-dark">
+                    <div class="col-12 col-md-6 bg-secondary text-center col py-2">NOAH INSPECTOR</div>
+                    <div class="col-12 col-md-6 d-flex justify-content-center align-items-center">
+                        <p id="checklist-noah_inspector" class="m-0"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-0">
+                <div class="col-12 col-md-6 row g-0 border border-dark">
+                    <div class="col-12 col-md-6 bg-secondary text-center col py-2">SESSION ID</div>
+                    <div class="col-12 col-md-6 d-flex justify-content-center align-items-center">
+                        <p id="checklist-session_id" class="m-0"></p>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 row g-0 border border-dark">
+                    <div class="col-12 col-md-6 bg-secondary text-center col py-2">DRAGON INSPECTOR</div>
+                    <div class="col-12 col-md-6 d-flex justify-content-center align-items-center">
+                        <p id="checklist-dragon_inspector" class="m-0"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-0">
+                <div class="col-12 col-md-6 row g-0 border border-dark">
+                    <div class="col-12 col-md-6 bg-secondary text-center col py-2">PASS OR FAIL</div>
+                    <div class="col-12 col-md-6 d-flex justify-content-center">
+                        <select id="checklist-is_pass" class="form-select no-shadow text-center">
+                            <option value="" selected></option>
+                            <option value="false">FAIL</option>
+                            <option value="true">PASS</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 row g-0 border border-dark">
+                    <div class="col-12 col-md-6 bg-secondary text-center col py-2">REINSPECTION NEEDED?</div>
+                    <div class="col-12 col-md-6 d-flex justify-content-center">
+                        <select id="checklist-is_reinspection_needed" class="form-select no-shadow text-center">
+                            <option value="" selected></option>
+                            <option value="false">NO</option>
+                            <option value="true">YES</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <div class="fs-5 fw-bolder">NOTES:</div>
+            <p id="checklist-inspection_notes" class="form-control border border-dark" style="height: calc(1.5rem * 5);"></p>
+        </div>
+
+
+        <div class="container-fluid mb-3 p-0">
+            <div class="bg-secondary text-center py-1 fs-4">Checklist</div>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th class="col-auto">#</th>
+                        <th class="col-3">Description</th>
+                        <th class="col-2">Notes</th>
+                        <th class="col-2">Video</th>
+                        <th class="col-2">Photos</th>
+                        <th class="col-2">Remarks</th>
+                        <th class="col-1">Actions</th>
+                        <th class="col-auto">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center p-3">
+            <button class="btn btn-primary w-25" onclick="prevStep()">Previous</button>
+        </div>
+    </div>
+    <!-- PAGE 2 -->
+
+
+    <script>
+        let checklistInfo;
+        let checklistItems;
+
+        let updateDebounce;
+        let updateChecklistDebounce;
+        let updateItemDebounce;
+
+        const status_colors = {approved: "success", completed: "success", rejected: "danger", pending: "warning", inprogress: "secondary"}
+
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await fetchChecklistInfo();
+            populateChecklistInfo();
+            populateChecklistItems();
+
+            attachListeners();
+        });
+
+        function attachListeners() {
+            const checklistInputs = document.querySelectorAll(`input[id^="checklist"], select[id^="checklist"]`);
+            checklistInputs.forEach((input) => input.addEventListener("input", function () {
+                clearTimeout(updateChecklistDebounce);
+                updateChecklistDebounce = setTimeout(() => {
+                    updateChecklist();
+                }, 400)
+            }));
+        }
+
+        async function fetchChecklistInfo() {
+            const checklist_id = new URLSearchParams(window.location.search).get("checklist_id");
+            if(!checklist_id) window.location.href = "/checklists/manage"
+            let res = await fetch(`/api/checklists/${checklist_id}`)
+            checklistInfo = await res.json();
+            checklistItems = checklistInfo.all_items;
+        }
+        function populateChecklistInfo() {
+            const getDate = (datetime) => (datetime) ? new Date(datetime).toISOString().slice(0, 10) : datetime;
+            const getDateTime = (datetime) => (datetime) ? new Date(datetime).toISOString().slice(0, 16) : datetime;
+
+            document.querySelector("#project-parent").innerText = checklistInfo.all_projects.project_name;
+            document.querySelector("#project-parent-2").innerText = checklistInfo.all_projects.project_name;
+            document.querySelector("#checklist-title").innerText = checklistInfo.all_template_checklists.name;
+            document.querySelector("#checklist-name").innerText = checklistInfo.all_template_checklists.name;
+
+            document.querySelector("#checklist-who_did_the_work").innerText = checklistInfo.worker?.employee_name || "";
+            document.querySelector("#checklist-who_is_checking").innerText = checklistInfo.evaluator?.employee_name || "";
+
+            document.querySelector("#checklist-issues").innerText = checklistInfo.issues ?? "";
+            document.querySelector("#checklist-changes").innerText = checklistInfo.changes ?? "";
+            document.querySelector("#checklist-what_is_not_done").innerText = checklistInfo.what_is_not_done ?? "";
+
+            document.querySelector("#checklist-phase_start_date").innerText = getDate(checklistInfo.phase_start_date) || "";
+            document.querySelector("#checklist-completed_date").innerText = getDate(checklistInfo.completed_date) || "";
+            document.querySelector("#checklist-requested_inspection_date").innerText = getDateTime(checklistInfo.requested_inspection_date) || "";
+
+            document.querySelector("#checklist-inspection_date").innerText = getDateTime(checklistInfo.inspection_date) || "";
+
+            document.querySelector("#checklist-is_done_yes").checked = checklistInfo.is_done;
+            document.querySelector("#checklist-is_done_no").checked = !checklistInfo.is_done;
+
+            document.querySelector("#checklist-is_missing_yes").checked = checklistInfo.is_done;
+            document.querySelector("#checklist-is_missing_no").checked = !checklistInfo.is_done;
+
+            document.querySelector("#checklist-is_ready_inspect_yes").checked = checklistInfo.is_ready_inspect;
+            document.querySelector("#checklist-is_ready_inspect_no").checked = !checklistInfo.is_ready_inspect;
+
+
+            document.querySelector("#checklist-session_id").innerText = checklistInfo.session_id;
+            document.querySelector("#checklist-noah_inspector").innerText = checklistInfo.noah_ins.employee_name;
+            document.querySelector("#checklist-dragon_inspector").innerText = checklistInfo.dragon_ins.employee_name;
+            document.querySelector("#checklist-is_pass").value = checklistInfo.is_pass
+            document.querySelector("#checklist-is_reinspection_needed").value = checklistInfo.is_reinspection_needed;
+
+        }
+        function populateChecklistItems() {
+            const tBody = document.querySelector('tbody');
+            tBody.innerHTML = '';
+
+            checklistItems.forEach((item, index) => {
+                const row = document.createElement('tr');
+                const template = item.all_template_items;
+                row.setAttribute('id', `item-check-${item.id}`); // Set the id for the row
+                row.innerHTML = `
+                    <td class="align-middle text-center">${index + 1}</td>
+                    <td class="align-middle">
+                        <p>${template.description_en}</p>
+                        <p>${template.translation_overwrite_cn || template.description_cn}</p>
+                    </td>
+                    <td class="align-middle">${template.notes ? `${template.notes}`: ""}</td>
+                    <td class="align-middle">${template.video_link ? `<a href="${template.video_link}">Click here to watch a video</a>`: "No available video."}</td>
+                    <td class="align-middle">
+                        <a target="_blank" href="/photo/view?name=${item.photo_path.split("/")[3]} "><img src="${item.photo_path}" loading="lazy" width="121" height="181" class="img-fluid d-block mx-auto" /></a></td>
+                    <td class="align-middle"><p>${item.remarks}</p></td>
+                    <td class="align-middle" id="item-action-${item.id}">
+                        <div class="d-flex gap-2">
+                        ${  (item.status == "approved") ? `<button class="btn btn-outline-secondary" onclick="handleAction(${item.id}, 'cancel_approve')">Cancel</button>`:
+                            (item.status == "rejected") ? `<button class="btn btn-outline-secondary" onclick="handleAction(${item.id}, 'cancel_reject')">Cancel</button>`:
+                            (item.status == "completed") ? `<button class="btn btn-outline-secondary" onclick="handleAction(${item.id}, 'cancel_complete')">Cancel</button>`:
+                            (item.status == "pending") ? `<button class="btn btn-outline-success" onclick="handleAction(${item.id}, 'approve')">Approve</button> <button class="btn btn-outline-danger" onclick="handleAction(${item.id}, 'reject')">Reject</button>`:
+                            `<button class="btn btn-outline-primary" onclick="handleAction(${item.id}, 'mark_complete')">Mark as complete</button>`
+                        }
+                        </div>
+                    </td>
+                    <td id="item-status-${item.id}" class="align-middle text-center"><span class="badge bg-${status_colors[item.status]}">${item.status === "completed" ? "approved": item.status}</span></td>
+                    
+                `;
+                tBody.appendChild(row);
+            });
+        }
+
+        function updateChecklist() {
+            let updatedData = {
+                inspection_date: document.querySelector("#checklist-inspection_date").value || null,
+                is_pass: (document.querySelector("#checklist-is_pass").value == "true") ? true
+                        : (document.querySelector("#checklist-is_pass").value == "false") ? false
+                        : null,
+                is_reinspection_needed: (document.querySelector("#checklist-is_reinspection_needed").value == "true") ? true
+                        : (document.querySelector("#checklist-is_reinspection_needed").value == "false") ? false
+                        : null,
+            }
+
+            fetch(`/api/checklists/${checklistInfo.id}/update`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(updatedData)
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                console.log(data.message)
+            });
+        }
+
+        function handleAction(id, action) {
+            fetch(`/api/items/${id}/action`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action})
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                document.querySelector(`#item-status-${id}`).innerHTML = `
+                    <span class="badge bg-${status_colors[data.status]}">${data.status === "completed" ? "approved": data.status}</span>
+                `
+                document.querySelector(`#item-action-${id}`).innerHTML = `
+                    <div class="d-flex gap-2">
+                        ${  (data.status == "approved") ? `<button class="btn btn-outline-secondary" onclick="handleAction(${id}, 'cancel_approve')">Cancel</button>`:
+                            (data.status == "rejected") ? `<button class="btn btn-outline-secondary" onclick="handleAction(${data.id}, 'cancel_reject')">Cancel</button>`:
+                            (data.status == "completed") ? `<button class="btn btn-outline-secondary" onclick="handleAction(${data.id}, 'cancel_complete')">Cancel</button>`:
+                            (data.status == "pending") ? `<button class="btn btn-outline-success" onclick="handleAction(${data.id}, 'approve')">Approve</button> <button class="btn btn-outline-danger" onclick="handleAction(${data.id}, 'reject')">Reject</button>`:
+                            `<button class="btn btn-outline-primary" onclick="handleAction(${data.id}, 'mark_complete')">Mark as complete</button>`
+                        }
+                    </div>
+                `
+            });
+        }
+
+        function redirectToExport() {
+            const checklist_id = new URLSearchParams(window.location.search).get("checklist_id");
+            window.location.href = `/checklists/pdf?checklist_id=${checklist_id}`
+        }
+
+    
+
+       
+        </script>
+        <script>
+            let currentStep = 0;
+                const steps = document.querySelectorAll(".form-step");
+
+                function showStep(step) {
+                    window.scrollTo({top: 0});
+                    steps.forEach((formStep, index) => {
+                        formStep.classList.toggle("active", index === step);
+                    });
+                }
+
+                function nextStep() {
+                    if (currentStep < steps.length - 1) {
+                        currentStep++;
+                        showStep(currentStep);
+                    }
+                }
+
+                function prevStep() {
+                    if (currentStep > 0) {
+                        currentStep--;
+                        showStep(currentStep);
+                    }
+                }
+        </script>
+</body>
+
+</html>

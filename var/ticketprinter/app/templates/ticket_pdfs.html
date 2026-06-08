@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="stack">
+    <div class="card">
+        <div class="toolbar">
+            <div>
+                <div class="section-title">Tickets</div>
+                <h2 style="margin: 0">Ticket PDFs</h2>
+                <div class="muted">Generated automatically when a ticket is submitted.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        {% if not pdfs %}
+            <div class="muted">No PDFs have been generated yet.</div>
+        {% else %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Ticket</th>
+                            <th>Project</th>
+                            <th>Generated At</th>
+                            <th>PDF</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in pdfs %}
+                        <tr>
+                            <td>
+                                <div class="ticket-title">{{ row.ticketTitle or "Untitled" }}</div>
+                                <div class="ticket-meta">UUID: {{ row.ticketUuid }}</div>
+                            </td>
+                            <td>{{ row.projectCode or "-" }}</td>
+                            <td>{{ row.uploadedAt or "-" }}</td>
+                            <td>
+                                {% if row.fileUrl %}
+                                    <a class="btn btn-sm" href="{{ row.fileUrl }}">Download</a>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

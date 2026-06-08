@@ -1,0 +1,21 @@
+### index
+GET http://localhost:5030/api/v1/relations
+
+### show
+GET http://localhost:5030/api/v1/relations/1
+
+### create
+POST http://localhost:5030/api/v1/relations
+Content-Type: application/json
+
+{ "":"" }
+
+### patch
+PUT http://localhost:5030/api/v1/relations/1
+Content-Type: application/json
+
+{ "":"" }
+
+### delete
+DELETE http://localhost:5030/api/v1/relations/1
+

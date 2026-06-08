@@ -1,0 +1,21 @@
+### index
+GET http://localhost:5030/api/v1/delegations
+
+### show
+GET http://localhost:5030/api/v1/delegations/1
+
+### create
+POST http://localhost:5030/api/v1/delegations
+Content-Type: application/json
+
+{ "":"" }
+
+### patch
+PUT http://localhost:5030/api/v1/delegations/1
+Content-Type: application/json
+
+{ "":"" }
+
+### delete
+DELETE http://localhost:5030/api/v1/delegations/1
+

@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Order</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            font-size: 14px;
+            background-color: #f8f8f8;
+        }
+
+        header {
+            background-color: #fff;
+            padding: 10px 20px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0;
+            flex: 1;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            width: 50%;
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .search-container input[type="text"] {
+            padding: 8px;
+            width: 75%;
+        }
+
+        .search-container button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 25%;
+        }
+
+        .logout-btn {
+            background-color: #FF6347;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .product-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .product-item {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .product-item img {
+            width: 100px;
+            height: 100px;
+        }
+
+        .product-item input[type="number"] {
+            padding: 5px;
+            width: 40px;
+            margin-right: 10px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            .icons {
+                justify-content: flex-end;
+                gap: 15px;
+            }
+
+            .product-list {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .header-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-right {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .search-container {
+                width: 100%;
+            }
+
+            .search-container input[type="text"] {
+                width: 70%;
+            }
+
+            .search-container button {
+                width: 30%;
+            }
+
+            .logout-btn {
+                width: 100%;
+            }
+        }
+
+        h1 {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: 700;
+            color: #343a40;
+            margin-top: 20px;
+            }
+        /* Logout button styles */
+        .logout-button {
+                padding: 4px 8px;
+                background-color: #cc716c;
+                color: #333;
+                font-size: 0.5em;
+                font-weight: bold;
+                border: none;
+                border-radius: 12px;
+                cursor: pointer;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                transition: background-color 0.3s ease;
+                text-decoration: none;
+                margin-left: auto; /* Pushes the button to the right */
+            }
+
+        .logout-button:hover {
+                background-color: #cc716c;
+            }
+        .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px;
+                background-color: #f8f9fa;
+                position: relative;
+            }
+
+            /* Centered title */
+        .header h1 {
+                font-weight: bold;
+                color: #333;
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        .truncate-text {
+            display: block;
+            width: 120px; /* Adjust this to the desired width */
+            white-space: nowrap; /* Prevent the text from wrapping */
+            overflow: hidden; /* Hide the text that overflows */
+            text-overflow: ellipsis; /* Add the ellipsis (…) at the end */
+        }
+        .cart-icon {
+            display: flex;
+            align-items: right;
+            cursor: pointer;
+            color: #007bff;
+            font-size: 14px;
+            gap: 5px;
+        }
+
+            /* Modal styles */
+        .modal {
+                display: none;
+                position: fixed;
+                z-index: 1;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                overflow: auto;
+                background-color: rgba(0, 0, 0, 0.4);
+            }
+    
+        .modal-content {
+                background-color: #fefefe;
+                font-size: 10px;
+                margin: 15% auto;
+                padding: 20px;
+                border: 1px solid #888;
+                width: 80%;
+                max-width: 800px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Confirmation Modal (mini screen) styles */
+        #confirmationModal .modal-content {
+            max-width: 400px;
+            text-align: center;
+            font-size: 14px;
+            }
+        #confirmationModal img {
+            width: 100px;
+            height: 100px;
+            display: block;
+            margin: 0 auto;
+            }
+        #confirmationModal p {
+            font-weight: bold;
+            margin: 10px 0;
+            }
+        #confirmationModal input[type="text"] {
+            width: 100%;
+            padding: 5px;
+            margin: 10px 0;}
+    </style>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#000000">
+    <script>
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+            .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+        }
+    </script>
+</head>
+<body>
+    <!-- Header Section -->
+ <div class="container_info" id="info-container" style="width: 100%;  margin: 0 auto;">
+    <div class="header" style="margin-bottom: 20px;">
+        <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+            <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;">
+        </a>
+        <h1>Request Material</h1>
+        <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+        <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <!-- Confirmation Modal for Adding an Item -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closeConfirmationModal()" style="float: right; cursor: pointer;">&times;</span>
+          <img id="confirmImage" src="" alt="Product Image" />
+          <p id="confirmName"></p>
+          <label for="confirmNote">Note:</label>
+          <input type="text" id="confirmNote" placeholder="Enter any note..." />
+          <button onclick="confirmAddItem()">Submit</button>
+        </div>
+      </div>
+
+    <!-- Manual Entry Modal -->
+    <div id="manualEntryModal" class="modal">
+        <div class="modal-content" style="max-width: 500px; margin: 50px auto; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background-color: #fff;">
+        <span class="close" onclick="closeManualEntryModal()" style="float: right; font-size: 20px; cursor: pointer;">&times;</span>
+        <h2 style="text-align: center; margin-top: 0; color: #333;">Item not found. Please upload image</h2>
+        
+        <!-- Image upload and preview -->
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img id="manualImagePreview" src="/static/default-image.png" alt="Product Image" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd;">
+        </div>
+        <div style="margin-bottom: 15px;">
+            <label for="manualImage" style="display: block; margin-bottom: 5px; color: #555;">Upload Image:</label>
+            <input type="file" id="manualImage" accept="image/*" onchange="previewManualImage(this)" style="width: 100%;">
+        </div>
+        
+        <!-- Input fields for product details -->
+        <div style="margin-bottom: 15px; display: none;">
+            <label for="manualSupplierName" style="display: block; margin-bottom: 5px; color: #555;">Supplier Name:</label>
+            <input type="text" id="manualSupplierName" placeholder="Enter Supplier Name" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <div style="margin-bottom: 15px;  display: none;">
+            <label for="manualSkuNumber" style="display: block; margin-bottom: 5px; color: #555;">Internet SKU Number:</label>
+            <input type="text" id="manualSkuNumber" placeholder="Enter SKU Number" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <div style="margin-bottom: 15px;  display: none;">
+            <label for="manualDescEnglish" style="display: block; margin-bottom: 5px; color: #555;">Description (English):</label>
+            <input type="text" id="manualDescEnglish" placeholder="Enter Description" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <div style="margin-bottom: 15px;  display: none;">
+            <label for="manualDescMandarin" style="display: block; margin-bottom: 5px; color: #555;">Description (Mandarin):</label>
+            <input type="text" id="manualDescMandarin" placeholder="Enter Mandarin Description" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <div style="margin-bottom: 15px;  display: none;">
+            <label for="manualPrice" style="display: block; margin-bottom: 5px; color: #555;">Price:</label>
+            <input type="number" step="0.01" id="manualPrice" placeholder="Enter Price" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <div style="margin-bottom: 15px;  display: none;">
+            <label for="manualDefaultQty" style="display: block; margin-bottom: 5px; color: #555;">Default Order Qty:</label>
+            <input type="number" id="manualDefaultQty" placeholder="Enter Order Qty" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <div style="margin-bottom: 20px;">
+            <label for="manualNote" style="display: block; margin-bottom: 5px; color: #555;">Note:</label>
+            <input type="text" id="manualNote" placeholder="Enter any note..." style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        
+        <!-- Submit Button -->
+        <div style="text-align: center;">
+            <button onclick="submitManualEntry()" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+            Submit
+            </button>
+        </div>
+        </div>
+    </div>
+  
+
+    <div style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px; font-size: 10px; margin: 0 auto;">
+        <label for="languageSelect" class="description data-english" style="margin-left: 20px;">Choose Language:</label>
+        <label for="languageSelect" class="description data-mandarin" style="margin-left: 20px; display: none;">选择语言: </label>
+        <select id="languageSelect" onchange="updateDescriptions()" style="margin-left: 10px; font-size: 10px;">
+            <option value="english">English</option>
+            <option value="chinese">Chinese</option>
+        </select>
+    </div>
+
+    <div class="search-container" style="margin-top: 20px;">
+        <input type="text" id="search" placeholder="Search...">
+        <button id="search-btn">Search</button>
+    </div>
+
+    <!-- Product List Section -->
+    <div class="product-list" id="product-list">
+        {% for item in home_depot_items %}
+        <!-- Example Product Item -->
+        <div class="product-item" data-name="{{ item.item_desc }}">
+            <img src="{{ item.item_image }}" alt="Product" loading="lazy">
+            <p class="truncate-text">
+                <span class="data-english">{{ item.item_desc }}</span>
+                <span class="data-mandarin" style="display: none;">{{ item.item_desc_mandarin }}</span>
+            </p>
+            <p style="display: none;">${{item.item_price}}</p>
+            <p style="display: none;">{{item.keywords}}</p>
+            <p style="display: none;">{{item.keywords_ch}}</p>
+            <button class="add-btn" onclick="openConfirmationModal('{{ item.material_id }}', 
+                                                    '{{ item.supplier_name }}', 
+                                                    '{{ item.internet_sku_number }}', 
+                                                    '{{ item.item_desc }}', 
+                                                    '{{ item.item_desc_mandarin }}',
+                                                    '{{ item.item_price }}', 
+                                                    '{{ item.item_image }}',
+                                                    '{{ item.default_order_qty }}',
+                                                    '{{ user.name }}')">Add</button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+</body>
+<script>
+    function updateDescriptions() {
+        const language = document.getElementById('languageSelect').value;
+
+        // Save the selected language in local storage
+        localStorage.setItem('selectedLanguage', language);
+
+        // Get all elements with class 'data-english' and 'data-mandarin'
+        const englishElements = document.querySelectorAll('.data-english');
+        const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+        if (language === 'english') {
+            englishElements.forEach(element => {
+                element.style.display = 'block';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'none';
+            });
+        } else if (language === 'chinese') {
+            englishElements.forEach(element => {
+                element.style.display = 'none';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'block';
+            });
+        }
+    }
+
+    let scanBuffer = "";
+    let lastScanTime = 0;
+    // Global array to hold scanned items
+    let scannedItems = [];
+    const maxScans = 5;
+
+    document.addEventListener("keydown", (event) => {
+        const currentTime = Date.now();
+        const scanThreshold = window.scanThreshold || 50;
+        const scanMinChar = window.scanMinChar || 3;
+
+        if (currentTime - lastScanTime > scanThreshold) {
+            scanBuffer = "";
+        }
+
+        if (event.key.length === 1) {
+            scanBuffer += event.key;
+        }
+
+        if (event.key === "Enter" && scanBuffer.length >= scanMinChar) {
+            document.dispatchEvent(new CustomEvent("PDA_SCAN", { detail: { value: scanBuffer } }));
+            scanBuffer = "";
+        }
+
+        lastScanTime = currentTime;
+    });
+
+    function openManualEntryModal() {
+        // Clear previous values if desired
+        document.getElementById('manualSupplierName').value = "";
+        document.getElementById('manualSkuNumber').value = "";
+        document.getElementById('manualDescEnglish').value = "";
+        document.getElementById('manualDescMandarin').value = "";
+        document.getElementById('manualPrice').value = "";
+        document.getElementById('manualDefaultQty').value = "";
+        document.getElementById('manualNote').value = "";
+        // Show the modal
+        document.getElementById('manualEntryModal').style.display = 'block';
+    }
+
+    function closeManualEntryModal() {
+        document.getElementById('manualEntryModal').style.display = 'none';
+    }
+
+    function previewManualImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+            document.getElementById('manualImagePreview').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    document.addEventListener("PDA_SCAN", (e) => {
+            //const scanMessage = document.getElementById("scanMessage");
+            //scanMessage.textContent = `Scanning detected:\n${e.detail.value}`;
+            //scanMessage.style.display = "block";
+
+            console.log(`${e.detail.value}`)
+            scannedCode = `${e.detail.value}`
+            if (scannedCode) {
+                fetch('/search_barcode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ barcode: scannedCode })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        openConfirmationModal(data.material_id , 
+                                                data.supplier_name, 
+                                                data.internet_sku_number, 
+                                                data.item_desc, 
+                                                data.item_desc_mandarin,
+                                                data.item_price, 
+                                                data.item_image,
+                                                data.default_order_qty,
+                                                "{{ user.name }}");
+                        console.log('Custom script executed with data:', data); // Log to verify
+                    } else {
+                        openManualEntryModal(); // open the new modal for manual data entry
+                    }
+                })}
+
+            setTimeout(() => {
+                scanMessage.style.display = "none";
+            }, 3000);
+        });
+
+    // Handle "Add" button click
+    // const addButtons = document.querySelectorAll(".add-btn");
+
+    // addButtons.forEach((button) => {
+    //     button.addEventListener("click", (event) => {
+    //         const productItem = event.target.closest(".product-item");
+    //         const productName = productItem.querySelector("p").textContent;
+    //         const quantityInput = productItem.querySelector(".quantity-input");
+    //         const quantity = parseInt(quantityInput.value);
+
+    //         // Add product to cart
+    //         cart.push({ name: productName, quantity });
+
+    //         // Update cart count
+    //         updateCartCount();
+    //     });
+    // });
+
+    // Search functionality
+    const searchInput = document.getElementById("search");
+
+    searchInput.addEventListener("input", function () {
+        const query = searchInput.value.toLowerCase();
+        const productItems = document.querySelectorAll(".product-item");
+
+        // Split the query into individual words
+        const keywords = query.split(" ").filter((word) => word.trim() !== "");
+
+        productItems.forEach((item) => {
+            const productTexts = item.querySelectorAll("p"); // Get all <p> tags inside the product item
+            let isMatch = true;
+
+            // Check if all keywords are present in any of the <p> elements
+            keywords.forEach((keyword) => {
+                const matched = Array.from(productTexts).some((text) => text.textContent.toLowerCase().includes(keyword));
+                if (!matched) {
+                    isMatch = false; // If a keyword is not found, hide the product
+                }
+            });
+
+            // Show or hide the product based on whether it matches the keywords
+            if (isMatch) {
+                item.style.display = "block";
+            } else {
+                item.style.display = "none";
+            }
+        });
+    });
+
+    // Open confirmation modal for adding an item
+    function openConfirmationModal(sku_num, supplier_name, internet_num, description_english, description_mandarin, price, image, default_qty, requesting_party) {
+      // Store the item details in a global object
+      selectedItem = { sku_num, supplier_name, internet_num, description_english, description_mandarin, price, image, default_qty, requesting_party };
+      // Populate modal fields
+      document.getElementById('confirmImage').src = image;
+      document.getElementById('confirmName').textContent = description_english;
+      document.getElementById('confirmNote').value = '';
+      document.getElementById('confirmationModal').style.display = 'block';
+    }
+
+    function closeConfirmationModal() {
+        document.getElementById('confirmationModal').style.display = 'none';
+        }
+
+    function submitManualEntry() {
+        if (!confirm("Are you sure you want to request to order this item?")) return;
+
+        const manualItem = {
+            item_image: document.getElementById('manualImagePreview').src,
+            notes:      document.getElementById('manualNote').value.trim(),
+            requesting_party:    "{{ user.name }}",
+            requesting_party_id: "{{ user.id }}"
+        };
+
+        // validate the actual properties
+        if (!manualItem.item_image || !manualItem.notes) {
+            alert("All fields are required.");
+            return;
+        }
+
+        fetch('/send_pending_request_material', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requestingItem: manualItem })
+        })
+        .then(_ => {
+            closeManualEntryModal();
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Error submitting request.");
+        });
+        }
+
+
+    function confirmAddItem() {
+        const note = document.getElementById('confirmNote').value;
+        // Ask the user to confirm before adding the item
+        if (confirm("Are you sure you want to order this item?")) {
+            const newItem = {
+                material_id: selectedItem.sku_num,
+                supplier_name: selectedItem.supplier_name,
+                internet_sku_number: selectedItem.internet_num,
+                item_desc: selectedItem.description_english,
+                item_desc_mandarin: selectedItem.description_mandarin,
+                item_price: parseFloat(selectedItem.price).toFixed(2),
+                item_image: selectedItem.image,
+                quantity_requested: selectedItem.default_qty,
+                requesting_party: selectedItem.requesting_party,
+                requesting_party_id: "{{ user.id }}",
+                notes: note
+                };
+            fetch('/send_request_material', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ requestingItem: newItem })
+            });
+            closeConfirmationModal();
+        }
+    }
+
+    // Creating a JavaScript object that maps supplier names to their IDs
+    const supplierData = {};
+    {% for supplier in supplier_data %}
+        supplierData["{{ supplier.supplier_name }}"] = "{{ supplier.id }}";
+    {% endfor %}
+
+    // Function to submit the order data and selected items
+    function sendRequest() {
+        if (!confirm("Are you sure everything is final? Click OK to continue or Cancel to review your materials.")) {
+            return; // Stop execution if the user cancels
+        }
+        
+        const requestingParty = "{{ user.name }}";
+        const requestingPartyId = "{{ user.id | escape }}";
+
+        // Collect selected items data, grouped by supplier
+        const supplierOrders = {};
+        const supplierTables = document.querySelectorAll('.supplier-table');
+        
+        supplierTables.forEach(supplierTable => {
+            const supplierName = supplierTable.querySelector('h3 .data-english').textContent.replace('Supplier: ', '');
+            const supplierId = supplierData[supplierName.trim()];
+            const rows = supplierTable.querySelectorAll('tbody tr');
+
+            if (!supplierOrders[supplierName]) {
+                supplierOrders[supplierName] = {
+                    supplier_name: supplierName,
+                    supplier_id: supplierId,
+                    items: [],
+                };
+            }
+
+            let supplierTotal = 0;
+
+            rows.forEach(row => {
+                const sku_number = row.querySelector('td:nth-child(3)').textContent;
+                const internet_sku_number = row.querySelector('td:nth-child(4)').textContent;
+                const description = row.querySelector('td:nth-child(5) .data-english').textContent.trim();
+                const price = parseFloat(row.querySelector('td:nth-child(6)').textContent);
+                const image = row.querySelector('td:nth-child(1) img').src;
+                const quantity = parseInt(row.querySelector('td:nth-child(7) input').value);
+                const notes = row.querySelector('td:nth-child(8) input').value;
+
+                // Add item details to the supplier's items list
+                supplierOrders[supplierName].items.push({
+                    material_id: sku_number,
+                    internet_sku_number: internet_sku_number,
+                    item_desc: description,
+                    item_price: price,
+                    item_image: image,
+                    order_qty_requested: quantity,
+                    request_notes: notes
+                });
+            });
+        });
+
+        // Prepare the data payload to send to the backend
+        const orderData = {
+            requsting_party: requestingParty,
+            requesting_party_id: requestingPartyId,
+            supplier_orders: Object.values(supplierOrders) // Array of orders per supplier
+        };
+
+        // Check if there are any items to submit
+        if (orderData.supplier_orders.length === 0) {
+            alert("Please add at least one item.");
+            return;
+        }
+
+        // Send the data to the backend using Fetch API
+        fetch('/send_request_material', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message && data.redirect_url) {
+                localStorage.removeItem('requestcartItems');
+                alert('Request successfully added: ' + data.message);
+                window.location.href = data.redirect_url;
+            } else {
+                console.error('Invalid response:', data);
+                alert('An error occurred while processing the order.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+</script>
+</html>

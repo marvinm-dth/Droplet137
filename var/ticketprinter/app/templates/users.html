@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="stack">
+  <div class="card">
+    <div class="section-title">Admin</div>
+    <h2 style="margin:0;">User management</h2>
+    <div class="muted">Create users, set passwords, and revoke login tokens.</div>
+    {% if message %}
+    <div class="alert alert-success" style="margin-top:10px;">{{ message }}</div>
+    {% endif %}
+    {% if errors %}
+    <div class="alert alert-warning" style="margin-top:10px;">
+      <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="section-title">Create user</div>
+    <form method="post" class="stack" action="{{ url_for('user_management') }}">
+      <input type="hidden" name="action" value="create">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" value="{{ form_data.username }}" required>
+        </div>
+        <div class="form-group">
+          <label for="display_name">Display name</label>
+          <input type="text" id="display_name" name="display_name" value="{{ form_data.display_name }}">
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="text" id="email" name="email" value="{{ form_data.email }}">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label for="role">Role</label>
+          {% set role_value = form_data.role if form_data.role in ["admin", "user"] else "user" %}
+          <select id="role" name="role">
+            <option value="admin" {% if role_value == "admin" %}selected{% endif %}>Admin</option>
+            <option value="user" {% if role_value == "user" %}selected{% endif %}>User</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="is_active">Status</label>
+          <select id="is_active" name="is_active">
+            <option value="true" {% if form_data.is_active == "true" %}selected{% endif %}>Active</option>
+            <option value="false" {% if form_data.is_active == "false" %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-sm">Create user</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="toolbar">
+      <div>
+        <div class="section-title">Users</div>
+        <div class="muted">Edit roles, rename users, or deactivate as needed.</div>
+      </div>
+      <div class="badge">{{ users|length }} users</div>
+    </div>
+    {% if users %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Display name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Sessions</th>
+            <th>New password</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          {% set form_id = "user-form-" ~ u.id %}
+          <tr>
+            <td class="muted">
+              #{{ u.id }}
+              <form id="{{ form_id }}" method="post" action="{{ url_for('user_management') }}">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="user_id" value="{{ u.id }}">
+              </form>
+            </td>
+            <td>
+              <input type="text" name="username" value="{{ u.username }}" form="{{ form_id }}" class="inline-input">
+            </td>
+            <td>
+              <input type="text" name="display_name" value="{{ u.display_name or '' }}" form="{{ form_id }}" class="inline-input">
+            </td>
+            <td>
+              <input type="text" name="email" value="{{ u.email or '' }}" form="{{ form_id }}" class="inline-input">
+            </td>
+            <td>
+              {% set role_value = u.role if u.role in ["admin", "user"] else "user" %}
+              <select name="role" form="{{ form_id }}" class="inline-select" style="max-width:120px;">
+                <option value="admin" {% if role_value == "admin" %}selected{% endif %}>Admin</option>
+                <option value="user" {% if role_value == "user" %}selected{% endif %}>User</option>
+              </select>
+            </td>
+            <td>
+              <select name="is_active" form="{{ form_id }}" class="inline-select">
+                <option value="true" {% if u.is_active %}selected{% endif %}>Active</option>
+                <option value="false" {% if not u.is_active %}selected{% endif %}>Inactive</option>
+              </select>
+            </td>
+            <td>
+              <span class="badge">{{ session_counts.get(u.id, 0) }}</span>
+            </td>
+            <td>
+              <input type="password" name="password" form="{{ form_id }}" class="inline-input" placeholder="New password" autocomplete="new-password">
+            </td>
+            <td>
+              <div class="inline-actions">
+                <button type="submit" class="btn btn-sm" form="{{ form_id }}">Update</button>
+                <form method="post" action="{{ url_for('user_management') }}" onsubmit="return confirm('Log out {{ u.username }}?');">
+                  <input type="hidden" name="action" value="logout">
+                  <input type="hidden" name="user_id" value="{{ u.id }}">
+                  <button type="submit" class="btn btn-sm">Log out</button>
+                </form>
+                <form method="post" action="{{ url_for('user_management') }}" onsubmit="return confirm('Delete {{ u.username }}?');">
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="user_id" value="{{ u.id }}">
+                  <button type="submit" class="btn btn-ghost btn-sm">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">No users yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nested Locations with Barcodes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      max-width: 800px;
+      margin-inline: auto;
+      background: #fafafa;
+    }
+
+    header {
+      background-color: #fff;
+      padding: 10px 20px;
+      border-bottom: 2px solid #ddd;
+    }
+
+    .header-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .logout-btn {
+      background-color: #FF6347;
+      color: white;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .add-location,
+    .save-button {
+      border: 1px solid #ccc;
+      padding: 12px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background-color: #f5f5f5;
+      margin: 10px 0;
+      text-decoration: none;
+      color: #333;
+    }
+
+    .add-location:hover,
+    .save-button:hover {
+      background-color: #e0e0e0;
+    }
+
+    .add-location i,
+    .save-button i {
+      margin-right: 8px;
+    }
+
+    ul.location-list {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .location-item {
+      background-color: #ffeccb;
+      padding: 8px 10px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .location-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .toggle-children {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .location-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 5px;
+    }
+
+    .location-actions i {
+      cursor: pointer;
+    }
+
+    .children {
+      list-style-type: none;
+      padding-left: 30px;
+      margin: 6px 0;
+      display: none;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 90%;
+      max-width: 400px;
+      border-radius: 8px;
+    }
+
+    .modal-content input,
+    .modal-content textarea {
+      width: 100%;
+      padding: 8px;
+      margin: 8px 0;
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .image-modal-content {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+    }
+
+    .image-modal-content img {
+      max-width: 90%;
+      max-height: 90%;
+      border: 5px solid white;
+      border-radius: 10px;
+    }
+
+    #viewImageContainer img,
+    #editCurrentImage img {
+      max-width: 80px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+
+    .barcode-container {
+      width: 100%;
+      text-align: center;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .barcode {
+      max-width: 200px;
+    }
+
+    body.user-role .fa-grip-vertical {
+      display: none;
+    }
+
+    @media screen and (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+
+      .location-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .location-actions {
+        justify-content: flex-start;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-container">
+    <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
+      <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; margin-right: 10px;">
+    </a>
+    <h1 style="flex-grow: 1; font-size: 20px; margin: 0; text-align: center;">Inventory Location</h1>
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <a href="{{ url_for('logout') }}" class="logout-btn data-english">Logout</a>
+      <a href="{{ url_for('logout') }}" class="logout-btn data-mandarin" style="display: none;">登出</a>
+    </div>
+  </div>
+</header>
+
+{% if current_user.role != 'user' %}
+<div class="add-location" onclick="openModal()">
+  <i class="fas fa-plus-circle"></i> Add Location
+</div>
+{% endif %}
+
+<ul class="location-list" id="locationList"></ul>
+
+<a id="saveButton" class="save-button">
+  <i class="fas fa-save"></i> Save
+</a>
+
+<div id="locationModal" class="modal">
+  <div class="modal-content">
+    <h3>Add New Location</h3>
+    <input type="text" id="newLocationInput" placeholder="Enter location name" required />
+    <textarea id="locationDescription" placeholder="Description" required ></textarea>
+    <textarea id="locationNotes" placeholder="Notes" required ></textarea>
+    <input type="file" id="locationImage" accept="image/*" required  />
+    <div class="modal-buttons">
+      <button onclick="closeModal()">Cancel</button>
+      <button onclick="addLocationFromModal()">Add</button>
+    </div>
+  </div>
+</div>
+
+<div id="viewModal" class="modal">
+  <div class="modal-content">
+    <h3 id="viewName"></h3>
+    <p><strong>Description:</strong> <span id="viewDesc"></span></p>
+    <p><strong>Notes:</strong> <span id="viewNotes"></span></p>
+    <div id="viewImageContainer"></div>
+    <div class="modal-buttons">
+      <button onclick="closeViewModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <h3>Edit Location Info</h3>
+    <input type="text" id="editName" placeholder="Location name" />
+    <textarea id="editDesc" placeholder="Description"></textarea>
+    <textarea id="editNotes" placeholder="Notes"></textarea>
+    <input type="file" id="editImage" accept="image/*" />
+    <div id="editCurrentImage"></div>
+    <div class="modal-buttons">
+      <button onclick="closeEditModal()">Cancel</button>
+      <button onclick="saveEditModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="zoomModal" class="modal" onclick="this.style.display='none'">
+  <div class="image-modal-content">
+    <img id="zoomedImage" src="" alt="Zoomed View" />
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script>
+  const userRole = "{{ user.role }}";
+  if (userRole === 'user') {
+    document.body.classList.add('user-role');
+  }
+
+  // Original nested data from server
+  const nestedLocations = {{ locations|tojson|safe }};
+
+  // Flatten nestedLocations into a flat array
+  const serverLocations = [];
+  function flatten(loc) {
+    serverLocations.push({
+      id: loc.id,
+      name: loc.name,
+      description: loc.description,
+      notes: loc.notes,
+      barcode: loc.barcode,
+      image_url: loc.image_url,
+      barcode_url: loc.barcode_url,
+      parent_barcode: loc.parent_barcode
+    });
+    if (loc.children && loc.children.length) {
+      loc.children.forEach(child => flatten(child));
+    }
+  }
+  nestedLocations.forEach(loc => flatten(loc));
+
+  console.log('Flattened serverLocations:', serverLocations);
+
+  const locationList = document.getElementById('locationList');
+  const modal = document.getElementById('locationModal');
+  const newLocationInput = document.getElementById('newLocationInput');
+  const locationDescription = document.getElementById('locationDescription');
+  const locationNotes = document.getElementById('locationNotes');
+  const locationImage = document.getElementById('locationImage');
+
+  const viewModal = document.getElementById('viewModal');
+  const viewName = document.getElementById('viewName');
+  const viewDesc = document.getElementById('viewDesc');
+  const viewNotes = document.getElementById('viewNotes');
+  const viewImageContainer = document.getElementById('viewImageContainer');
+
+  const editModal = document.getElementById('editModal');
+  const editName = document.getElementById('editName');
+  const editDesc = document.getElementById('editDesc');
+  const editNotes = document.getElementById('editNotes');
+  const editImage = document.getElementById('editImage');
+  const editCurrentImage = document.getElementById('editCurrentImage');
+
+  const zoomModal = document.getElementById('zoomModal');
+  const zoomedImage = document.getElementById('zoomedImage');
+
+  let currentEditItem = null;
+  let currentParentForChild = null;
+
+  function makeSortable(ul) {
+    if (userRole !== 'user') {
+      Sortable.create(ul, {
+        group: 'nested',
+        animation: 150,
+        fallbackOnBody: true,
+        swapThreshold: 0.65,
+        handle: '.fa-grip-vertical'
+      });
+    }
+  }
+  makeSortable(locationList);
+
+  function createLocationNode(location) {
+    const li = document.createElement('li');
+    li.dataset.barcode = location.barcode;
+    li.dataset.name = location.name;
+    li.dataset.desc = location.description;
+    li.dataset.notes = location.notes;
+    li.dataset.imageUrl = location.image_url || '';
+
+    const row = document.createElement('div');
+    row.className = 'location-item';
+    row.innerHTML = `
+      <div class="location-info">
+        <i class="fas fa-grip-vertical location-icon"></i>
+        <span class="toggle-children" onclick="toggleChildren(this)">
+          <i class="fas fa-chevron-right"></i>
+          <span class="location-name">${location.name}</span>
+        </span>
+      </div>
+      <div class="location-actions">
+        <i class="fas fa-eye" onclick="openViewModal(this)"></i>
+        <i class="fas fa-barcode" onclick="toggleBarcode(this)"></i>
+        ${userRole !== 'user' ? `<i class="fas fa-edit" onclick="openEditModal(this)"></i>
+          <i class="fas fa-circle-plus" onclick="openModal(this.closest('li'))"></i>` : ''}
+      </div>
+    `;
+    li.appendChild(row);
+
+    // Barcode container (hidden by default)
+    const barcodeDiv = document.createElement('div');
+    barcodeDiv.className = 'barcode-container';
+    barcodeDiv.style.display = 'none';
+    barcodeDiv.innerHTML = '<svg class="barcode"></svg>';
+    li.appendChild(barcodeDiv);
+
+    // Prepare child list
+    const childrenUl = document.createElement('ul');
+    childrenUl.className = 'children';
+    childrenUl.style.display = 'none';
+    makeSortable(childrenUl);
+    li.appendChild(childrenUl);
+
+    return li;
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const parentMap = new Map();
+    serverLocations.forEach(loc => {
+      const node = createLocationNode(loc);
+      const parent = loc.parent_barcode;
+      if (!parentMap.has(parent)) parentMap.set(parent, []);
+      parentMap.get(parent).push(node);
+    });
+
+    function buildTree(parentBarcode, container) {
+      const children = parentMap.get(parentBarcode) || [];
+      children.forEach(child => {
+        const code = child.dataset.barcode;
+        // Recursively build deeper levels
+        buildTree(code, child.querySelector('ul.children'));
+        // Append node to its parent container
+        container.appendChild(child);
+        // Render barcode SVG now that element is in DOM
+        const svgEl = child.querySelector('.barcode');
+        if (svgEl) {
+          JsBarcode(svgEl, code, {
+            format: 'CODE128',
+            lineColor: '#000',
+            width: 2,
+            height: 40,
+            displayValue: true
+          });
+        }
+      });
+    }
+
+    makeSortable(locationList);
+    buildTree(null, locationList);
+  });
+
+  function toggleBarcode(icon) {
+    const container = icon.closest('li').querySelector('.barcode-container');
+    container.style.display = container.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function openModal(parent = null) {
+    if (userRole === 'user') return;
+    currentParentForChild = parent;
+    newLocationInput.value = '';
+    locationDescription.value = '';
+    locationNotes.value = '';
+    locationImage.value = '';
+    modal.style.display = 'block';
+  }
+
+  function closeModal() {
+    modal.style.display = 'none';
+    currentParentForChild = null;
+  }
+
+  function addLocationFromModal() {
+    const name = newLocationInput.value.trim();
+    const desc = locationDescription.value.trim();
+    const notes = locationNotes.value.trim();
+    const imageFile = locationImage.files[0];
+    if (!name) return;
+    const barcodeValue = 'LDTH' + Math.floor(1000000000 + Math.random() * 9000000000);
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const imageUrl = imageFile ? e.target.result : '';
+      const block = createLocationBlock(name, desc, notes, imageUrl, barcodeValue);
+      const parent = currentParentForChild
+        ? currentParentForChild.querySelector('.children')
+        : locationList;
+      parent.appendChild(block);
+      JsBarcode(`#barcode-${barcodeValue}`, barcodeValue, {
+        format: "CODE128",
+        lineColor: "#000",
+        width: 2,
+        height: 40,
+        displayValue: true
+      });
+      closeModal();
+    };
+    if (imageFile) reader.readAsDataURL(imageFile);
+    else reader.onload();
+  }
+
+  function createLocationBlock(name, desc, notes, imageUrl, barcodeValue) {
+    const wrapper = document.createElement('li');
+    const row = document.createElement('div');
+    row.className = 'location-item';
+    row.innerHTML = `
+      <div class="location-info">
+        <i class="fas fa-grip-vertical location-icon"></i>
+        <span class="toggle-children" onclick="toggleChildren(this)">
+          <i class="fas fa-chevron-right"></i>
+          <span class="location-name">${name}</span>
+        </span>
+      </div>
+      <div class="location-actions">
+        <i class="fas fa-eye" onclick="openViewModal(this)"></i>
+        <i class="fas fa-barcode" onclick="toggleBarcode(this)"></i>
+        ${userRole !== 'user' ? `
+          <i class="fas fa-edit" onclick="openEditModal(this)"></i>
+          <i class="fas fa-circle-plus" onclick="openModal(this.closest('li'))"></i>
+        ` : ''}
+      </div>
+    `;
+    wrapper.appendChild(row);
+
+    const barcodeDiv = document.createElement('div');
+    barcodeDiv.className = 'barcode-container';
+    barcodeDiv.innerHTML = `<svg id="barcode-${barcodeValue}" class="barcode"></svg>`;
+    wrapper.appendChild(barcodeDiv);
+
+    const children = document.createElement('ul');
+    children.className = 'children';
+    children.style.display = 'none';
+    makeSortable(children);
+    wrapper.appendChild(children);
+
+    // store barcode on the <li> here as well
+    wrapper.dataset.barcode = barcodeValue;
+    wrapper.dataset.name = name;
+    wrapper.dataset.desc = desc;
+    wrapper.dataset.notes = notes;
+    wrapper.dataset.imageUrl = imageUrl;
+
+    return wrapper;
+  }
+
+  function toggleChildren(toggleElement) {
+    const li = toggleElement.closest('li');
+    const children = li.querySelector('.children');
+    const icon = toggleElement.querySelector('i');
+    if (children.style.display === 'none') {
+      children.style.display = 'block';
+      icon.classList.replace('fa-chevron-right', 'fa-chevron-down');
+    } else {
+      children.style.display = 'none';
+      icon.classList.replace('fa-chevron-down', 'fa-chevron-right');
+    }
+  }
+
+  function toggleBarcode(icon) {
+    const li = icon.closest('li');
+    const container = li.querySelector('.barcode-container');
+    container.style.display = (container.style.display === 'block') ? 'none' : 'block';
+  }
+
+  function openViewModal(icon) {
+    const wrapper = icon.closest('li');
+    viewName.textContent = wrapper.dataset.name;
+    viewDesc.textContent = wrapper.dataset.desc;
+    viewNotes.textContent = wrapper.dataset.notes;
+    viewImageContainer.innerHTML = '';
+    if (wrapper.dataset.imageUrl) {
+      const img = document.createElement('img');
+      img.src = wrapper.dataset.imageUrl;
+      img.onclick = () => openZoomModal(img.src);
+      viewImageContainer.appendChild(img);
+    }
+    viewModal.style.display = 'block';
+  }
+
+  function closeViewModal() {
+    viewModal.style.display = 'none';
+  }
+
+  function openZoomModal(src) {
+    zoomedImage.src = src;
+    zoomModal.style.display = 'block';
+  }
+
+  function openEditModal(icon) {
+    currentEditItem = icon.closest('li');
+    editName.value = currentEditItem.querySelector('.location-name').textContent || '';
+    editDesc.value = currentEditItem.dataset.desc || '';
+    editNotes.value = currentEditItem.dataset.notes || '';
+    editImage.value = '';
+    editCurrentImage.innerHTML = '';
+    if (currentEditItem.dataset.imageUrl) {
+      const img = document.createElement('img');
+      img.src = currentEditItem.dataset.imageUrl;
+      editCurrentImage.appendChild(img);
+    }
+    editModal.style.display = 'block';
+  }
+
+  function closeEditModal() {
+    editModal.style.display = 'none';
+  }
+
+  function saveEditModal() {
+    if (!currentEditItem) return;
+    const nameInput = editName.value.trim();
+    if (nameInput) {
+      currentEditItem.querySelector('.location-name').textContent = nameInput;
+      currentEditItem.dataset.name = nameInput;
+    }
+    currentEditItem.dataset.desc = editDesc.value;
+    currentEditItem.dataset.notes = editNotes.value;
+    const file = editImage.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        currentEditItem.dataset.imageUrl = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    closeEditModal();
+  }
+
+  document.getElementById('saveButton').addEventListener('click', () => {
+    const locationTree = buildLocationTree(locationList);
+
+    fetch('/save_locations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locations: locationTree })
+    })
+    .then(res => res.json())
+    .then(json => {
+      if (json.message) alert('Locations saved successfully!');
+      else alert('Failed: ' + json.error);
+    });
+  });
+
+  function buildLocationTree(ul, parentBarcode = null) {
+  const result = []
+  ul.querySelectorAll(':scope > li').forEach(li => {
+    const code = li.dataset.barcode
+    const img = li.dataset.imageUrl
+    const loc = {
+      name:           li.dataset.name,
+      description:    li.dataset.desc,
+      notes:          li.dataset.notes,
+      barcode:        code,
+      parent_barcode: parentBarcode
+    }
+
+    if (img.startsWith('data:')) {
+      // brand-new: send base64
+      loc.image_base64 = img
+    } else {
+      // already saved: send just the filename
+      // strip off any path or host
+      loc.image_url = img.split('/').pop()
+    }
+
+    result.push(loc)
+    result.push(...buildLocationTree(li.querySelector(':scope > ul.children'), code))
+  })
+  return result
+}
+
+</script>
+</body>
+</html>

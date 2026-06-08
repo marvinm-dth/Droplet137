@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>Checklist</title>
+</head>
+
+<body>
+    <div class="container-md">
+        <div id="checklist-title" class="bg-dark text-white text-center py-1 fs-4 mb-2">Edit Checklist</div>
+        <div>
+            <div class="mb-2">
+                <label for="checklist-name" class="form-label">Name: </label>
+                <input id="checklist-name" class="form-control"></input>
+            </div>
+            <div class="mb-2">
+                <label for="checklist-description-en" class="form-label">Description (EN): </label>
+                <textarea id="checklist-description-en" class="form-control" rows="6"></textarea>
+            </div>
+            <div class="mb-2">
+                <label for="checklist-description-cn" class="form-label">Description (CN): </label>
+                <textarea id="checklist-description-cn" class="form-control" rows="6"></textarea>
+            </div>
+        </div>
+        <div class="border">
+            <div class="fs-4 text-center">Items</div>
+            <table class="table table-bordered table-striped small">
+                <thead>
+                    <tr>
+                        <th class="col-auto">#</th>
+                        <th class="col-auto">Description (EN)</th>
+                        <th class="col-auto">Translation Overwrite (CN)</th>
+                        <th class="col-auto">Video Link</th>
+                        <th class="col-auto">Notes</th>
+                        <th class="col-auto">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+<script>
+    let checklist;
+    let items;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        await refreshEverything();
+    });
+
+    async function refreshEverything() {
+        await fetchChecklist();
+        populateChecklistInfo();
+        populateItems();
+    }
+
+    async function fetchChecklist() {
+        const checklist_id = new URLSearchParams(window.location.search).get("checklist_id");
+        if(!checklist_id) window.location.href = "manager/checklists"
+        let res = await fetch(`/api/template-checklists/${checklist_id}`)
+        checklist = await res.json();
+        items = checklist.all_template_items;
+    }
+
+  
+
+    function populateChecklistInfo() {
+        document.querySelector("#checklist-name").value = checklist.name
+        document.querySelector("#checklist-description-en").value = checklist.description_en 
+        document.querySelector("#checklist-description-cn").value = checklist.description_cn 
+    }
+
+    function populateItems() {
+        const tBody = document.querySelector('tbody');
+        tBody.innerHTML = '';
+
+        items.forEach((item, index) => {
+            const row = document.createElement('tr');
+            row.setAttribute('id', `item-${item.id}`); // Set the id for the row
+            row.innerHTML = `
+                <td class="align-middle text-center">${index + 1}</td>
+                <td id="descriptions-${item.id}">
+                    <input id="description_en${item.id}" class="w-100 form-control" type="text" value="${item.description_en}"><br/>
+                    <p id="description_cn${item.id}">Auto Translation: ${item.description_cn}</p>
+                </td>
+                <td id="translation_overwrite_cn-${item.id}"><input class="w-100 form-control" type="text" value="${item.translation_overwrite_cn}"></td>
+                <td id="video_link-${item.id}"><input class="w-100 form-control" type="text" value="${item.video_link}"></td>
+                <td id="notes-${item.id}"><input class="w-100 form-control" type="text" value="${item.notes}"></td>
+                <td>
+                    <button type="button" class="btn btn-primary" onclick="updateItem(${item.id})">Update</button>
+                    <button type="button" class="btn btn-primary" onclick="deleteItem(${item.id})">Delete</button>
+                </td>
+            `;
+            tBody.appendChild(row);
+        });
+    }
+</script>
+</body>
+
+
+</html>

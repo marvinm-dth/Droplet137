@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dragon Tiny Homes: Home Depot Orders</title>
+
+  <!-- Google Font -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css?family=Poppins:400,600,700&display=swap"
+  />
+
+  <!-- DataTables CSS (for desktop/tablet) -->
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css"
+  />
+
+  <!-- Font Awesome (for spinner icon) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  />
+
+  <style>
+    /* ----------------------------------------
+       Global & Base Styles
+       ---------------------------------------- */
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      line-height: 1.4;
+    }
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+    h1 {
+      font-size: 1.5em;
+      font-weight: 700;
+      color: #343a40;
+      margin: 0;
+    }
+    /* Container: centers content and adds side padding */
+    .container {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 16px;
+      box-sizing: border-box;
+    }
+
+    /* ----------------------------------------
+       Header (logo, title, logout button)
+       ---------------------------------------- */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      background-color: #f8f9fa;
+      position: relative;
+    }
+    .header .logo-link {
+      display: flex;
+      align-items: center;
+    }
+    .header .logo-link img {
+      width: 30px;
+      height: 30px;
+      margin-right: 10px;
+    }
+    /* Center the title */
+    .header h1 {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+      font-size: 1.5em;
+    }
+    .logout-button {
+      padding: 10px 20px;
+      background-color: #cc716c;
+      color: #fff;
+      font-size: 1em;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+    }
+    .logout-button:hover {
+      background-color: #b35c58;
+    }
+
+    /* ----------------------------------------
+       Language Selector
+       ---------------------------------------- */
+    .language-selector {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .language-selector label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .language-selector select {
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+    }
+
+    /* ----------------------------------------
+       Form Groups (label + input)
+       ---------------------------------------- */
+    .form-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap; /* allow wrapping on mobile */
+    }
+    .form-group label {
+      min-width: 180px;
+      font-weight: bold;
+      margin-bottom: 4px; /* if wrapped, space above */
+      font-size: 1em;
+    }
+    .form-group input[type='text'],
+    .form-group input[type='number'],
+    .form-group select,
+    .form-group textarea {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      min-width: 0; /* prevent overflow */
+      font-size: 1em;
+    }
+    .form-group textarea {
+      resize: vertical;
+    }
+
+    /* ----------------------------------------
+       Primary Buttons (submit, etc.)
+       ---------------------------------------- */
+    .button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      margin: 8px;
+      font-size: 0.9em;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-block;
+    }
+    .button:hover {
+      background-color: #45a049;
+    }
+    /* Smaller for very compact buttons */
+    .button.small {
+      font-size: 0.8em;
+      padding: 6px 12px;
+    }
+    .loading-spinner {
+      margin-left: 6px;
+      color: #fff;
+    }
+
+    /* ----------------------------------------
+       Submit‐Delivery Styling
+       ---------------------------------------- */
+    .submit-delivery {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: #fff;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+      margin: 8px;
+    }
+    .submit-delivery:hover {
+      background-color: #218838;
+    }
+
+    /* ----------------------------------------
+       Table Styles (Desktop/Tablet)
+       ---------------------------------------- */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto; /* horizontal scroll if needed */
+      margin-bottom: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 0 auto;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-size: 0.85em;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+    }
+    th {
+      background-color: #007bff;
+      color: #fff;
+      font-weight: 600;
+      text-align: center;
+      white-space: nowrap;
+    }
+    td {
+      text-align: center;
+      vertical-align: middle;
+      color: #333;
+    }
+    tbody tr:hover {
+      background-color: #f1f1f1;
+    }
+    .update-item,
+    .delete-item,
+    .generate-image {
+      padding: 4px 8px;
+      margin: 2px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: #fff;
+      font-size: 0.8em;
+      white-space: nowrap;
+    }
+    .update-item:hover,
+    .delete-item:hover,
+    .generate-image:hover {
+      background-color: #0056b3;
+    }
+
+    /* ----------------------------------------
+       Mobile ‐ Only Overrides (≤ 480px)
+       ---------------------------------------- */
+    @media (max-width: 480px) {
+      /* Header stacks */
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-bottom: 10px;
+      }
+      .header h1 {
+        position: static;
+        transform: none;
+        margin: 0 0 10px;
+        font-size: 1.8em;
+      }
+      .logout-button {
+        width: auto;
+        margin: 8px auto;
+        display: block;
+        font-size: 0.9em;
+      }
+
+      /* Language selector stacks */
+      .language-selector {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .language-selector label {
+        margin-bottom: 6px;
+      }
+
+      /* Form groups stack vertically */
+      .form-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .form-group label {
+        width: 100%;
+        margin-bottom: 4px;
+        font-size: 0.95em;
+      }
+      .form-group input[type='text'],
+      .form-group input[type='number'],
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        font-size: 1em;
+      }
+
+      /* Buttons shrink for mobile */
+      .button {
+        font-size: 0.9em;
+        padding: 8px 16px;
+        margin: 6px 0;
+      }
+      .button.small {
+        font-size: 0.8em;
+        padding: 6px 12px;
+        margin: 4px 0;
+      }
+      .submit-delivery {
+        font-size: 0.9em;
+        padding: 8px 16px;
+        margin: 6px 0;
+      }
+
+      /* Table → Card‐style for mobile */
+      #prelisted-items-table thead {
+        display: none;
+      }
+      #prelisted-items-table tbody tr {
+        display: block;
+        margin-bottom: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background-color: #fff;
+        padding: 8px;
+      }
+      #prelisted-items-table tbody tr td {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 8px;
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        text-align: left;
+        font-size: 0.9em;
+      }
+      #prelisted-items-table tbody tr td:last-child {
+        border-bottom: none;
+      }
+      #prelisted-items-table tbody tr td::before {
+        content: attr(data-label) ": ";
+        flex-shrink: 0;
+        font-weight: 600;
+        color: #555;
+      }
+      #prelisted-items-table tbody tr td img {
+        max-width: 60px;
+        height: auto;
+        border-radius: 4px;
+      }
+
+      /* Textarea & inputs inside table shrink */
+      #prelisted-items-table tbody tr td input[type='number'] {
+        width: 50px;
+        font-size: 0.9em;
+        padding: 4px;
+      }
+      #prelisted-items-table tbody tr td textarea {
+        width: 100%;
+        font-size: 0.9em;
+        padding: 4px;
+        border: 1px solid #ccc;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- HEADER -->
+    <div class="header">
+      <a href="{{ url_for('main') }}" class="logo-link">
+        <img
+          src="/static/home-logo.png"
+          alt="Home"
+          style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;"
+        />
+      </a>
+      <h1>Dragon Tiny Homes Delivery</h1>
+      <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+      <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <!-- LANGUAGE SELECTOR -->
+    <div class="language-selector">
+      <label for="languageSelect" class="description data-english">Choose Language:</label>
+      <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言:</label>
+      <select id="languageSelect" onchange="updateDescriptions()" style="margin-left: 10px;">
+        <option value="english">English</option>
+        <option value="chinese">Chinese</option>
+      </select>
+    </div>
+
+    <!-- DELIVERY FORM -->
+    <form action="/submit_delivery" method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
+      <!-- Order ID -->
+      <div class="form-group">
+        <label for="order-id" class="description data-english"><b>Order ID:</b></label>
+        <label for="order-id" class="description data-mandarin" style="display: none;">订单编号:</label>
+        <input type="text" id="order_id" name="order_id" value="{{ order_id }}" readonly />
+      </div>
+
+      <!-- Receiver Name -->
+      <div class="form-group">
+        <label for="receiver-name" class="description data-english"><b>Receiver Name:</b></label>
+        <label for="receiver-name" class="description data-mandarin" style="display: none;">接收人名称:</label>
+        <input type="text" id="receiver_name" name="receiver_name" value="{{ user.name }}" readonly />
+        <input
+          type="text"
+          id="receiver_id"
+          name="receiver_id"
+          value="{{ user.id }}"
+          readonly
+          style="display: none;"
+        />
+      </div>
+
+      <!-- Approver Dropdown -->
+      <div class="form-group">
+        <label for="approverFilter" class="description data-english"><b>Approver:</b></label>
+        <label for="approverFilter" class="description data-mandarin" style="display: none;"><b>审批人:</b></label>
+        <select id="approverFilter" name="approver" style="margin-left: 10px; width: 200px;">
+          {% for approver in approver_data %}
+            {% if approver.role != "user" %}
+              <option
+                id="approver_name"
+                value="{{ approver.employee_name }},{{ approver.eid }}"
+                data-name="{{ approver.employee_name }}"
+              >
+                {{ approver.employee_name }}
+              </option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Images Upload -->
+      <div class="form-group">
+        <label class="description data-english"><b>Images:</b></label>
+        <label class="description data-mandarin" style="display: none;"><b>图片:</b></label>
+        <input type="file" name="images" accept="image/*" multiple style="margin-left: 10px;" />
+      </div>
+
+      <!-- Submit Button -->
+      <div style="margin-bottom: 20px;">
+        <button type="submit" class="button data-english">
+          <span class="button-text">Submit Delivery</span>
+          <i class="fas fa-spinner fa-spin loading-spinner" style="display: none;"></i>
+        </button>
+        <button type="submit" class="button data-mandarin" style="display: none;">
+          <span class="button-text">提交交货</span>
+          <i class="fas fa-spinner fa-spin loading-spinner" style="display: none;"></i>
+        </button>
+      </div>
+
+      <!-- ITEMS TABLE -->
+      <div class="table-responsive">
+        <table id="prelisted-items-table">
+          <thead>
+            <tr>
+              <th>
+                <div class="col data-english">SKU Number</div>
+                <div class="col data-mandarin" style="display: none;">SKU编号</div>
+              </th>
+              <th>
+                <div class="col data-english">Supplier SKU Number</div>
+                <div class="col data-mandarin" style="display: none;">供应商 SKU 编号</div>
+              </th>
+              <th>
+                <div class="col data-english">Description</div>
+                <div class="col data-mandarin" style="display: none;">描述</div>
+              </th>
+              <th>
+                <div class="col data-english">Actual Price</div>
+                <div class="col data-mandarin" style="display: none;">实际价格</div>
+              </th>
+              <th>
+                <div class="col data-english">Quantity Confirmed</div>
+                <div class="col data-mandarin" style="display: none;">确认数量</div>
+              </th>
+              <th>
+                <div class="col data-english">Quantity Remaining</div>
+                <div class="col data-mandarin" style="display: none;">剩余数量</div>
+              </th>
+              <th>
+                <div class="col data-english">Quantity Received</div>
+                <div class="col data-mandarin" style="display: none;">接收数量</div>
+              </th>
+              <th>
+                <div class="col data-english">Notes</div>
+                <div class="col data-mandarin" style="display: none;">备注</div>
+              </th>
+              <th>
+                <div class="col data-english">Image</div>
+                <div class="col data-mandarin" style="display: none;">图片</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="prelisted-items">
+            {% for item in home_depot_items %}
+            <tr>
+              <td data-label="SKU Number">{{ item.material_id }}</td>
+              <td data-label="Supplier SKU Number">{{ item.internet_sku_number }}</td>
+              <td data-label="Description">
+                <div
+                  class="data-english"
+                  style="width: 150px; white-space: normal; margin: 0 auto;"
+                >
+                  {{ item.item_desc }}
+                </div>
+                <div
+                  class="data-mandarin"
+                  style="width: 150px; white-space: normal; margin: 0 auto; display: none;"
+                >
+                  {{ item.item_desc_mandarin }}
+                </div>
+              </td>
+              <td data-label="Actual Price">{{ item.actual_item_price }}</td>
+              <td data-label="Quantity Confirmed">{{ item.order_qty_confirmed }}</td>
+              <td data-label="Quantity Remaining">{{ item.order_qty_remaining }}</td>
+              <td data-label="Quantity Received">
+                <input
+                  type="number"
+                  name="items[{{ item.material_id }}][order_qty_received]"
+                  max="{{ item.order_qty_remaining }}"
+                  style="width: 50px; text-align: center; font-size: 0.9em; padding: 4px; border: 1px solid #ccc;"
+                />
+              </td>
+              <td data-label="Notes">
+                <textarea
+                  name="items[{{ item.material_id }}][delivery_notes]"
+                  style="width: 100%; height: 50px; font-size: 0.9em; padding: 4px; border: 1px solid #ccc; resize: none;"
+                >{{ item.notes }}</textarea>
+              </td>
+              <td data-label="Image">
+                <img
+                  src="{{ item.item_image }}"
+                  width="100"
+                  height="100"
+                  alt="Item Image"
+                />
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </form>
+  </div>
+
+  <!-- Lightbox (hidden by default; for image preview) -->
+  <div
+    id="lightbox"
+    style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    "
+    onclick="closeLightbox()"
+  >
+    <span
+      id="close-lightbox"
+      style="
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 2em;
+        color: white;
+        cursor: pointer;
+      "
+      >&times;</span
+    >
+    <img
+      id="lightbox-image"
+      src=""
+      alt="Full-Size Image"
+      style="max-width: 90%; max-height: 90%; border-radius: 5px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);"
+    />
+  </div>
+
+  <!-- jQuery & DataTables JS -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script
+    type="text/javascript"
+    src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"
+  ></script>
+  <script>
+    $(document).ready(function () {
+      $('#prelisted-items-table').DataTable({
+        responsive: true,
+        paging: false,
+        searching: false,
+        info: false,
+      });
+    });
+  </script>
+
+  <!-- html2canvas & jsPDF (for PDF export, if needed) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+  <script>
+    /* ===============================
+       Show Loading Spinner on Submit
+       =============================== */
+    function showLoading() {
+      const buttons = document.querySelectorAll('.button');
+      buttons.forEach((btn) => {
+        btn.disabled = true;
+      });
+      const buttonTexts = document.querySelectorAll('.button-text');
+      const spinners = document.querySelectorAll('.loading-spinner');
+      buttonTexts.forEach((text) => (text.style.display = 'none'));
+      spinners.forEach((spinner) => (spinner.style.display = 'inline-block'));
+    }
+
+    /* ===============================
+       Language Toggle (English/Chinese)
+       =============================== */
+    function updateDescriptions() {
+      const language = document.getElementById('languageSelect').value;
+      localStorage.setItem('selectedLanguage', language);
+
+      const englishElements = document.querySelectorAll('.data-english');
+      const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+      if (language === 'english') {
+        englishElements.forEach((el) => (el.style.display = 'block'));
+        mandarinElements.forEach((el) => (el.style.display = 'none'));
+      } else {
+        englishElements.forEach((el) => (el.style.display = 'none'));
+        mandarinElements.forEach((el) => (el.style.display = 'block'));
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedLanguage = localStorage.getItem('selectedLanguage');
+      if (savedLanguage) {
+        document.getElementById('languageSelect').value = savedLanguage;
+        updateDescriptions();
+      }
+    });
+
+    /* ===============================
+       Lightbox Open/Close Logic
+       ================================
+    */
+    function openLightbox(imageUrl) {
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImage = document.getElementById('lightbox-image');
+      lightboxImage.src = imageUrl;
+      lightbox.style.display = 'flex';
+    }
+    function closeLightbox() {
+      const lightbox = document.getElementById('lightbox');
+      lightbox.style.display = 'none';
+      document.getElementById('lightbox-image').src = '';
+    }
+  </script>
+</body>
+</html>

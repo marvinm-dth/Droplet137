@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="stack">
+  <div class="card">
+    <div class="section-title">Designs</div>
+    <h2 style="margin:0;">Ticket design gallery</h2>
+    <div class="muted">Preview the available receipt layouts.</div>
+  </div>
+
+  {% for d in designs %}
+  <div class="card">
+    <div class="toolbar">
+      <div>
+        <div class="section-title" style="margin:0;">{{ d.id }}</div>
+        <h3 style="margin:2px 0 6px;">{{ d.name }}</h3>
+        <div class="muted">{{ d.description }}</div>
+      </div>
+      <div class="form-actions" style="gap:8px;">
+        <a class="btn btn-sm" href="{{ d.preview_url }}" target="_blank" rel="noopener">Open preview</a>
+        <form method="get" action="{{ url_for('preview_design', design_id=d.id) }}" style="display:inline;">
+          <input type="hidden" name="action" value="print">
+          <button type="submit" class="btn btn-primary btn-sm">Print test</button>
+        </form>
+      </div>
+    </div>
+    <div style="display:flex; justify-content:center; margin-top:12px;">
+      <img src="{{ d.preview_url }}" alt="Preview for {{ d.name }}" style="max-width:100%; border:1px solid var(--border); border-radius:10px; box-shadow: var(--shadow);">
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

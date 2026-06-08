@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Barcode Scanner</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <style>
+        #camera {
+            width: 640px;
+            height: 480px;
+            border: 2px solid black;
+            margin: 20px auto;
+        }
+        #result {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#000000">
+    <script>
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+            .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+        }
+    </script>
+</head>
+<body>
+    <h1 style="text-align: center;">Scan Barcode with Camera</h1>
+    <div id="camera"></div>
+    <div id="result">Scanned Code: <span id="barcode"></span></div>
+    <div id="scanned-image" style="text-align: center; margin-top: 20px;"></div>
+
+    <script>
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: document.querySelector('#camera'), // The div where the camera feed will be displayed
+            },
+            decoder: {
+                readers: ["code_128_reader", "ean_reader", "upc_reader"] // Supports multiple barcode types
+            },
+        }, (err) => {
+            if (err) {
+                console.error("QuaggaJS initialization error:", err);
+                alert("Failed to initialize barcode scanner. Check console for errors.");
+                return;
+            }
+            Quagga.start();
+        });
+
+        // Event triggered on successful barcode detection
+        Quagga.onDetected((data) => {
+            const code = data.codeResult.code;
+            document.getElementById('barcode').innerText = code; // Display decoded barcode
+
+            // Display the image of the scanned barcode
+            const canvas = Quagga.canvas.dom.image; // Capture the canvas used for detection
+            const imgContainer = document.getElementById('scanned-image');
+            imgContainer.innerHTML = ''; // Clear previous image
+            imgContainer.appendChild(canvas); // Append the new canvas
+        });
+    </script>
+</body>
+</html>

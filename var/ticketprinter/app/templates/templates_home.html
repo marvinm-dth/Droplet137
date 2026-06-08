@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="stack">
+  <div class="card">
+    <div class="toolbar">
+      <div>
+        <div class="section-title">Templates</div>
+        <h2 style="margin:0;">Manage ticket templates</h2>
+        <div class="muted">Create a new template or edit/archive existing ones.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid list-grid">
+    <a href="{{ url_for('template_new') }}">
+      <div class="section-title">Create</div>
+      <div style="font-size:18px; font-weight:700;">New Template</div>
+      <div class="muted">Define job types and checklist items; includes translate helper.</div>
+    </a>
+    <a href="{{ url_for('template_edit') }}">
+      <div class="section-title">Manage</div>
+      <div style="font-size:18px; font-weight:700;">Edit / Archive Templates</div>
+      <div class="muted">Update wording, archive or delete when safe, adjust checklists.</div>
+    </a>
+  </div>
+</div>
+{% endblock %}

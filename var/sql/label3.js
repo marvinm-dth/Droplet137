@@ -1,0 +1,118 @@
+// label_poller.js
+
+import 'dotenv/config';
+import fs from 'fs';
+import path from 'path';
+import fetch from 'node-fetch';
+import { createClient } from '@supabase/supabase-js';
+import PDFDocument from 'pdfkit';
+import QRCode from 'qrcode';
+
+// ─── Polyfill global fetch for supabase-js in Node ─────────────
+globalThis.fetch = fetch;
+
+// ─── ENV & CONFIG ──────────────────────────────────────────────
+const {
+  SUPABASE_URL,         // e.g. "http://137.184.148.164:8000"
+  SUPABASE_ANON_KEY,    // your anon key
+} = process.env;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('❌  Missing SUPABASE_URL or SUPABASE_ANON_KEY');
+  process.exit(1);
+}
+
+// Directory for label PDFs
+const LABEL_DIR = '/var/sql/dth_materials/labels';
+if (!fs.existsSync(LABEL_DIR)) {
+  fs.mkdirSync(LABEL_DIR, { recursive: true });
+}
+
+// Initialize Supabase client
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ─── PDF + QR GENERATOR ─────────────────────────────────────────
+async function buildLabelsPDF(orderId, lines) {
+  const pdfPath = path.join(LABEL_DIR, `order_${orderId}.pdf`);
+  const doc     = new PDFDocument({ autoFirstPage: false });
+  const out     = fs.createWriteStream(pdfPath);
+  doc.pipe(out);
+
+  for (const line of lines) {
+    const qty = Number(line.order_qty_requested) || 1;
+    for (let i = 0; i < qty; i++) {
+      doc.addPage({ size: 'LETTER', margin: 20 });
+
+      // QR code
+      const qrDataUrl = await QRCode.toDataURL(line.UUID);
+      const base64    = qrDataUrl.split(',')[1];
+      doc.image(Buffer.from(base64, 'base64'), 20, 20, { width: 100, height: 100 });
+
+      // Text
+      doc.font('Helvetica').fontSize(8);
+      doc.text(`SKU: ${line.internet_sku_number}`, 130, 40);
+      doc.text(`Name: ${line.item_desc}`, 130, 55, { width: 200 });
+      doc.text(`Order: ${orderId}`, 130, 75);
+      doc.text(`Date: ${new Date().toISOString().slice(0,10)}`, 130, 90);
+    }
+  }
+
+  doc.end();
+  return new Promise((resolve, reject) => {
+    out.on('finish', () => resolve(`/order_file/labels/order_${orderId}.pdf`));
+    out.on('error', reject);
+  });
+}
+
+// ─── POLLING LOOP ──────────────────────────────────────────────
+async function pollNewOrders() {
+  // find orders without a label URL
+  const { data: pending, error: pendErr } = await supabase
+    .from('home_depot_orders')
+    .select('order_id')
+    .is('label_pdf_url', null);
+
+  if (pendErr) {
+    console.error('Error fetching pending orders:', pendErr);
+    return;
+  }
+
+  for (const { order_id: orderId } of pending) {
+    console.log('Processing order', orderId);
+
+    // fetch lines
+    const { data: lines, error: lineErr } = await supabase
+      .from('home_depot_order_history')
+      .select('*')
+      .eq('order_id', orderId);
+
+    if (lineErr) {
+      console.error(`Error fetching lines for order ${orderId}:`, lineErr);
+      continue;
+    }
+
+    try {
+      // generate PDF
+      const pdfRelPath = await buildLabelsPDF(orderId, lines);
+      console.log(`Generated PDF: ${pdfRelPath}`);
+
+      // update header
+      const { error: updErr } = await supabase
+        .from('home_depot_orders')
+        .update({ label_pdf_url: pdfRelPath })
+        .eq('order_id', orderId);
+
+      if (updErr) {
+        console.error(`Failed to save PDF URL for order ${orderId}:`, updErr);
+      } else {
+        console.log(`Saved label_pdf_url for order ${orderId}`);
+      }
+    } catch (e) {
+      console.error(`Error generating labels for order ${orderId}:`, e);
+    }
+  }
+}
+
+// start polling every second
+console.log('🔄 Starting label poller (every 1s)...');
+setInterval(pollNewOrders, 1000);

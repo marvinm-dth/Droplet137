@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="stack">
+  <div class="card">
+    <div class="toolbar">
+      <div>
+        <div class="section-title">Fill &amp; Print</div>
+        <h2 style="margin: 2px 0 4px;">Work ticket</h2>
+        <div class="muted">Pick a template + DTH project. We preload the last ticket for that combo.</div>
+      </div>
+      <div class="pill">Step: load template</div>
+    </div>
+    {% if message %}
+    <div class="alert alert-success">{{ message }}</div>
+    {% endif %}
+    {% if errors %}
+    <div class="alert alert-warning">
+      <div style="font-weight:600;">Please fix the following:</div>
+      <ul>
+        {% for error in errors %}
+        <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="section-title">1. Load template &amp; project</div>
+    <form method="get" class="stack">
+      <div class="form-grid">
+        <div>
+          <label for="project_id">Project (DTH)</label>
+          <select id="project_id" name="project_id">
+            <option value="">-- No project --</option>
+            {% for project in projects %}
+            <option value="{{ project.id }}" {% if form_data.get('project_id') == project.id|string %}selected{% endif %}>
+              {{ project.project_code }}
+            </option>
+            {% endfor %}
+          </select>
+          <div class="helper" style="margin-top:8px;">DTH number syncs from the selected project. You can override after load.</div>
+        </div>
+        <div>
+          <label for="template_id">Choose template</label>
+          <select id="template_id" name="template_id">
+            <option value="">-- Select a template --</option>
+            {% for tpl in templates %}
+            {% set tid = tpl.template_id or tpl["template_id"] %}
+            <option value="{{ tid }}" {% if form_data.template_id == tid %}selected{% endif %}>
+              {{ tpl.name or tpl["name"] }} ({{ tid }})
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Load</button>
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('ticket_fill') }}">Clear</a>
+      </div>
+    </form>
+  </div>
+
+  {% if selected_template %}
+  <div class="card">
+    <div class="section-title">Template</div>
+    <h3 style="margin: 4px 0 6px;">{{ selected_template.name }}</h3>
+    <div class="muted">Code: {{ selected_template.template_code }} • ID: {{ selected_template.template_id }}</div>
+    <div class="helper" style="margin-top:10px;">
+      <div><strong>Job type:</strong> {{ selected_template.job_type_en }} / {{ selected_template.job_type_cn }}</div>
+      <div style="margin-top:6px;">Checklist items load from the latest ticket for this template + project. Edits here only affect this ticket.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">2. Ticket details</div>
+    <form method="post" class="stack" enctype="multipart/form-data">
+      <input type="hidden" name="template_id" value="{{ form_data.get('template_id', '') }}">
+      <input type="hidden" name="project_id" value="{{ form_data.get('project_id', '') }}">
+      <input type="hidden" id="dth_number" name="dth_number" value="{{ form_data.get('dth_number', '') }}">
+
+      <div class="card" style="border-color:#1c2c46; padding:14px;">
+        <div class="section-title">Staff</div>
+        <label for="name">Staff member name</label>
+        <input type="text" id="name" name="name" value="{{ form_data.get('name', '') }}" placeholder="Who will do the work">
+        <div class="muted" style="margin-top:6px;">DTH number is pulled from the project automatically and kept hidden.</div>
+      </div>
+
+      <div class="card" style="border-color:#1c2c46; padding:14px;">
+        <div class="toolbar" style="align-items:flex-start;">
+          <div>
+            <div class="section-title">Notes</div>
+            <div class="muted">English → Chinese with one click when translation is enabled.</div>
+          </div>
+          <button type="button" class="btn btn-sm" id="translate-notes" data-enabled="{{ 'true' if translation_enabled else 'false' }}">Translate notes</button>
+        </div>
+        <label for="notes_en">Notes (English)</label>
+        <textarea id="notes_en" name="notes_en" rows="4" placeholder="Site observations, change orders, etc.">{{ form_data.get('notes_en', '') }}</textarea>
+        <label for="notes_cn" style="margin-top:10px;">Notes (Chinese)</label>
+        <textarea id="notes_cn" name="notes_cn" rows="4" placeholder="自动翻译或手动输入">{{ form_data.get('notes_cn', '') }}</textarea>
+        <details class="helper" style="margin-top:10px;">
+          <summary style="cursor:pointer;">Translation status</summary>
+          <div id="translate-status" style="margin-top:6px;">Translation ready.</div>
+        </details>
+      </div>
+
+      <div class="card" style="border-color:#1c2c46; padding:14px;">
+        <div class="toolbar" style="align-items:center;">
+          <div class="section-title" style="margin-bottom:0;">Checklist</div>
+          <button type="button" class="btn btn-sm" id="translate-checklist" data-enabled="{{ 'true' if translation_enabled else 'false' }}">Translate checklist</button>
+        </div>
+        <table id="checklist-table">
+          <thead>
+            <tr><th>English</th><th>Chinese</th><th style="width:60px;">&nbsp;</th></tr>
+          </thead>
+          <tbody>
+            {% if form_data.checklist_rows %}
+              {% for row in form_data.checklist_rows %}
+              <tr>
+                <td><input type="text" name="check_en[]" value="{{ row.en }}"></td>
+                <td><input type="text" name="check_cn[]" value="{{ row.cn }}"></td>
+                <td><button type="button" class="btn btn-ghost btn-sm" onclick="removeRow(this)">Remove</button></td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td><input type="text" name="check_en[]" value=""></td>
+                <td><input type="text" name="check_cn[]" value=""></td>
+                <td><button type="button" class="btn btn-ghost btn-sm" onclick="removeRow(this)">Remove</button></td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+        <div class="form-actions" style="margin-top:8px;">
+          <button type="button" class="btn btn-sm" onclick="addRow()">Add row</button>
+        </div>
+      </div>
+
+      <div class="card" style="border-color:#1c2c46; padding:14px;">
+        <div class="section-title">Images</div>
+        <label for="image_paths">Existing image paths (optional)</label>
+        <input type="text" id="image_paths" name="image_paths" value="{{ form_data.get('image_paths', '') }}" placeholder="/path/a.png, /path/b.jpg">
+        <div class="muted" style="margin-top:6px;">You can paste server paths or upload new images below.</div>
+        <div style="margin-top:10px;">
+          <label for="image_files">Upload images</label>
+          <input type="file" id="image_files" name="image_files" multiple accept="image/*">
+          <div class="muted" style="margin-top:6px;">Select multiple files; they will upload when you Preview/Save/Print.</div>
+        </div>
+        <div id="image-gallery" class="grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px; margin-top:12px;"></div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn" name="action" value="preview">Preview ticket</button>
+        <button type="submit" class="btn btn-ghost" name="action" value="save">Save (no print)</button>
+        <button type="submit" class="btn btn-primary" name="action" value="print">Print ticket</button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+</div>
+<script>
+(() => {
+  const projectSelect = document.getElementById('project_id');
+  const dthInput = document.getElementById('dth_number');
+  function syncDth() {
+    if (!projectSelect || !dthInput) return;
+    const selected = projectSelect.options[projectSelect.selectedIndex];
+    const code = selected && selected.text ? selected.text.trim().split(' ')[0] : '';
+    const value = code === '--' ? '' : code;
+    dthInput.value = value;
+  }
+  if (projectSelect && dthInput) {
+    projectSelect.addEventListener('change', syncDth);
+    syncDth();
+  }
+})();
+
+function addRow() {
+  const tbody = document.querySelector('#checklist-table tbody');
+  if (!tbody) return;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input type="text" name="check_en[]"></td>
+                  <td><input type="text" name="check_cn[]"></td>
+                  <td><button type="button" class="btn btn-ghost btn-sm" onclick="removeRow(this)">Remove</button></td>`;
+  tbody.appendChild(tr);
+}
+function removeRow(btn) {
+  const tr = btn.closest('tr');
+  if (!tr) return;
+  const tbody = tr.parentElement;
+  if (tbody && tbody.children.length > 1) {
+    tr.remove();
+  }
+}
+
+async function translateNotes() {
+  const btn = document.getElementById('translate-notes');
+  if (!btn || btn.dataset.enabled !== 'true') return;
+  const statusEl = document.getElementById('translate-status');
+  const en = document.getElementById('notes_en').value || '';
+  if (!en) {
+    alert('Please enter English notes first.');
+    if (statusEl) statusEl.textContent = 'Enter English notes to translate.';
+    return;
+  }
+  if (statusEl) statusEl.textContent = 'Translating notes...';
+  try {
+    const res = await fetch('{{ url_for("translate_text") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texts: [en] }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.translations) {
+      const msg = data.error || 'Translation failed.';
+      alert(msg);
+      if (statusEl) statusEl.textContent = `Error: ${msg}`;
+      console.error('Translation error response:', data);
+      return;
+    }
+    document.getElementById('notes_cn').value = data.translations[0] || '';
+    if (statusEl) statusEl.textContent = 'Translation complete.';
+  } catch (e) {
+    alert('Translation error: ' + e);
+    if (statusEl) statusEl.textContent = `Error: ${e}`;
+    console.error('Translation fetch error:', e);
+  }
+}
+
+async function translateChecklistRows() {
+  const btn = document.getElementById('translate-checklist');
+  if (!btn || btn.dataset.enabled !== 'true') return;
+  const statusEl = document.getElementById('translate-status');
+  const enInputs = Array.from(document.querySelectorAll('input[name="check_en[]"]'));
+  const cnInputs = Array.from(document.querySelectorAll('input[name="check_cn[]"]'));
+  if (!enInputs.length) return;
+  const textsToTranslate = [];
+  const targetIdx = [];
+  enInputs.forEach((enInput, idx) => {
+    const en = enInput.value || '';
+    const cn = cnInputs[idx] ? (cnInputs[idx].value || '') : '';
+    if (en && !cn) {
+      textsToTranslate.push(en);
+      targetIdx.push(idx);
+    }
+  });
+  if (!textsToTranslate.length) {
+    if (statusEl) statusEl.textContent = 'No checklist items need translation.';
+    return;
+  }
+  if (statusEl) statusEl.textContent = 'Translating checklist...';
+  try {
+    const res = await fetch('{{ url_for("translate_text") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texts: textsToTranslate }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.translations) {
+      const msg = data.error || 'Checklist translation failed.';
+      alert(msg);
+      if (statusEl) statusEl.textContent = `Error: ${msg}`;
+      return;
+    }
+    data.translations.forEach((val, i) => {
+      const idx = targetIdx[i];
+      if (cnInputs[idx]) cnInputs[idx].value = val || '';
+    });
+    if (statusEl) statusEl.textContent = 'Checklist translation complete.';
+  } catch (e) {
+    alert('Checklist translation error: ' + e);
+    if (statusEl) statusEl.textContent = `Error: ${e}`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const notesBtn = document.getElementById('translate-notes');
+  const checklistBtn = document.getElementById('translate-checklist');
+  const statusEl = document.getElementById('translate-status');
+  if (notesBtn) notesBtn.addEventListener('click', translateNotes);
+  if (checklistBtn) checklistBtn.addEventListener('click', translateChecklistRows);
+
+  if (notesBtn && notesBtn.dataset.enabled !== 'true') {
+    notesBtn.disabled = true;
+    if (statusEl) statusEl.textContent = 'Translation unavailable on this server.';
+  }
+  if (checklistBtn && checklistBtn.dataset.enabled !== 'true') {
+    checklistBtn.disabled = true;
+  }
+
+  // Image gallery builder for existing paths with remove button
+  const gallery = document.getElementById('image-gallery');
+  const imagePathsInput = document.getElementById('image_paths');
+  const imageFilesInput = document.getElementById('image_files');
+  function renderGallery() {
+    if (!gallery || !imagePathsInput) return;
+    gallery.innerHTML = '';
+    const paths = (imagePathsInput.value || '')
+      .split(',')
+      .map(p => p.trim())
+      .filter(Boolean);
+    paths.forEach((p, idx) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.padding = '8px';
+      const thumbUrl = '{{ url_for("image_thumb") }}' + '?path=' + encodeURIComponent(p);
+      card.innerHTML = `
+        <div style="margin-top:6px; display:flex; justify-content:center;">
+          <img src="${thumbUrl}" alt="img" style="max-width:100%; max-height:140px; border:1px solid var(--border); border-radius:8px; object-fit:contain;">
+        </div>
+        <div class="form-actions" style="margin-top:8px;">
+          <button type="button" class="btn btn-ghost btn-sm" data-remove-index="${idx}">Remove</button>
+        </div>
+      `;
+      gallery.appendChild(card);
+    });
+    gallery.querySelectorAll('[data-remove-index]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const removeIdx = parseInt(btn.getAttribute('data-remove-index'), 10);
+        const pathsList = (imagePathsInput.value || '')
+          .split(',')
+          .map(p => p.trim())
+          .filter(Boolean);
+        pathsList.splice(removeIdx, 1);
+        imagePathsInput.value = pathsList.join(', ');
+        renderGallery();
+      });
+    });
+  }
+  renderGallery();
+  if (imagePathsInput) {
+    imagePathsInput.addEventListener('blur', renderGallery);
+  }
+
+  // Preview thumbnails for newly selected files (client-side only)
+  if (imageFilesInput && gallery) {
+    imageFilesInput.addEventListener('change', () => {
+      const files = Array.from(imageFilesInput.files || []);
+      files.forEach((file, idx) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.padding = '8px';
+        const url = URL.createObjectURL(file);
+        card.innerHTML = `
+          <div style="margin-top:6px; display:flex; justify-content:center;">
+            <img src="${url}" alt="upload" style="max-width:100%; max-height:140px; border:1px solid var(--border); border-radius:8px; object-fit:contain;">
+          </div>
+          <div class="form-actions" style="margin-top:8px;">
+            <button type="button" class="btn btn-ghost btn-sm" data-remove-file="${idx}">Remove</button>
+          </div>
+        `;
+        gallery.appendChild(card);
+      });
+      // remove handler for selected files (rebuild FileList)
+      gallery.querySelectorAll('[data-remove-file]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const removeIdx = parseInt(btn.getAttribute('data-remove-file'), 10);
+          const dt = new DataTransfer();
+          Array.from(imageFilesInput.files || []).forEach((file, i) => {
+            if (i !== removeIdx) dt.items.add(file);
+          });
+          imageFilesInput.files = dt.files;
+          renderGallery();
+          // re-render selected previews
+          imageFilesInput.dispatchEvent(new Event('change'));
+        }, { once: true });
+      });
+    });
+  }
+});
+</script>
+{% endblock %}

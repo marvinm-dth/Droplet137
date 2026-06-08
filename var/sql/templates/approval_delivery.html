@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragon Tiny Homes: Home Depot Orders</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        h1 {
+            font-size: 2em;  /* Slightly smaller title */
+            font-weight: 700;
+            color: #343a40;
+            margin-top: 20px;
+        }
+
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            margin: 8px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            width: 180px;
+            font-weight: bold;
+        }
+        .form-group input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .containers {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin-top: 20px;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .submit-delivery {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        .submit-delivery:hover {
+            background-color: #218838;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 80%;  /* Make the table slightly smaller */
+            max-width: 1000px;  /* Limit the table width */
+            margin: 0 auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            font-size: 0.85em;  /* Reduced font size for compact look */
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;  /* Reduced padding for more compact cells */
+        }
+
+        th {
+            background-color: #007bff;
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        td {
+            text-align: center;
+            color: #333;
+        }
+
+        tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .update-item, .delete-item, .generate-image {
+            padding: 4px 8px;  /* Smaller buttons for compactness */
+            margin: 2px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+
+        .update-item:hover, .delete-item:hover, .generate-image:hover {
+            background-color: #0056b3;
+        }
+
+        /* Header container */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: #f8f9fa;
+            position: relative;
+        }
+
+        /* Centered title */
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 0;
+        }
+
+        /* Logout button styles */
+        .logout-button {
+            padding: 10px 20px;
+            background-color: #cc716c;
+            color: #333;
+            font-size: 1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            margin-left: auto; /* Pushes the button to the right */
+        }
+
+        .logout-button:hover {
+            background-color: #cc716c;
+        }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <meta name="theme-color" content="#000000">
+    <script type="text/javascript" src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            $('#items-table').DataTable(); // Initialize DataTables on the table
+        });
+    </script>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <script>
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+            .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+        }
+    </script>
+</head>
+<body>
+    <div class="container" style="width: 100%; max-width: 800px; margin: auto;">
+        <div class="header">
+            <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+                <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;">
+            </a>
+            <h1>Dragon Tiny Homes Delivery</h1>
+            <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+            <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+        </div>
+
+        <div style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="languageSelect" class="description data-english">Choose Language:</label>
+            <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言: </label>
+            <select id="languageSelect" onchange="updateDescriptions()" style="margin-left: 10px;">
+                <option value="english">English</option>
+                <option value="chinese">Chinese</option>
+            </select>
+        </div>
+
+        <form action="/submit_delivery_approval" method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
+            <div class="form-group">
+                <label for="delivery-id" class="description data-english"><b>Delivery ID:</b></label>
+                <label for="delivery-id" class="description data-mandarin" style="display: none;">交货编号: </label>
+                <input type="text" id="delivery_id" name="delivery_id" value="{{ delivery_data.delivery_id }}" readonly/><br>
+            </div>
+
+            <div class="form-group">
+                <label for="order-id" class="description data-english"><b>Order ID:</b></label>
+                <label for="order-id" class="description data-mandarin" style="display: none;">订单编号: </label>
+                <input type="text" id="order_id" name="order_id" value="{{ delivery_data.order_id }}" readonly/><br>
+            </div>
+
+            <div class="form-group">
+                <label for="receiver-name" class="description data-english"><b>Receiver Name:</b></label>
+                <label for="receiver-name" class="description data-mandarin" style="display: none;">订单名称: </label>
+                <input type="text" id="receiver_name" name="receiver_name" value="{{ delivery_data.receiver_name }}" readonly/><br>
+            </div>
+  
+
+            {% if delivery_data.approval_status != "Pending" %}
+            <div class="form-group">
+                <label for="approval-status" class="description data-english"><b>Approval Status:</b></label>
+                <label for="approval-status" class="description data-mandarin" style="display: none;">审批状态: </label>
+                <select name="approval_status" id="approval_status" disabled>
+                    <option value="Approved" {{ "selected" if delivery_data.approval_status == "Approve" else "" }}>Approve</option>
+                    <option value="Denied" {{ "selected" if delivery_data.approval_status == "Deny" else "" }}>Deny</option>
+                </select>
+            </div><br>
+
+            <div class="form-group">
+                <label for="approval_notes" class="description data-english"><b>Approval Notes:</b></label>
+                <label for="approval_notes" class="description data-mandarin" style="display: none;"><b>审批备注:</b></label>
+                <input type="text" name="approval_notes" style="height: 100px;" value="{{ delivery_data.approval_notes }}" readonly>
+            </div>
+
+            {% else %}
+
+            <div class="form-group">
+                <label for="approval-status" class="description data-english"><b>Approval Status:</b></label>
+                <label for="approval-status" class="description data-mandarin" style="display: none;">审批状态: </label>
+                <select name="approval_status" id="approval_status">
+                    <option value="Approved" {{ "selected" if delivery_data.approval_status == "Approve" else "" }}>Approve</option>
+                    <option value="Denied" {{ "selected" if delivery_data.approval_status == "Deny" else "" }}>Deny</option>
+                </select>
+            </div><br>
+
+            <div class="form-group">
+                <label for="approval_notes" class="description data-english"><b>Approval Notes:</b></label>
+                <label for="approval_notes" class="description data-mandarin" style="display: none;"><b>审批备注:</b></label>
+                <input type="text" name="approval_notes" style="height: 100px;" value="{{ delivery_data.approval_notes }}">
+            </div>
+
+            <div class="form-group" style="display: flex; justify-content: space-between;">
+                <div style="display: flex 1;">
+                    <button type="submit" class="button data-english" id="update_order" style="float: left; margin-left:5px;">
+                        <span class="button-text">Send Approval</span>
+                        <i class="fas fa-spinner fa-spin loading-spinner" style="display:none;"></i>
+                    </button>
+                    <button type="submit" class="button data-mandarin" id="update_order" style="float: left; margin-left: 5px; display: none;">
+                        <span class="button-text">发送审批</span>
+                        <i class="fas fa-spinner fa-spin loading-spinner" style="display:none;"></i>
+                    </button>
+                </div>
+            </div>
+
+            {% endif %}
+
+            <table id="prelisted-items-table" style="width: 100%; max-width: 800px; margin: 0 auto;">
+                <thead>
+                    <tr>
+                        <th>
+                            <div class="col data-english">SKU Number</div>
+                            <div class="col data-mandarin" style="display: none;">SKU编号</div>
+                        </th>
+                        <th>
+                            <div class="col data-english">Supplier SKU Number</div>
+                            <div class="col data-mandarin" style="display: none;">供应商 SKU 编号</div>
+                        </th>
+                        <th>
+                            <div class="col data-english">Description</div>
+                            <div class="col data-mandarin" style="display: none;">描述</div>
+                        </th>
+                        <th>
+                            <div class="col data-english">Actual Price</div>
+                            <div class="col data-mandarin" style="display: none;">实际价格</div>     
+                        </th>
+                        <th>
+                            <div class="col data-english">Quantity Confirmed</div>
+                            <div class="col data-mandarin" style="display: none;">确认数量</div>
+                        </th>
+                        <th>
+                            <div class="col data-english">Quantity Received</div>
+                            <div class="col data-mandarin" style="display: none;">接收数量</div>
+                        </th>
+                        <th>
+                            <div class="col data-english">Notes</div>
+                            <div class="col data-mandarin" style="display: none;">备注</div>
+                        </th>
+                        <th>
+                            <div class="col data-english">Image</div>
+                            <div class="col data-mandarin" style="display: none;">图片</div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="prelisted-items">
+                    {% for item in home_depot_items %}
+                    <tr>
+                        <td>{{ item.material_id }}</td>
+                        <td>{{ item.internet_sku_number }}</td>
+                        <td>
+                            <div class="description data-english" style="width: 150px;">{{ item.item_desc }}</div>
+                            <div class="description data-mandarin" style="width: 150px; display: none;">{{ item.item_desc_mandarin }}</div>
+                        </td>
+
+                        <td>{{ item.actual_item_price }}</td>
+                        <td>{{ item.order_qty_confirmed }}</td>
+
+                        <!-- Quantity Confirmed input field -->
+                        <td><input type="number" name="items[{{ item.material_id }}][order_qty_received]" style="width: 35px; text-align: center; border: none" value="{{ item.order_qty_received }}" readonly/></td>
+                        
+                        <!-- Notes input field -->
+                        <td>
+                            <textarea name="items[{{ item.material_id }}][delivery_notes]" style="width: 150px; height: 50px; border: none; resize: none;" readonly>{{ item.delivery_notes }}</textarea>
+                        </td>
+
+                        <!-- Image field -->
+                        <td><img src="{{ item.item_image }}" width="100" height="100"></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
+
+        <div class="form-group" style="margin-top: 30px;">
+            <div class="section-title">
+                <span class="description data-english">Delivery Images</span>
+                <span class="description data-mandarin" style="display: none;">交货图片</span>
+            </div>
+            <div class="image-gallery">
+                {% for image in images %}
+                    <img src="{{ image.image_url }}" alt="Material Image" style="width: 200px; height: auto; margin: 10px;">
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <script>
+        function showLoading() {
+            // Disable the submit button to prevent multiple submissions
+            const buttons = document.querySelectorAll('.button');
+            buttons.forEach(button => {
+                button.disabled = true;
+            });
+
+            // Hide button text and show the loading spinner
+            const buttonTexts = document.querySelectorAll('.button-text');
+            const spinners = document.querySelectorAll('.loading-spinner');
+
+            buttonTexts.forEach(text => text.style.display = 'none');
+            spinners.forEach(spinner => spinner.style.display = 'inline-block');
+        }
+
+        function updateDescriptions() {
+           const language = document.getElementById('languageSelect').value;
+   
+           // Save the selected language in local storage
+           localStorage.setItem('selectedLanguage', language);
+   
+           // Add debugging to ensure the function runs
+           console.log(`Language selected: ${language}`);
+           
+           // Get all elements with class 'data-english' and 'data-mandarin'
+           const englishElements = document.querySelectorAll('.data-english');
+           const mandarinElements = document.querySelectorAll('.data-mandarin');
+   
+           if (language === 'english') {
+               englishElements.forEach(element => {
+                   console.log(`Displaying English element:`, element); 
+                   element.style.display = 'block';
+               });
+               mandarinElements.forEach(element => {
+                   element.style.display = 'none';
+               });
+           } else if (language === 'chinese') {
+               englishElements.forEach(element => {
+                   element.style.display = 'none';
+               });
+               mandarinElements.forEach(element => {
+                   element.style.display = 'block';
+               });
+           }
+       }   
+        // Function to load the saved language preference on page load
+        document.addEventListener('DOMContentLoaded', () => {
+        // Get the selected language from local storage
+        const savedLanguage = localStorage.getItem('selectedLanguage');
+
+        // If there's a saved language, set it in the dropdown and update descriptions
+        if (savedLanguage) {
+            document.getElementById('languageSelect').value = savedLanguage;
+            updateDescriptions();
+        }
+    });
+    </script>
+</body>
+</html>

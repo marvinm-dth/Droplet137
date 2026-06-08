@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 20px;
+        }
+        .notification-container {
+            max-width: 800px;
+            margin: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        tr.unread {
+            background-color: #f9f9f9;
+            font-weight: bold;
+        }
+        button {
+            padding: 5px 10px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button.mark-read {
+            background-color: #007BFF;
+            color: white;
+        }
+        button.dismiss {
+            background-color: #dc3545;
+            color: white;
+        }
+    </style>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#000000">
+    <script>
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+            .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+        }
+    </script>
+</head>
+<body>
+    <div class="notification-container">
+        <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+            <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;">
+        </a>
+        <h1>Notifications</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Notification</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if notif_data %}
+                    {% for notification in notif_data %}
+                        <tr class="{{ 'unread' if not notification.is_read else '' }}">
+                            <td>{{ notification.request_date }}</td>
+                            <td>
+                                {{ notification.notification_message }}
+                                <a href="{{ notification.url }}"> {{ notification.category }} {{ notification.reference_id }}</a>
+                            </td>
+                            <td>
+                                <button class="dismiss" onclick="dismissNotification({{ notification.id }})">Dismiss</button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="3">No notifications available.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        async function dismissNotification(notificationId) {
+            await fetch('/dismiss-notification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notification_id: notificationId })
+            });
+            location.reload(); // Refresh the page to update the notifications
+        }
+    </script>
+</body>
+</html>

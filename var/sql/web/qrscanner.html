@@ -1,0 +1,2206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>DTH – Inventory Scanner (QR ⇄ Barcode Modes)</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <!-- ZXing (must finish loading before our script runs) -->
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
+
+    <!-- ----------- styles (keeps your original look) ----------- -->
+    <style>
+      :root {
+        --blue: #007bff;
+        --green: #28a745;
+        --red: #dc3545;
+        --teal: #009688;
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+        --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.12);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #f6f8fa;
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1rem;
+      }
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1.6rem;
+        text-align: center;
+      }
+
+      /* controls */
+      #topBar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        max-width: 360px;
+      }
+      select,
+      button,
+      input {
+        font-size: 0.95rem;
+        padding: 0.4rem 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+      }
+      button {
+        cursor: pointer;
+      }
+      #backupBtn {
+        background: var(--blue);
+        color: #fff;
+        border: none;
+      }
+
+      /* video + readout */
+      video {
+        margin-top: 1rem;
+        width: 100%;
+        max-width: 360px;
+        border-radius: 8px;
+        background: #000;
+      }
+      #qrBox {
+        display: none;
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: var(--shadow-sm);
+        width: 100%;
+        max-width: 360px;
+        display: flex;
+        justify-content: space-between;
+        font-family: monospace;
+      }
+      #qrBox span {
+        flex: 1;
+        text-align: center;
+      }
+
+      /* card */
+      #card {
+        display: none;
+        margin-top: 1rem;
+        width: 100%;
+        max-width: 360px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        padding: 1rem;
+        text-align: center;
+      }
+      #card img {
+        width: 100%;
+        border-radius: 8px;
+        object-fit: contain;
+        margin-bottom: 0.5rem;
+      }
+      .action {
+        margin: 0.5rem 0.25rem 0;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+      }
+      .good {
+        background: var(--green);
+        color: #fff;
+      }
+      .bad {
+        background: var(--red);
+        color: #fff;
+      }
+
+      /* drawer */
+      #queueDrawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 24rem;
+        max-width: 100%;
+        background: #fff;
+        box-shadow: -3px 0 8px rgba(0, 0, 0, 0.25);
+        transform: translateX(100%);
+        transition: 0.3s ease;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+      }
+      #queueDrawer.open {
+        transform: translateX(0);
+      }
+      #queueHeader {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0.75rem;
+        font-weight: 600;
+        font-size: 1.2rem;
+        border-bottom: 1px solid #ddd;
+      }
+      #lookupBar {
+        display: flex;
+        gap: 6px;
+        padding: 0.75rem;
+        border-bottom: 1px solid #eee;
+      }
+      #lookupBar input {
+        padding: 0.4rem 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 0.95rem;
+      }
+      #lookupOrder {
+        flex: 1 1 auto;
+      }
+      #lookupDelivery {
+        width: 6.5rem;
+      }
+      #lookupBtn {
+        padding: 0.4rem 0.9rem;
+        background: var(--blue);
+        border: none;
+        border-radius: 6px;
+        color: #fff;
+      }
+      #deliveryWrap {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 0.5rem 0.75rem;
+      }
+      .delivery-card {
+        background: #fafbfc;
+        border-radius: 10px;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 0.8rem;
+      }
+      .delivery-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.55rem 0.8rem;
+        cursor: pointer;
+      }
+      .delivery-body {
+        display: none;
+        padding: 0.4rem 0.8rem 0.8rem;
+      }
+
+      .item-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0.45rem 0;
+      }
+      .item-row img {
+        width: 46px;
+        height: 46px;
+        border-radius: 6px;
+        object-fit: cover;
+        border: 1px solid #ddd;
+      }
+      .item-info {
+        flex: 1 1 auto;
+        font-size: 0.87rem;
+      }
+
+      #drawerToggle {
+        position: fixed;
+        right: 1rem;
+        bottom: 1rem;
+        width: 3rem;
+        height: 3rem;
+        border: none;
+        border-radius: 50%;
+        background: var(--teal);
+        color: #fff;
+        font-size: 1.6rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+      }
+      @media (max-width: 767px) {
+        #queueDrawer {
+          width: 100%;
+        }
+      }
+
+      /* ===== Shared modal styles (PDF/Label/Message/Delivery) ===== */
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+      }
+      .modal.open {
+        display: flex;
+      }
+      .modalPanel {
+        background: #fff;
+        width: 95vw;
+        max-width: 1100px;
+        max-height: 92vh;
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        display: flex;
+        flex-direction: column;
+      }
+      .modalHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.8rem 1rem;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .modalTitle {
+        font-weight: 700;
+      }
+      .modalTools {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .modalBody {
+        padding: 12px;
+        overflow: auto;
+      }
+
+      .pdfSearch {
+        display: flex;
+        gap: 8px;
+        margin: 4px 0 12px;
+      }
+      .pdfSearch input {
+        flex: 1;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+      @media (max-width: 980px) {
+        .grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 640px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .pdfCard {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .pdfHead {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 0.6rem 0.75rem;
+        border-bottom: 1px solid #eef2f7;
+      }
+      .pdfTitle {
+        font-weight: 700;
+        font-size: 0.95rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .pdfMeta {
+        color: #6b7280;
+        font-size: 0.78rem;
+      }
+      .pdfBody {
+        display: none;
+        padding: 0.6rem 0.75rem;
+      }
+      .pdfViewer {
+        width: 100%;
+        height: 420px;
+        border: 0;
+        border-radius: 8px;
+        background: #f3f4f6;
+      }
+      .pdfActions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 0.6rem 0.75rem;
+        border-top: 1px solid #eef2f7;
+      }
+      .btn {
+        padding: 0.45rem 0.7rem;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        background: #fff;
+      }
+      .btn.primary {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #fff;
+      }
+      .pill {
+        font-size: 0.78rem;
+        color: #6b7280;
+        margin-left: auto;
+      }
+      .empty {
+        border: 2px dashed #d1d5db;
+        border-radius: 12px;
+        padding: 18px;
+        text-align: center;
+        color: #6b7280;
+      }
+      .hidden {
+        display: none !important;
+      }
+
+      #toast {
+        position: fixed;
+        right: 12px;
+        bottom: 12px;
+        background: #111827;
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 10px;
+        box-shadow: var(--shadow-md);
+        opacity: 0;
+        transform: translateY(8px);
+        transition: 0.25s ease;
+        z-index: 10002;
+      }
+      #toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* Hidden wedge input (does NOT change look) */
+      #wedgeHidden {
+        position: fixed;
+        left: -9999px;
+        top: -9999px;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Inventory Scanner</h1>
+
+    <div id="topBar">
+      <label><strong>Mode:</strong></label>
+      <select id="modeSel">
+        <option value="multi">Barcode + QR</option>
+        <option value="qr">QR only</option>
+      </select>
+
+      <input
+        id="backupSku"
+        type="text"
+        placeholder="Backup SKU (7 digits)"
+        maxlength="7"
+      />
+      <button id="backupBtn">Lookup</button>
+      <button id="openPdfLib">📄 PDFs</button>
+      <button id="openLabelLib">🏷 Labels</button>
+    </div>
+
+    <video id="video" muted playsinline></video>
+
+    <!-- camera chooser (QR mode only) -->
+    <div id="camPanel" style="display: none; margin-top: 0.5rem">
+      <label for="camSel">Camera:&nbsp;</label>
+      <select id="camSel"></select>
+    </div>
+
+    <div id="qrBox">
+      <span id="scanSku">SKU: —</span>
+      <span id="scanUuid">UUID: —</span>
+    </div>
+
+    <div id="card">
+      <img id="itemImg" alt="Item image" />
+      <h2 id="itemName"></h2>
+      <p id="itemSku"></p>
+      <button id="btnRecv" class="action good">Receive</button>
+      <button id="btnMiss" class="action bad">Not&nbsp;Received</button>
+    </div>
+
+    <!-- deliveries drawer -->
+    <div id="queueDrawer">
+      <div id="queueHeader">
+        Receiving Queue <button id="closeDrawer">✕</button>
+      </div>
+      <div id="lookupBar">
+        <input id="lookupOrder" type="number" placeholder="Order #" />
+        <input id="lookupDelivery" type="number" placeholder="Del #" />
+        <button id="lookupBtn">Load</button>
+      </div>
+      <div id="deliveryWrap"></div>
+    </div>
+    <button id="drawerToggle">☰</button>
+
+    <!-- ===== PDF Modal ===== -->
+    <div id="pdfModal" class="modal">
+      <div class="modalPanel">
+        <div class="modalHead">
+          <div class="modalTitle">Delivery PDFs</div>
+          <div class="modalTools">
+            <button class="btn" id="pdfRefresh">Refresh</button>
+            <button class="btn primary" id="pdfPrintAll">
+              Print All (visible)
+            </button>
+            <button class="btn" id="pdfClose">✕</button>
+          </div>
+        </div>
+        <div class="modalBody">
+          <div class="pdfSearch">
+            <input
+              id="pdfSearchInput"
+              placeholder="Filter by filename… e.g. order-123"
+            />
+            <button class="btn" id="pdfClearSearch">Clear</button>
+          </div>
+          <div id="pdfGrid" class="grid"></div>
+          <div id="pdfEmpty" class="empty hidden">
+            No PDFs found. Add <code>GET /pdfs-index</code> on the server
+            (returns <code>["file.pdf",…]</code>) or pass filenames via
+            <code>?files=a.pdf,b.pdf</code>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Label Modal ===== -->
+    <div id="labelModal" class="modal">
+      <div class="modalPanel">
+        <div class="modalHead">
+          <div class="modalTitle">Label PDFs</div>
+          <div class="modalTools">
+            <button class="btn" id="labelRefresh">Refresh</button>
+            <button class="btn primary" id="labelPrintAll">
+              Print All (visible)
+            </button>
+            <button class="btn" id="labelClose">✕</button>
+          </div>
+        </div>
+        <div class="modalBody">
+          <div class="pdfSearch">
+            <input
+              id="labelSearchInput"
+              placeholder="Filter by filename… e.g. label-123"
+            />
+            <button class="btn" id="labelClearSearch">Clear</button>
+          </div>
+          <div id="labelGrid" class="grid"></div>
+          <div id="labelEmpty" class="empty hidden">
+            No label PDFs found. Ensure <code>/labels-index</code> returns
+            <code>["file.pdf", …]</code>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Message Modal ===== -->
+    <div id="msgModal" class="modal" aria-hidden="true">
+      <div class="modalPanel">
+        <div class="modalHead">
+          <div class="modalTitle" id="msgTitle">Message</div>
+          <div class="modalTools">
+            <button class="btn" id="msgCopy">Copy</button>
+            <button class="btn" id="msgClose">✕</button>
+          </div>
+        </div>
+        <div class="modalBody">
+          <div
+            id="msgText"
+            style="white-space: pre-wrap; line-height: 1.35"
+          ></div>
+          <details id="msgDetails" style="margin-top: 8px">
+            <summary>Details</summary>
+            <pre
+              id="msgPre"
+              style="
+                white-space: pre-wrap;
+                background: #f9fafb;
+                border: 1px solid #e5e7eb;
+                padding: 8px;
+                border-radius: 8px;
+                overflow: auto;
+                max-height: 40vh;
+              "
+            ></pre>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Delivery Items Modal ===== -->
+    <div id="deliveryModal" class="modal" aria-hidden="true">
+      <div class="modalPanel">
+        <div class="modalHead">
+          <div class="modalTitle" id="delModalTitle">Delivery</div>
+          <div class="modalTools">
+            <button class="btn" id="delRefresh">Refresh</button>
+            <button class="btn" id="delModalClose">✕</button>
+          </div>
+        </div>
+        <div class="modalBody">
+          <h3 style="margin: 0.25rem 0 0.5rem">Expected for this delivery</h3>
+          <div id="delExpected"></div>
+          <hr
+            style="margin: 1rem 0; border: none; border-top: 1px solid #e5e7eb"
+          />
+          <h3 style="margin: 0.25rem 0 0.5rem">Missing items</h3>
+          <div id="delMissing"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden scanner input (keyboard-wedge) -->
+    <input
+      id="wedgeHidden"
+      type="text"
+      autocomplete="off"
+      spellcheck="false"
+      aria-hidden="true"
+    />
+
+    <div id="toast"></div>
+
+    <script>
+      /* ----- CONFIG ----- */
+      const API_ROOT = "https://inventory.orcagroup.io:5092"; // items, track*, tracking
+      const QUEUE_API = "https://inventory.orcagroup.io:5092"; // order-history, pdfs, labels
+
+      // Accept delivery anywhere in the scan, allow em/en dashes and slashes
+      const DELIVERY_ANY =
+        /([0-9]+)\s*[-–—]\s*(\n?\d{4})[-\/]?(\d{2})[-\/]?(\d{2})/; // robust, but we still display yyyy-mm-dd
+      const DTH_REGEX = /\bDTH\d+\b/i;
+      const BACKUP7_REGEX = /\b\d{7}\b/;
+      const UUID_REGEX =
+        /[0-9a-f]{8}-?[0-9a-f]{4}-?[1-5][0-9a-f]{3}-?[89ab][0-9a-f]{3}-?[0-9a-f]{12}/i;
+
+      /* ----- UI refs ----- */
+      const videoEl = document.getElementById("video");
+      const qrBox = document.getElementById("qrBox");
+      const scanSku = document.getElementById("scanSku");
+      const scanUuid = document.getElementById("scanUuid");
+      const drawer = document.getElementById("queueDrawer");
+      const modeSel = document.getElementById("modeSel");
+      const camSel = document.getElementById("camSel");
+
+      const toastEl = document.getElementById("toast");
+      function toast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add("show");
+        setTimeout(() => toastEl.classList.remove("show"), 1500);
+      }
+
+      /* ----- Message modal helpers ----- */
+      const msgModal = document.getElementById("msgModal");
+      const msgTitleEl = document.getElementById("msgTitle");
+      const msgTextEl = document.getElementById("msgText");
+      const msgPreEl = document.getElementById("msgPre");
+      const msgDetails = document.getElementById("msgDetails");
+      function showMsg({ title = "Message", text = "", details = null }) {
+        msgTitleEl.textContent = title;
+        msgTextEl.textContent = text;
+        if (details) {
+          msgPreEl.textContent =
+            typeof details === "string"
+              ? details
+              : JSON.stringify(details, null, 2);
+          msgDetails.open = false;
+          msgDetails.style.display = "block";
+        } else {
+          msgPreEl.textContent = "";
+          msgDetails.style.display = "none";
+        }
+        msgModal.classList.add("open");
+        msgModal.setAttribute("aria-hidden", "false");
+      }
+      function closeMsg() {
+        msgModal.classList.remove("open");
+        msgModal.setAttribute("aria-hidden", "true");
+      }
+      document.getElementById("msgClose").onclick = closeMsg;
+      document.getElementById("msgCopy").onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(
+            msgTitleEl.textContent +
+              "\n\n" +
+              msgTextEl.textContent +
+              (msgPreEl.textContent ? "\n\n" + msgPreEl.textContent : "")
+          );
+          toast("Copied");
+        } catch {
+          toast("Copy failed");
+        }
+      };
+
+      /* ----- STATE ----- */
+      let mode = modeSel.value; // 'multi' | 'qr'
+      let codeReader = null;
+      let currentCamId = null;
+
+      // Hidden wedge keeps focus for keyboard scanners without changing UI
+      const wedgeHidden = document.getElementById("wedgeHidden");
+      function refocusWedge() {
+        if (document.activeElement !== wedgeHidden) {
+          wedgeHidden.focus();
+          wedgeHidden.select();
+        }
+      }
+      window.addEventListener("focus", refocusWedge);
+      wedgeHidden.addEventListener("blur", refocusWedge);
+      setInterval(refocusWedge, 1500);
+      setTimeout(refocusWedge, 300);
+      wedgeHidden.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          const v = wedgeHidden.value.trim();
+          if (v) handleScan(v);
+          wedgeHidden.value = "";
+        }
+      });
+
+      /* Camera helpers */
+      function chooseBackCam(cams) {
+        const back = cams.find((c) => /back|rear|environment/i.test(c.label));
+        return back ? back.deviceId : cams[0].deviceId;
+      }
+      function startDecode() {
+        if (codeReader) codeReader.reset();
+        codeReader =
+          mode === "qr"
+            ? new ZXing.BrowserQRCodeReader()
+            : new ZXing.BrowserMultiFormatReader(undefined, 500);
+        const decodeCb = (result, err) => {
+          if (result) {
+            const txt = result.getText ? result.getText() : result.text;
+            if (txt) handleScan(txt);
+          } else if (err && !(err instanceof ZXing.NotFoundException)) {
+            console.error(err);
+          }
+        };
+        if (mode === "qr")
+          codeReader.decodeFromVideoDevice(currentCamId, videoEl, decodeCb);
+        else
+          codeReader.decodeFromConstraints(
+            { video: { facingMode: { ideal: "environment" } } },
+            videoEl,
+            decodeCb
+          );
+      }
+      function restart() {
+        qrBox.style.display = "none";
+        document.getElementById("card").style.display = "none";
+        startDecode();
+      }
+
+      /* ----- EVENTS ----- */
+      modeSel.onchange = () => {
+        mode = modeSel.value;
+        document.getElementById("camPanel").style.display =
+          mode === "qr" && camSel.options.length > 1 ? "block" : "none";
+        restart();
+      };
+      camSel.onchange = () => {
+        currentCamId = camSel.value;
+        restart();
+      };
+      document.getElementById("drawerToggle").onclick = () =>
+        drawer.classList.add("open");
+      document.getElementById("closeDrawer").onclick = () =>
+        drawer.classList.remove("open");
+
+      /* ==================== PARSING + SCAN ROUTER ==================== */
+      function extractDelivery(txt) {
+        const s = String(txt || "")
+          .normalize("NFKC")
+          .replace(/[\u200B-\u200D\uFEFF]/g, " ")
+          .trim();
+        const m = s.match(DELIVERY_ANY);
+        if (!m) return null;
+        const orderId = Number(m[1]);
+        const yyyy = m[2],
+          mm = m[3],
+          dd = m[4];
+        const date = `${yyyy}-${mm}-${dd}`;
+        return { orderId, date, raw: m[0] };
+      }
+      function extractKnownCode(txt) {
+        const del = extractDelivery(txt);
+        if (del) return { type: "delivery", ...del };
+        const b7 = (String(txt).match(BACKUP7_REGEX) || [])[0];
+        if (b7) return { type: "backup7", backupSku: b7 };
+        const dth = (String(txt).match(DTH_REGEX) || [])[0];
+        if (dth) return { type: "dth", sku: dth.toUpperCase() };
+        const uuid = (String(txt).match(UUID_REGEX) || [])[0];
+        if (uuid)
+          return { type: "uuid", uuid: uuid.replace(/-/g, "").toLowerCase() };
+        return null;
+      }
+      // async function handleScan(raw) {
+      //   const parsed = extractKnownCode(raw);
+      //   const txt = String(raw)
+      //     .replace(/(?:\r\n|\r|\n|\u2028|\u2029)+/g, "")
+      //     .trim();
+      //   qrBox.style.display = "flex";
+      //   if (!parsed) {
+      //     scanSku.textContent = `Scanned: ${txt}`;
+      //     scanUuid.textContent = " ";
+      //     showMsg({
+      //       title: "Unrecognized scan",
+      //       text: `Could not recognize a delivery, DTH, 7-digit, or UUID in:\n${txt}`,
+      //     });
+      //     return;
+      //   }
+      //   if (parsed.type === "delivery") {
+      //     scanSku.textContent = `Order: ${parsed.orderId}`;
+      //     scanUuid.textContent = `Date: ${parsed.date}`;
+      //   } else if (parsed.type === "backup7") {
+      //     scanSku.textContent = `Backup: ${parsed.backupSku}`;
+      //     scanUuid.textContent = " ";
+      //   } else if (parsed.type === "dth") {
+      //     scanSku.textContent = `SKU: ${parsed.sku}`;
+      //     scanUuid.textContent = " ";
+      //   } else if (parsed.type === "uuid") {
+      //     scanSku.textContent = "SKU: —";
+      //     scanUuid.textContent = `UUID: ${parsed.uuid}`;
+      //   }
+      //   try {
+      //     if (parsed.type === "delivery") {
+      //       await fetchAndShowDeliveries(
+      //         parsed.orderId,
+      //         parsed.date,
+      //         parsed.raw
+      //       );
+      //       return;
+      //     }
+      //     if (parsed.type === "backup7") {
+      //       const r = await fetch(
+      //         `${API_ROOT}/items/backup/${parsed.backupSku}`
+      //       );
+      //       if (!r.ok) throw new Error(await r.text());
+      //       const it = await r.json();
+      //       showCard(it);
+      //       document.getElementById("btnRecv").onclick = () =>
+      //         flag(parsed.backupSku, null, "received");
+      //       document.getElementById("btnMiss").onclick = () =>
+      //         flag(parsed.backupSku, null, "missing");
+      //       return;
+      //     }
+      //     if (parsed.type === "dth") {
+      //       const r = await fetch(`${API_ROOT}/items/${parsed.sku}`);
+      //       if (!r.ok) throw new Error(await r.text());
+      //       const it = await r.json();
+      //       showCard(it);
+      //       return;
+      //     }
+      //     if (parsed.type === "uuid") {
+      //       await flag(null, parsed.uuid, "received");
+      //       return;
+      //     }
+      //   } catch (e) {
+      //     showMsg({ title: "Scan failed", text: e.message, details: { raw } });
+      //   }
+      // }
+
+      async function handleScan(raw) {
+        var parsed = extractKnownCode(raw);
+        var txt = String(raw)
+          .replace(/(?:\r\n|\r|\n|\u2028|\u2029)+/g, "")
+          .trim();
+        qrBox.style.display = "flex";
+
+        if (!parsed) {
+          scanSku.textContent = "Scanned: " + txt;
+          scanUuid.textContent = " ";
+          showMsg({
+            title: "Unrecognized scan",
+            text:
+              "Could not recognize a delivery, DTH, 7-digit, or UUID in:\n" +
+              txt,
+          });
+          return;
+        }
+
+        if (parsed.type === "delivery") {
+          scanSku.textContent = "Order: " + parsed.orderId;
+          scanUuid.textContent = "Date: " + parsed.date;
+        } else if (parsed.type === "backup7") {
+          scanSku.textContent = "Backup: " + parsed.backupSku;
+          scanUuid.textContent = " ";
+        } else if (parsed.type === "dth") {
+          scanSku.textContent = "SKU: " + parsed.sku;
+          scanUuid.textContent = " ";
+        } else if (parsed.type === "uuid") {
+          scanSku.textContent = "SKU: —";
+          scanUuid.textContent = "UUID: " + parsed.uuid;
+        }
+
+        try {
+          // DELIVERY CODE
+          if (parsed.type === "delivery") {
+            await fetchAndShowDeliveries(
+              parsed.orderId,
+              parsed.date,
+              parsed.raw
+            );
+            return;
+          }
+
+          // DTH SCANNED WHILE DELIVERY MODAL OPEN → quick Received/Missing, update, refresh
+          if (parsed.type === "dth" && isDeliveryModalOpen()) {
+            var orderIdForModal = Number(deliveryModal.dataset.orderId);
+            var skuScanned = String(parsed.sku || "").toUpperCase();
+            var ok = window.confirm(
+              "Mark 1 unit of " +
+                skuScanned +
+                " as RECEIVED?\n\nOK = Received,  Cancel = Missing"
+            );
+            var action = ok ? "received" : "missing";
+
+            var resp = await fetch(API_ROOT + "/tracking/by-sku/" + action, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                order_id: orderIdForModal,
+                internal_sku: skuScanned,
+              }),
+            });
+            if (!resp.ok) {
+              var t = "";
+              try {
+                t = await resp.text();
+              } catch (_) {}
+              throw new Error(t || "HTTP " + resp.status);
+            }
+            toast(ok ? "✅ Marked received" : "⚠️ Marked missing");
+
+            // refresh modal view
+            var did = Number(deliveryModal.dataset.deliveryId);
+            await fetchTracking(orderIdForModal);
+            var group = { id: did, items: __lastGroupsById[did] || [] };
+            openDeliveryModal(orderIdForModal, group);
+            refocusWedge();
+            return;
+          }
+
+          // BACKUP 7-digit
+          if (parsed.type === "backup7") {
+            var r1 = await fetch(
+              API_ROOT + "/items/backup/" + parsed.backupSku
+            );
+            if (!r1.ok) throw new Error(await r1.text());
+            var it1 = await r1.json();
+            showCard(it1);
+            document.getElementById("btnRecv").onclick = function () {
+              flag(parsed.backupSku, null, "received");
+            };
+            document.getElementById("btnMiss").onclick = function () {
+              flag(parsed.backupSku, null, "missing");
+            };
+            return;
+          }
+
+          // DTH (normal path when modal not open)
+          if (parsed.type === "dth") {
+            var r2 = await fetch(API_ROOT + "/items/" + parsed.sku);
+            if (!r2.ok) throw new Error(await r2.text());
+            var it2 = await r2.json();
+            showCard(it2);
+            return;
+          }
+
+          // UUID → mark received
+          if (parsed.type === "uuid") {
+            await flag(null, parsed.uuid, "received");
+            return;
+          }
+        } catch (e) {
+          showMsg({
+            title: "Scan failed",
+            text: e.message,
+            details: { raw: raw },
+          });
+        }
+      }
+
+      /* ==================== DELIVERIES (order/date aware) ==================== */
+      const deliveryWrap = document.getElementById("deliveryWrap");
+
+      function groupByDelivery(rows) {
+        const m = {};
+        rows.forEach((r) => {
+          (r.delivery_id || []).forEach((id, i) => {
+            const copy = { ...r, _qty: r.delivery_qty?.[i] || 0 };
+            (m[id] ??= []).push(copy);
+          });
+        });
+        return Object.entries(m).map(([id, items]) => ({ id: +id, items }));
+      }
+      function buildItemRow(it) {
+        const d = document.createElement("div");
+        d.className = "item-row";
+        d.innerHTML = `<img src="${
+          it.item_image || ""
+        }"><div class="item-info"><strong>${
+          it.item_name || it.item_desc || "—"
+        }</strong><br>Qty exp: ${it._qty ?? it.delivery_qty ?? 0}</div>`;
+        return d;
+      }
+      function buildDeliveryCard(del) {
+        const card = document.createElement("div");
+        card.className = "delivery-card";
+        card.innerHTML = `<div class="delivery-head"><div><strong>Delivery #${del.id}</strong> · ${del.items.length} line(s)</div><span>▶</span></div><div class="delivery-body"></div>`;
+        const body = card.querySelector(".delivery-body");
+        del.items.forEach((it) => body.appendChild(buildItemRow(it)));
+        card.querySelector(".delivery-head").onclick = () => {
+          const orderId = del.items[0]?.order_id ?? null;
+          openDeliveryModal(orderId, del);
+        };
+        return card;
+      }
+
+      function rowDateMatches(row, yyyy_mm_dd) {
+        const want = String(yyyy_mm_dd).slice(0, 10);
+        const candidates = [];
+        for (const k in row) {
+          if (!Object.prototype.hasOwnProperty.call(row, k)) continue;
+          if (
+            /date/i.test(k) ||
+            /created_at/i.test(k) ||
+            /updated_at/i.test(k)
+          ) {
+            const v = row[k];
+            if (typeof v === "string" && v.length >= 10)
+              candidates.push(v.slice(0, 10));
+          }
+        }
+        return candidates.includes(want);
+      }
+
+      // ===== Tracking state & helpers =====
+      let __lastOrderRows = [];
+      let __lastGroupsById = {}; // deliveryId -> rows with _qty
+      let __trackRows = [];
+      let __trackBySku = {}; // DTH -> { open:[], received:[], missing:[] }
+
+      async function fetchTracking(orderId) {
+        try {
+          const r = await fetch(`${API_ROOT}/tracking?order_id=${orderId}`);
+          if (!r.ok) throw new Error(await r.text());
+          __trackRows = await r.json();
+          indexTracking();
+        } catch (e) {
+          console.warn("tracking fetch failed", e);
+          __trackRows = [];
+          __trackBySku = {};
+        }
+      }
+      function indexTracking() {
+        __trackBySku = {};
+        for (const t of __trackRows) {
+          const sku = (t.internal_sku || "").toUpperCase();
+          if (!sku) continue;
+          const bucket = (__trackBySku[sku] ??= {
+            open: [],
+            received: [],
+            missing: [],
+          });
+          const st = String(t.status || "").toLowerCase();
+          if (st === "received") bucket.received.push(t);
+          else if (st === "missing") bucket.missing.push(t);
+          else bucket.open.push(t);
+        }
+      }
+      function mapGroupsById(rows) {
+        const m = {};
+        rows.forEach((r) => {
+          (r.delivery_id || []).forEach((id, i) => {
+            const copy = { ...r, _qty: r.delivery_qty?.[i] || 0 };
+            (m[id] ??= []).push(copy);
+          });
+        });
+        return m;
+      }
+      function expectedBefore(sku, deliveryId) {
+        sku = (sku || "").toUpperCase();
+        let sum = 0;
+        Object.entries(__lastGroupsById).forEach(([id, list]) => {
+          const dId = Number(id);
+          if (dId >= deliveryId) return;
+          for (const r of list) {
+            const dth = (
+              r.internal_sku ||
+              r.temp_internal_sku ||
+              ""
+            ).toUpperCase();
+            if (dth === sku) sum += r._qty || 0;
+          }
+        });
+        return sum;
+      }
+      // ===== Item info cache & lookup (by DTH internal_sku OR temp_internal_sku) =====
+      const __itemInfoCache = new Map(); // key: DTH (upper), val: { item_image, item_name, sku_used }
+
+      async function fetchItemInfoBySku(dthSku) {
+        const key = String(dthSku || "").toUpperCase();
+        if (!key) return null;
+        if (__itemInfoCache.has(key)) return __itemInfoCache.get(key);
+
+        // Try /items?sku= which matches internal_sku OR temp_internal_sku; fallback to /items/:sku
+        let info = null;
+        try {
+          const u = `${API_ROOT}/items?sku=${encodeURIComponent(key)}`;
+          const r = await fetch(u);
+          if (r.ok) {
+            const arr = await r.json();
+            if (Array.isArray(arr) && arr.length) {
+              const it = arr[0];
+              info = {
+                item_image: it.item_image || "",
+                item_name: it.item_desc || it.short_name || "",
+                sku_used: it.internal_sku || it.temp_internal_sku || key,
+              };
+            }
+          }
+        } catch {}
+
+        if (!info) {
+          try {
+            const r = await fetch(
+              `${API_ROOT}/items/${encodeURIComponent(key)}`
+            );
+            if (r.ok) {
+              const it = await r.json();
+              info = {
+                item_image: it.item_image || "",
+                item_name: it.item_name || "",
+                sku_used: it.sku_used || key,
+              };
+            }
+          } catch {}
+        }
+
+        if (!info) info = { item_image: "", item_name: "", sku_used: key };
+        __itemInfoCache.set(key, info);
+        return info;
+      }
+
+      // ===== Delivery modal & tiles =====
+      const deliveryModal = document.getElementById("deliveryModal");
+      const delModalTitle = document.getElementById("delModalTitle");
+      const delExpected = document.getElementById("delExpected");
+      const delMissing = document.getElementById("delMissing");
+      document.getElementById("delModalClose").onclick = () => {
+        deliveryModal.classList.remove("open");
+        deliveryModal.setAttribute("aria-hidden", "true");
+      };
+      document.getElementById("delRefresh").onclick = async () => {
+        const ord = deliveryModal.dataset.orderId;
+        const did = deliveryModal.dataset.deliveryId;
+        if (!ord || !did) return;
+        await fetchTracking(ord);
+        const group = { id: Number(did), items: __lastGroupsById[did] || [] };
+        openDeliveryModal(Number(ord), group);
+      };
+
+      // function itemTile({ img, name, dthSku, trackRow }){
+      //   const div = document.createElement("div"); div.className = "item-row";
+      //   div.innerHTML = `
+      //     <img src="${img || ""}" alt="">
+      //     <div class="item-info"><strong>${name || "(no name)"}</strong><br>DTH: ${dthSku || "—"}</div>
+      //     <div>
+      //       <button class="btn" data-act="recv">Receive</button>
+      //       <button class="btn" data-act="miss">Missing</button>
+      //     </div>`;
+      //   const recvBtn = div.querySelector('[data-act="recv"]');
+      //   const missBtn = div.querySelector('[data-act="miss"]');
+      //   if (!trackRow || (!trackRow.backup_sku && !trackRow.UUID)){
+      //     recvBtn.onclick = () => toast("Scan item to mark received (no tracking row yet)");
+      //     missBtn.onclick = () => toast("Scan item to mark missing (no tracking row yet)");
+      //   } else {
+      //     recvBtn.onclick = () => flagFromTrackRow(trackRow, "received");
+      //     missBtn.onclick = () => flagFromTrackRow(trackRow, "missing");
+      //   }
+      //   return div;
+      // }
+
+      //   function itemTile({ img, name, dthSku, trackRow }) {
+      //     const div = document.createElement("div");
+      //     div.className = "item-row";
+      //     div.innerHTML = `
+      // <img src="${img || ""}" alt="">
+      // <div class="item-info"><strong>${name || "(no name)"}</strong><br>DTH: ${
+      //       dthSku || "—"
+      //     }</div>
+      // <div>
+      //   <button class="btn" data-act="recv">Receive</button>
+      //   <button class="btn" data-act="miss">Missing</button>
+      // </div>`;
+      //     const recvBtn = div.querySelector('[data-act="recv"]');
+      //     const missBtn = div.querySelector('[data-act="miss"]');
+
+      //     if (!trackRow || (!trackRow.backup_sku && !trackRow.UUID)) {
+      //       recvBtn.onclick = () =>
+      //         toast("Scan this item’s QR or backup to link and mark Received");
+      //       missBtn.onclick = () =>
+      //         toast("Scan this item’s QR or backup to link and mark Missing");
+      //     } else {
+      //       recvBtn.onclick = () => flagFromTrackRow(trackRow, "received");
+      //       missBtn.onclick = () => flagFromTrackRow(trackRow, "missing");
+      //     }
+      //     return div;
+      //   }
+      function itemTile(opts) {
+        var img = opts && opts.img ? opts.img : "";
+        var name = opts && opts.name ? opts.name : "(no name)";
+        var dthSku = opts && opts.dthSku ? opts.dthSku : "—";
+        var trackRow = opts ? opts.trackRow : null;
+
+        var div = document.createElement("div");
+        div.className = "item-row";
+        div.innerHTML =
+          '<img src="' +
+          img +
+          '" alt="">' +
+          '<div class="item-info"><strong>' +
+          name +
+          "</strong><br>DTH: " +
+          dthSku +
+          "</div>" +
+          "<div>" +
+          '<button class="btn" data-act="recv">Receive</button> ' +
+          '<button class="btn" data-act="miss">Missing</button>' +
+          "</div>";
+
+        var recvBtn = div.querySelector('[data-act="recv"]');
+        var missBtn = div.querySelector('[data-act="miss"]');
+
+        var hasIds = false;
+        if (trackRow && (trackRow.backup_sku || trackRow.UUID)) hasIds = true;
+
+        if (!hasIds) {
+          recvBtn.onclick = function () {
+            toast(
+              "Scan this item’s DTH, QR, or 7-digit backup to link and mark Received"
+            );
+          };
+          missBtn.onclick = function () {
+            toast(
+              "Scan this item’s DTH, QR, or 7-digit backup to link and mark Missing"
+            );
+          };
+        } else {
+          recvBtn.onclick = function () {
+            flagFromTrackRow(trackRow, "received");
+          };
+          missBtn.onclick = function () {
+            flagFromTrackRow(trackRow, "missing");
+          };
+        }
+        return div;
+      }
+
+      function missingTile(tr) {
+        const div = document.createElement("div");
+        const dth = (tr.internal_sku || "").toUpperCase();
+        div.className = "item-row";
+        div.innerHTML = `
+          <img src="" alt="">
+          <div class="item-info"><strong>${
+            tr.item_name || tr.item_desc || "(no name)"
+          }</strong><br>DTH: ${dth} · Marked missing ${
+          tr.missing_flagged_at
+            ? new Date(tr.missing_flagged_at).toLocaleString()
+            : ""
+        }</div>
+          <div><button class="btn" data-act="recv">Receive</button></div>`;
+        div.querySelector('[data-act="recv"]').onclick = () =>
+          flagFromTrackRow(tr, "received");
+        return div;
+      }
+      async function flagFromTrackRow(tr, action) {
+        const uuid = tr.UUID
+          ? String(tr.UUID).replace(/-/g, "").toLowerCase()
+          : null;
+        const b7 =
+          tr.backup_sku && /^\d{7}$/.test(String(tr.backup_sku))
+            ? tr.backup_sku
+            : null;
+        if (!uuid && !b7) return toast("No UUID/backup_sku on tracking row");
+        try {
+          await flag(b7, uuid, action);
+          if (deliveryModal.dataset.orderId) {
+            await fetchTracking(deliveryModal.dataset.orderId);
+            const did = Number(deliveryModal.dataset.deliveryId);
+            const group = { id: did, items: __lastGroupsById[did] || [] };
+            openDeliveryModal(Number(deliveryModal.dataset.orderId), group);
+          }
+        } catch (e) {
+          showMsg({ title: "Update failed", text: e.message });
+        }
+      }
+      // function openDeliveryModal(orderId, group) {
+      //   deliveryModal.dataset.orderId = String(orderId || "");
+      //   deliveryModal.dataset.deliveryId = String(group.id);
+      //   delModalTitle.textContent = `Order ${orderId ?? "—"} • Delivery #${
+      //     group.id
+      //   }`;
+      //   delExpected.innerHTML = "";
+      //   delMissing.innerHTML = "";
+
+      //   // Build open item tiles (one-by-one fan-out)
+      //   for (const r of group.items) {
+      //     const dth = (
+      //       r.internal_sku ||
+      //       r.temp_internal_sku ||
+      //       ""
+      //     ).toUpperCase();
+      //     const qtyForThisDelivery = Number(r._qty || 0);
+      //     if (!dth || !qtyForThisDelivery) continue;
+
+      //     const track = __trackBySku[dth] || {
+      //       open: [],
+      //       received: [],
+      //       missing: [],
+      //     };
+      //     const alreadyExpected = expectedBefore(dth, group.id);
+      //     const statusCount = track.received.length + track.missing.length;
+      //     const consumedByEarlier = Math.min(statusCount, alreadyExpected);
+      //     const statusStillAffectingThis = Math.max(
+      //       0,
+      //       statusCount - consumedByEarlier
+      //     );
+      //     const openCount = Math.max(
+      //       0,
+      //       qtyForThisDelivery - statusStillAffectingThis
+      //     );
+
+      //     const openPool = [...track.open];
+      //     for (let i = 0; i < openCount; i++) {
+      //       const tr = openPool.shift() || null; // if null → prompt to scan
+      //       delExpected.appendChild(
+      //         itemTile({
+      //           img: r.item_image,
+      //           name: r.item_name || r.item_desc,
+      //           dthSku: dth,
+      //           trackRow: tr,
+      //         })
+      //       );
+      //     }
+      //   }
+
+      //   // Build Missing section (only SKUs that appear in this delivery)
+      //   const skuSet = new Set(
+      //     group.items.map((r) =>
+      //       (r.internal_sku || r.temp_internal_sku || "").toUpperCase()
+      //     )
+      //   );
+      //   let addedMissing = 0;
+      //   for (const sku of skuSet) {
+      //     const bucket = __trackBySku[sku];
+      //     if (!bucket) continue;
+      //     for (const tr of bucket.missing) {
+      //       delMissing.appendChild(missingTile(tr));
+      //       addedMissing++;
+      //     }
+      //   }
+      //   if (!addedMissing) {
+      //     delMissing.innerHTML = `<div class="empty">No missing items for this delivery’s SKUs.</div>`;
+      //   }
+
+      //   deliveryModal.classList.add("open");
+      //   deliveryModal.setAttribute("aria-hidden", "false");
+      // }
+
+      // async function openDeliveryModal(orderId, group) {
+      //   // Make sure tracking is fresh for correct open/received/missing counts
+      //   if (orderId) await fetchTracking(orderId);
+
+      //   deliveryModal.dataset.orderId = String(orderId || "");
+      //   deliveryModal.dataset.deliveryId = String(group.id);
+      //   delModalTitle.textContent = `Order ${orderId ?? "—"} • Delivery #${
+      //     group.id
+      //   }`;
+      //   delExpected.innerHTML = "";
+      //   delMissing.innerHTML = "";
+
+      //   // Preload item info for all SKUs in this delivery
+      //   const skuList = [];
+      //   const lineItems = [];
+      //   for (const r of group.items) {
+      //     const dth = (
+      //       r.internal_sku ||
+      //       r.temp_internal_sku ||
+      //       ""
+      //     ).toUpperCase();
+      //     const qtyForThisDelivery = Number(r._qty || 0);
+      //     if (!dth || !qtyForThisDelivery) continue;
+      //     skuList.push(dth);
+      //     lineItems.push({ dth, qty: qtyForThisDelivery, row: r });
+      //   }
+      //   const uniqueSkus = [...new Set(skuList)];
+      //   const infoMap = {};
+      //   await Promise.all(
+      //     uniqueSkus.map(async (sku) => {
+      //       infoMap[sku] = await fetchItemInfoBySku(sku);
+      //     })
+      //   );
+
+      //   // Build expected tiles, one per expected unit, attempting to attach open tracking rows (per SKU)
+      //   const perSkuOpenPools = {};
+      //   for (const sku of uniqueSkus) {
+      //     const bucket = __trackBySku[sku] || {
+      //       open: [],
+      //       received: [],
+      //       missing: [],
+      //     };
+
+      //     // Calculate how many earlier deliveries consumed statuses for this SKU
+      //     const alreadyExpected = expectedBefore(sku, group.id);
+      //     const statusCount = bucket.received.length + bucket.missing.length;
+      //     const consumedByEarlier = Math.min(statusCount, alreadyExpected);
+      //     const statusStillAffectingThis = Math.max(
+      //       0,
+      //       statusCount - consumedByEarlier
+      //     );
+
+      //     perSkuOpenPools[sku] = {
+      //       open: [...bucket.open], // open rows available to attach
+      //       statusAffect: statusStillAffectingThis, // received/missing that count against this delivery
+      //       missing: [...bucket.missing], // used later for "Missing items"
+      //     };
+      //   }
+
+      //   // Fan-out each line into individual tiles
+      //   for (const { dth, qty } of lineItems) {
+      //     const info = infoMap[dth] || {
+      //       item_image: "",
+      //       item_name: "",
+      //       sku_used: dth,
+      //     };
+      //     const pools = perSkuOpenPools[dth];
+
+      //     // How many tiles should be “covered” by existing statuses affecting this delivery
+      //     const openCount = Math.max(0, qty - (pools?.statusAffect || 0));
+
+      //     // For each expected unit, attach an open tracking row if we have one; otherwise placeholder that asks to scan
+      //     for (let i = 0; i < openCount; i++) {
+      //       const tr = pools && pools.open.length ? pools.open.shift() : null;
+      //       delExpected.appendChild(
+      //         itemTile({
+      //           img: info.item_image,
+      //           name: info.item_name || "(no name)",
+      //           dthSku: dth,
+      //           trackRow: tr,
+      //         })
+      //       );
+      //     }
+      //   }
+
+      //   // Missing section: only show missing rows for SKUs that appear in THIS delivery
+      //   let addedMissing = 0;
+      //   for (const sku of uniqueSkus) {
+      //     const bucket = __trackBySku[sku];
+      //     if (!bucket) continue;
+      //     for (const tr of bucket.missing) {
+      //       delMissing.appendChild(missingTile(tr));
+      //       addedMissing++;
+      //     }
+      //   }
+      //   if (!addedMissing) {
+      //     delMissing.innerHTML = `<div class="empty">No missing items for this delivery’s SKUs.</div>`;
+      //   }
+
+      //   deliveryModal.classList.add("open");
+      //   deliveryModal.setAttribute("aria-hidden", "false");
+      // }
+      // function openDeliveryModal(orderId, group) {
+      //   deliveryModal.dataset.orderId = String(orderId || "");
+      //   deliveryModal.dataset.deliveryId = String(group.id);
+      //   delModalTitle.textContent = `Order ${orderId ?? "—"} • Delivery #${
+      //     group.id
+      //   }`;
+      //   delExpected.innerHTML = "";
+      //   delMissing.innerHTML = "";
+
+      //   for (const r of group.items) {
+      //     const dth = (
+      //       r.internal_sku ||
+      //       r.temp_internal_sku ||
+      //       r.dth_sku ||
+      //       ""
+      //     ).toUpperCase();
+      //     const qtyForThisDelivery = Number(r._qty || 0);
+      //     if (!qtyForThisDelivery) continue;
+
+      //     const name =
+      //       r.item_name ||
+      //       r.item_desc ||
+      //       String(r.sku_number || r.material_id || "Item");
+      //     const img = r.item_image || "";
+
+      //     // Path A: we have a DTH → use tracking math to fan out exactly what's still open
+      //     if (dth) {
+      //       const track = __trackBySku[dth] || {
+      //         open: [],
+      //         received: [],
+      //         missing: [],
+      //       };
+      //       const alreadyExpected = expectedBefore(dth, group.id);
+      //       const statusCount = track.received.length + track.missing.length;
+      //       const consumedByEarlier = Math.min(statusCount, alreadyExpected);
+      //       const statusStillAffectingThis = Math.max(
+      //         0,
+      //         statusCount - consumedByEarlier
+      //       );
+      //       const openCount = Math.max(
+      //         0,
+      //         qtyForThisDelivery - statusStillAffectingThis
+      //       );
+
+      //       const openPool = [...track.open];
+      //       for (let i = 0; i < openCount; i++) {
+      //         const tr = openPool.shift() || null; // null → button will ask to scan
+      //         delExpected.appendChild(
+      //           itemTile({ img, name, dthSku: dth, trackRow: tr })
+      //         );
+      //       }
+      //     } else {
+      //       // Path B: no DTH on this line → still show the expected count so the user can scan to attach
+      //       for (let i = 0; i < qtyForThisDelivery; i++) {
+      //         delExpected.appendChild(
+      //           itemTile({ img, name, dthSku: "—", trackRow: null })
+      //         );
+      //       }
+      //     }
+      //   }
+
+      //   // Missing section: only SKUs that appear in THIS delivery (if any SKUs exist)
+      //   const skuSet = new Set(
+      //     group.items
+      //       .map((x) =>
+      //         (
+      //           x.internal_sku ||
+      //           x.temp_internal_sku ||
+      //           x.dth_sku ||
+      //           ""
+      //         ).toUpperCase()
+      //       )
+      //       .filter(Boolean)
+      //   );
+      //   let addedMissing = 0;
+      //   for (const sku of skuSet) {
+      //     const bucket = __trackBySku[sku];
+      //     if (!bucket) continue;
+      //     for (const tr of bucket.missing) {
+      //       delMissing.appendChild(missingTile(tr));
+      //       addedMissing++;
+      //     }
+      //   }
+      //   if (!addedMissing) {
+      //     delMissing.innerHTML = `<div class="empty">No missing items for this delivery’s SKUs.</div>`;
+      //   }
+
+      //   deliveryModal.classList.add("open");
+      //   deliveryModal.setAttribute("aria-hidden", "false");
+      // }
+      function openDeliveryModal(orderId, group) {
+        deliveryModal.dataset.orderId = String(orderId || "");
+        deliveryModal.dataset.deliveryId = String(group.id);
+        delModalTitle.textContent =
+          "Order " +
+          (orderId != null ? orderId : "—") +
+          " • Delivery #" +
+          group.id;
+        delExpected.innerHTML = "";
+        delMissing.innerHTML = "";
+
+        // Build Expected section
+        for (var i = 0; i < group.items.length; i++) {
+          var r = group.items[i];
+
+          var dth = "";
+          if (r && r.internal_sku) dth = String(r.internal_sku).toUpperCase();
+          else if (r && r.temp_internal_sku)
+            dth = String(r.temp_internal_sku).toUpperCase();
+          else if (r && r.dth_sku) dth = String(r.dth_sku).toUpperCase();
+
+          // qty from this delivery row (number or per-index)
+          var rawQty =
+            typeof r._qty !== "undefined" && r._qty !== null ? r._qty : 0;
+          if (
+            (!rawQty || isNaN(rawQty)) &&
+            r &&
+            r.delivery_qty &&
+            r.delivery_qty.length
+          ) {
+            rawQty = r.delivery_qty[0];
+          }
+          var qtyForThisDelivery = Math.max(parseInt(rawQty, 10) || 0, 0);
+          if (!qtyForThisDelivery) qtyForThisDelivery = 1; // show at least one tile so it’s never blank
+
+          var name =
+            r && r.item_name
+              ? r.item_name
+              : r && r.item_desc
+              ? r.item_desc
+              : String(r.sku_number || r.material_id || "Item");
+          var img = r && r.item_image ? r.item_image : "";
+
+          if (dth) {
+            // use tracking math to compute how many units remain "open" for THIS delivery
+            var bucket = __trackBySku[dth] || {
+              open: [],
+              received: [],
+              missing: [],
+            };
+
+            var alreadyExpected = expectedBefore(dth, group.id);
+            var statusCount =
+              (bucket.received ? bucket.received.length : 0) +
+              (bucket.missing ? bucket.missing.length : 0);
+            var consumedByEarlier = Math.min(statusCount, alreadyExpected);
+            var statusStillAffectingThis = Math.max(
+              0,
+              statusCount - consumedByEarlier
+            );
+
+            var tileCount = Math.max(
+              qtyForThisDelivery - statusStillAffectingThis,
+              0
+            );
+
+            var openPool = bucket.open ? bucket.open.slice() : [];
+            for (var k = 0; k < tileCount; k++) {
+              var tr = openPool.length ? openPool.shift() : null; // no row → prompts user to scan to link
+              delExpected.appendChild(
+                itemTile({ img: img, name: name, dthSku: dth, trackRow: tr })
+              );
+            }
+          } else {
+            // no DTH on this line → still render placeholders so the user can scan to attach
+            for (var j = 0; j < qtyForThisDelivery; j++) {
+              delExpected.appendChild(
+                itemTile({ img: img, name: name, dthSku: "—", trackRow: null })
+              );
+            }
+          }
+        }
+
+        // Build Missing section (only SKUs that appear in THIS delivery)
+        var skuSet = {};
+        for (var s = 0; s < group.items.length; s++) {
+          var gi = group.items[s];
+          var v =
+            gi && (gi.internal_sku || gi.temp_internal_sku || gi.dth_sku)
+              ? String(
+                  gi.internal_sku || gi.temp_internal_sku || gi.dth_sku
+                ).toUpperCase()
+              : "";
+          if (v) skuSet[v] = true;
+        }
+        var addedMissing = 0;
+        for (var key in skuSet) {
+          if (!skuSet.hasOwnProperty(key)) continue;
+          var b = __trackBySku[key];
+          if (!b || !b.missing) continue;
+          for (var m = 0; m < b.missing.length; m++) {
+            delMissing.appendChild(missingTile(b.missing[m]));
+            addedMissing++;
+          }
+        }
+        if (!addedMissing) {
+          delMissing.innerHTML =
+            '<div class="empty">No missing items for this delivery’s SKUs.</div>';
+        }
+
+        deliveryModal.classList.add("open");
+        deliveryModal.setAttribute("aria-hidden", "false");
+      }
+
+      async function fetchAndShowDeliveries(orderId, dateStr, rawCode) {
+        //const url = `${QUEUE_API}/order-history?order_id=${orderId}`;
+        const url = `${QUEUE_API}/order-history/enriched?order_id=${orderId}`;
+
+        try {
+          const r = await fetch(url);
+          if (!r.ok) {
+            const body = await r.text().catch(() => "(no body)");
+            showMsg({
+              title: "Failed to load deliveries",
+              text: `Scan: ${rawCode}\nOrder: ${orderId} • Date: ${dateStr}\nHTTP ${r.status}`,
+              details: { url, status: r.status, body },
+            });
+            return;
+          }
+          let rows = await r.json();
+          if (!Array.isArray(rows)) {
+            showMsg({
+              title: "Unexpected server response",
+              text: `Scan: ${rawCode}\nOrder: ${orderId} • Date: ${dateStr}\nResponse was not an array.`,
+              details: { url, got: rows },
+            });
+            return;
+          }
+          const sameDate = rows.filter((row) => rowDateMatches(row, dateStr));
+          const rowsToUse = sameDate.length ? sameDate : rows;
+
+          __lastOrderRows = rowsToUse;
+          __lastGroupsById = mapGroupsById(rowsToUse);
+          await fetchTracking(orderId);
+
+          deliveryWrap.innerHTML = "";
+          if (!rowsToUse.length) {
+            showMsg({
+              title: "No deliveries found",
+              text: `Scan: ${rawCode}\nOrder: ${orderId} • Date: ${dateStr}\nThe server returned 0 rows.`,
+              details: {
+                hint: "Ensure /order-history is being populated when orders are created/approved.",
+                also_check_table: "public.all_items_tracking (order_number)",
+              },
+            });
+            drawer.classList.add("open");
+            return;
+          }
+          if (!sameDate.length) {
+            const p = document.createElement("p");
+            p.textContent = `No rows exactly on ${dateStr}. Showing all deliveries for order ${orderId}.`;
+            p.style.margin = "0.25rem 0 0.5rem";
+            p.style.color = "#6b7280";
+            deliveryWrap.appendChild(p);
+          }
+
+          const groups = groupByDelivery(rowsToUse);
+          groups
+            .sort((a, b) => a.id - b.id)
+            .forEach((g) => deliveryWrap.appendChild(buildDeliveryCard(g)));
+          drawer.classList.add("open");
+          toast(`Loaded ${rowsToUse.length} row(s) for order ${orderId}`);
+        } catch (e) {
+          showMsg({
+            title: "Network error while fetching deliveries",
+            text: `Scan: ${rawCode}\nOrder: ${orderId} • Date: ${dateStr}\n${e.message}`,
+            details: { url },
+          });
+        }
+      }
+
+      async function loadDeliveries(orderId, delId = null) {
+        //const url = `${QUEUE_API}/order-history?order_id=${orderId}`;
+        const url = `${QUEUE_API}/order-history/enriched?order_id=${orderId}`;
+
+        try {
+          const r = await fetch(url);
+          if (!r.ok) throw new Error(await r.text());
+          let rows = await r.json();
+          __lastOrderRows = rows;
+          __lastGroupsById = mapGroupsById(rows);
+          await fetchTracking(orderId);
+          if (delId)
+            rows = rows.filter((x) => (x.delivery_id || []).includes(delId));
+          deliveryWrap.innerHTML = "";
+          if (!rows.length) {
+            deliveryWrap.innerHTML = "<p>No deliveries found.</p>";
+            drawer.classList.add("open");
+            return;
+          }
+          const groups = delId
+            ? [{ id: delId, items: rows }]
+            : groupByDelivery(rows);
+          groups
+            .sort((a, b) => a.id - b.id)
+            .forEach((g) => deliveryWrap.appendChild(buildDeliveryCard(g)));
+          drawer.classList.add("open");
+          return rows;
+        } catch (e) {
+          showMsg({
+            title: "Failed to load deliveries",
+            text: e.message,
+            details: { url },
+          });
+          return [];
+        }
+      }
+
+      async function loadByDeliveryOnly(delId) {
+        //const url = `${QUEUE_API}/order-history?delivery_id=${delId}`;
+        const url = `${QUEUE_API}/order-history/enriched?delivery_id=${delId}`;
+
+        try {
+          const r = await fetch(url);
+          if (!r.ok) throw new Error(await r.text());
+          const rows = await r.json();
+          const trimmed = [];
+          rows.forEach((row) => {
+            const ids = row.delivery_id || [];
+            const qtys = row.delivery_qty || [];
+            ids.forEach((id, i) => {
+              if (id === Number(delId)) {
+                trimmed.push({
+                  ...row,
+                  delivery_id: [id],
+                  delivery_qty: [qtys[i] ?? 0],
+                });
+              }
+            });
+          });
+
+          deliveryWrap.innerHTML = "";
+          if (!trimmed.length) {
+            deliveryWrap.innerHTML = `<p>No deliveries found for #${delId}.</p>`;
+            drawer.classList.add("open");
+            return;
+          }
+
+          // infer orderId from first row
+          const orderId =
+            trimmed[0]?.order_id || trimmed[0]?.order_number || null;
+          __lastOrderRows = trimmed;
+          __lastGroupsById = mapGroupsById(trimmed);
+          if (orderId) await fetchTracking(orderId);
+
+          const groups = groupByDelivery(trimmed);
+          groups
+            .sort((a, b) => a.id - b.id)
+            .forEach((g) => deliveryWrap.appendChild(buildDeliveryCard(g)));
+          drawer.classList.add("open");
+        } catch (e) {
+          showMsg({
+            title: "Failed to load by delivery #",
+            text: e.message,
+            details: { url },
+          });
+        }
+      }
+
+      // Drawer Load button: supports Order# (+optional Delivery#) OR just Delivery#
+      document.getElementById("lookupBtn").onclick = () => {
+        const oRaw = document.getElementById("lookupOrder").value.trim();
+        const dRaw = document.getElementById("lookupDelivery").value.trim();
+        const o = Number(oRaw);
+        const d = Number(dRaw);
+        if (oRaw) {
+          loadDeliveries(o, isNaN(d) ? null : d);
+        } else if (dRaw) {
+          loadByDeliveryOnly(d);
+        } else {
+          showMsg({
+            title: "Enter a number",
+            text: "Type an Order # or a Delivery #, then click Load.",
+          });
+        }
+      };
+      ["lookupOrder", "lookupDelivery"].forEach((id) => {
+        const el = document.getElementById(id);
+        el.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") document.getElementById("lookupBtn").click();
+        });
+      });
+
+      /* ==================== CARD + ACTIONS ==================== */
+      function showCard(it) {
+        document.getElementById("itemImg").src = it.item_image || "";
+        document.getElementById("itemName").textContent =
+          it.item_name || "(no name)";
+        document.getElementById("itemSku").textContent = `SKU: ${
+          it.sku_used || it.sku_number || ""
+        }`;
+        document.getElementById("card").style.display = "block";
+      }
+      async function flag(backupSku, uuid, action) {
+        const url = uuid
+          ? `${API_ROOT}/track/${uuid}/${action}`
+          : `${API_ROOT}/track-sku/${backupSku}/${action}`;
+        try {
+          const r = await fetch(url, { method: "POST" });
+          if (!r.ok) throw new Error(await r.text());
+          toast(
+            action === "received"
+              ? "✅ Item received"
+              : "⚠️ Item flagged missing"
+          );
+        } catch (e) {
+          showMsg({
+            title: "Update failed",
+            text: e.message,
+            details: { url },
+          });
+        }
+        restart();
+      }
+
+      // backup SKU manual lookup
+      document.getElementById("backupBtn").onclick = () => {
+        const raw = document.getElementById("backupSku").value.trim();
+        if (!/^\d{7}$/.test(raw)) return alert("Enter a valid 7-digit code");
+        lookupBackup(raw);
+      };
+      async function lookupBackup(raw) {
+        if (codeReader) codeReader.reset();
+        try {
+          const r = await fetch(`${API_ROOT}/items/backup/${raw}`);
+          if (!r.ok) throw new Error(await r.text());
+          const it = await r.json();
+          showCard(it);
+          document.getElementById("btnRecv").onclick = () =>
+            flag(raw, null, "received");
+          document.getElementById("btnMiss").onclick = () =>
+            flag(raw, null, "missing");
+        } catch (e) {
+          showMsg({
+            title: "Lookup failed",
+            text: e.message,
+            details: { url: `${API_ROOT}/items/backup/${raw}` },
+          });
+          restart();
+        }
+      }
+
+      /* ==================== PDF & LABEL LIBRARIES (same look) ==================== */
+      const PDF_BASE = `${QUEUE_API}/pdfs`;
+      const LABEL_BASE = `${QUEUE_API}/labels`;
+
+      async function headMeta(url) {
+        try {
+          const r = await fetch(url, { method: "HEAD" });
+          const size = r.headers.get("content-length");
+          const lm = r.headers.get("last-modified");
+          return {
+            size: size ? Number(size) : null,
+            lastModified: lm ? new Date(lm) : null,
+          };
+        } catch {
+          return { size: null, lastModified: null };
+        }
+      }
+      function fmtBytes(n) {
+        if (!+n) return "—";
+        const u = ["B", "KB", "MB", "GB"];
+        const i = Math.floor(Math.log(n) / Math.log(1024));
+        return (n / Math.pow(1024, i)).toFixed(i ? 1 : 0) + " " + u[i];
+      }
+      function getUrlParamFiles(param) {
+        const p = new URLSearchParams(location.search).get(param);
+        if (!p) return null;
+        return p
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+
+      async function fetchPdfIndex() {
+        const endpoints = [
+          `${QUEUE_API}/pdfs-index`,
+          `${QUEUE_API}/delivery-pdfs/list`,
+          `${QUEUE_API}/pdfs/index.json`,
+        ];
+        for (const url of endpoints) {
+          try {
+            const r = await fetch(url);
+            if (!r.ok) continue;
+            const arr = await r.json();
+            if (Array.isArray(arr) && arr.length) return arr;
+          } catch {
+            /* try next */
+          }
+        }
+        const viaParam = getUrlParamFiles("files");
+        return viaParam || [];
+      }
+      async function fetchLabelIndex() {
+        try {
+          const r = await fetch(`${QUEUE_API}/labels-index`);
+          if (r.ok) {
+            const arr = await r.json();
+            if (Array.isArray(arr)) return arr;
+          }
+        } catch {}
+        const viaParam = getUrlParamFiles("label_files");
+        return viaParam || [];
+      }
+
+      function pdfCardTemplate({ name, href, size, lastModified }) {
+        const prettyDate = lastModified
+          ? new Date(lastModified).toLocaleString()
+          : "—";
+        const sizeLabel = fmtBytes(size);
+        const id = "pv_" + btoa(name).replace(/=/g, "");
+        return `<div class="pdfCard" data-name="${name.toLowerCase()}">
+          <div class="pdfHead"><div class="pdfTitle" title="${name}">${name}</div><div class="pdfMeta">${prettyDate}</div></div>
+          <div class="pdfBody" id="${id}"><iframe class="pdfViewer" src="${href}#view=FitH"></iframe></div>
+          <div class="pdfActions">
+            <button class="btn" data-action="toggle" data-target="${id}">View</button>
+            <button class="btn" data-action="open" data-url="${href}">Open</button>
+            <button class="btn" data-action="print" data-url="${href}">Print</button>
+            <button class="btn" data-action="copy" data-url="${href}">Copy Link</button>
+            <span class="pill">Size: ${sizeLabel}</span>
+          </div>
+        </div>`;
+      }
+      async function renderPdfLibrary() {
+        const grid = document.getElementById("pdfGrid");
+        const empty = document.getElementById("pdfEmpty");
+        grid.innerHTML = "";
+        empty.classList.add("hidden");
+        const files = await fetchPdfIndex();
+        if (!files.length) {
+          empty.classList.remove("hidden");
+          return;
+        }
+        const enriched = await Promise.all(
+          files
+            .filter((f) => f.toLowerCase().endsWith(".pdf"))
+            .map(async (f) => {
+              const href = `${PDF_BASE}/${encodeURIComponent(f)}`;
+              const meta = await headMeta(href);
+              return { name: f, href, ...meta };
+            })
+        );
+        enriched.sort(
+          (a, b) =>
+            (b.lastModified?.getTime() || 0) -
+              (a.lastModified?.getTime() || 0) || a.name.localeCompare(b.name)
+        );
+        grid.innerHTML = enriched.map(pdfCardTemplate).join("");
+      }
+      async function renderLabelLibrary() {
+        const grid = document.getElementById("labelGrid");
+        const empty = document.getElementById("labelEmpty");
+        grid.innerHTML = "";
+        empty.classList.add("hidden");
+        const files = await fetchLabelIndex();
+        if (!files.length) {
+          empty.classList.remove("hidden");
+          return;
+        }
+        const enriched = await Promise.all(
+          files
+            .filter((f) => f.toLowerCase().endsWith(".pdf"))
+            .map(async (f) => {
+              const href = `${LABEL_BASE}/${encodeURIComponent(f)}`;
+              const meta = await headMeta(href);
+              return { name: f, href, ...meta };
+            })
+        );
+        enriched.sort(
+          (a, b) =>
+            (b.lastModified?.getTime() || 0) -
+              (a.lastModified?.getTime() || 0) || a.name.localeCompare(b.name)
+        );
+        grid.innerHTML = enriched.map(pdfCardTemplate).join("");
+      }
+      function attachPdfHandlers() {
+        document.getElementById("openPdfLib").onclick = () => {
+          document.getElementById("pdfModal").classList.add("open");
+          renderPdfLibrary();
+        };
+        document.getElementById("pdfClose").onclick = () => {
+          document.getElementById("pdfModal").classList.remove("open");
+        };
+        document
+          .getElementById("pdfSearchInput")
+          .addEventListener("input", () => {
+            const q = document
+              .getElementById("pdfSearchInput")
+              .value.trim()
+              .toLowerCase();
+            document.querySelectorAll(".pdfCard").forEach((c) => {
+              const name = c.dataset.name || "";
+              c.style.display = name.includes(q) ? "" : "none";
+            });
+          });
+        document.getElementById("pdfClearSearch").onclick = () => {
+          const inp = document.getElementById("pdfSearchInput");
+          inp.value = "";
+          inp.dispatchEvent(new Event("input"));
+        };
+        document.getElementById("pdfRefresh").onclick = renderPdfLibrary;
+        document.getElementById("pdfPrintAll").onclick = async () => {
+          const visible = [...document.querySelectorAll(".pdfCard")].filter(
+            (c) => c.style.display !== "none"
+          );
+          if (!visible.length) return toast("Nothing to print");
+          for (const c of visible) {
+            c.querySelector('button[data-action="print"]')?.click();
+            await new Promise((r) => setTimeout(r, 500));
+          }
+        };
+        document.addEventListener(
+          "click",
+          async (e) => {
+            const btn = e.target.closest("button.btn");
+            if (!btn) return;
+            const act = btn.dataset.action;
+            if (!act) return;
+            if (act === "toggle") {
+              const t = document.getElementById(btn.dataset.target);
+              if (t)
+                t.style.display =
+                  t.style.display === "block" ? "none" : "block";
+            }
+            if (act === "open") {
+              window.open(btn.dataset.url, "_blank", "noopener");
+            }
+            if (act === "copy") {
+              try {
+                await navigator.clipboard.writeText(btn.dataset.url);
+                toast("Link copied");
+              } catch {
+                toast("Copy failed");
+              }
+            }
+            if (act === "print") {
+              const url = btn.dataset.url;
+              try {
+                let frame = document.getElementById("printFrame");
+                if (!frame) {
+                  frame = document.createElement("iframe");
+                  frame.id = "printFrame";
+                  frame.style.position = "fixed";
+                  frame.style.right = "0";
+                  frame.style.bottom = "0";
+                  frame.style.width = "0";
+                  frame.style.height = "0";
+                  frame.style.border = "0";
+                  document.body.appendChild(frame);
+                }
+                frame.onload = () => {
+                  try {
+                    frame.contentWindow.focus();
+                    frame.contentWindow.print();
+                  } catch {
+                    const w = window.open(url, "_blank", "noopener");
+                    if (!w) toast("Popup blocked — allow popups to print");
+                  }
+                };
+                frame.src = url;
+              } catch {
+                const w = window.open(url, "_blank", "noopener");
+                if (!w) toast("Popup blocked — allow popups to print");
+              }
+            }
+          },
+          { passive: true }
+        );
+      }
+      function attachLabelHandlers() {
+        document.getElementById("openLabelLib").onclick = () => {
+          document.getElementById("labelModal").classList.add("open");
+          renderLabelLibrary();
+        };
+        document.getElementById("labelClose").onclick = () => {
+          document.getElementById("labelModal").classList.remove("open");
+        };
+        document
+          .getElementById("labelSearchInput")
+          .addEventListener("input", () => {
+            const q = document
+              .getElementById("labelSearchInput")
+              .value.trim()
+              .toLowerCase();
+            document.querySelectorAll("#labelGrid .pdfCard").forEach((c) => {
+              const name = c.dataset.name || "";
+              c.style.display = name.includes(q) ? "" : "none";
+            });
+          });
+        document.getElementById("labelClearSearch").onclick = () => {
+          const inp = document.getElementById("labelSearchInput");
+          inp.value = "";
+          inp.dispatchEvent(new Event("input"));
+        };
+        document.getElementById("labelRefresh").onclick = renderLabelLibrary;
+        document.getElementById("labelPrintAll").onclick = async () => {
+          const visible = [
+            ...document.querySelectorAll("#labelGrid .pdfCard"),
+          ].filter((c) => c.style.display !== "none");
+          if (!visible.length) return toast("Nothing to print");
+          for (const c of visible) {
+            c.querySelector('button[data-action="print"]')?.click();
+            await new Promise((r) => setTimeout(r, 500));
+          }
+        };
+      }
+
+      /* ----- INIT ----- */
+      window.addEventListener("load", async () => {
+        attachPdfHandlers();
+        attachLabelHandlers();
+        if (
+          location.protocol !== "https:" &&
+          location.hostname !== "localhost"
+        ) {
+          showMsg({
+            title: "Camera permission",
+            text: "Camera requires HTTPS or localhost.",
+          });
+          return;
+        }
+        try {
+          const p = await navigator.mediaDevices.getUserMedia({ video: true });
+          p.getTracks().forEach((t) => t.stop());
+        } catch (e) {
+          showMsg({ title: "Camera unavailable", text: e.message });
+          return;
+        }
+        try {
+          const cams = await ZXing.BrowserCodeReader.listVideoInputDevices();
+          if (!cams.length) {
+            showMsg({
+              title: "No camera found",
+              text: "No video input devices were detected.",
+            });
+            return;
+          }
+          currentCamId = chooseBackCam(cams);
+          cams.forEach((c) => {
+            const o = document.createElement("option");
+            o.value = c.deviceId;
+            o.text = c.label || c.deviceId;
+            if (c.deviceId === currentCamId) o.selected = true;
+            camSel.appendChild(o);
+          });
+          document.getElementById("camPanel").style.display =
+            mode === "qr" && cams.length > 1 ? "block" : "none";
+        } catch {}
+        startDecode();
+      });
+
+      function isDeliveryModalOpen() {
+        return (
+          deliveryModal.classList.contains("open") &&
+          deliveryModal.getAttribute("aria-hidden") === "false" &&
+          deliveryModal.dataset.orderId
+        );
+      }
+    </script>
+  </body>
+</html>

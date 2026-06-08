@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="stack">
+  <div class="grid list-grid">
+    <a href="{{ url_for('ticket_fill') }}">
+      <div class="section-title">Today</div>
+      <div style="font-size:18px; font-weight:700;">Fill &amp; print tickets</div>
+      <div class="muted">Pull the latest project data, translate notes, preview or send to printer.</div>
+    </a>
+    <a href="{{ url_for('projects') }}">
+      <div class="section-title">Projects</div>
+      <div style="font-size:18px; font-weight:700;">Manage DTH codes</div>
+      <div class="muted">See project tickets, clone into new builds, delete stray tickets.</div>
+    </a>
+    <a href="{{ url_for('template_new') }}">
+      <div class="section-title">Templates</div>
+      <div style="font-size:18px; font-weight:700;">Create template</div>
+      <div class="muted">Define checklists and job types; translate English to Chinese.</div>
+    </a>
+    <a href="{{ url_for('template_edit') }}">
+      <div class="section-title">&nbsp;</div>
+      <div style="font-size:18px; font-weight:700;">Edit/Archive templates</div>
+      <div class="muted">Adjust wording, archive old versions, and manage checklists.</div>
+    </a>
+    <a href="{{ url_for('dbview') }}">
+      <div class="section-title">Admin</div>
+      <div style="font-size:18px; font-weight:700;">DB viewer</div>
+      <div class="muted">Inspect the first 50 rows of each table for quick debugging.</div>
+    </a>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="section-title">Workflow</div>
+      <ol class="muted" style="margin: 4px 0 0 16px; padding:0 0 0 4px;">
+        <li>Pick a project (DTH code) and template.</li>
+        <li>Fill notes, checklist rows, and upload site photos.</li>
+        <li>Translate missing Chinese text if needed.</li>
+        <li>Preview to verify, then print the receipt ticket.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <div class="section-title">Tips</div>
+      <ul class="muted" style="margin: 6px 0 0 16px; padding:0 0 0 4px;">
+        <li>Existing project + template combos preload the last ticket.</li>
+        <li>Templates stay static; tickets own their checklist text.</li>
+        <li>Use archive instead of delete when a template has history.</li>
+        <li>Translation requires OPENAI_API_KEY in .env (server side only).</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+    <div>
+      <div class="section-title">Admin</div>
+      <div style="font-size:18px; font-weight:700;">User management</div>
+      <div class="muted">Create or update mock users for testing.</div>
+    </div>
+    <a class="btn btn-primary" href="{{ users_url }}">Open user management</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,1198 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Inventory</title>
+    <style>
+      :root{
+        --bg:#f6f8fc;
+        --card:#ffffff;
+        --text:#0f172a;
+        --muted:#64748b;
+        --line:#e6edf7;
+        --pill:#f7f9ff;
+        --pill-line:#dbe6fb;
+        --thumb:108px;
+        --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      }
+      *{ box-sizing:border-box; }
+      body{
+        margin:0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        color:var(--text);
+        background:var(--bg);
+      }
+      .wrap{
+        max-width:100%;
+        width:100%;
+        margin:22px auto 60px;
+        padding:0 clamp(12px, 2.5vw, 28px);
+      }
+
+      /* Header actions */
+      .topbar{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:12px;
+        flex-wrap:wrap;
+        margin-bottom:14px;
+      }
+      
+      .topbarGroup{
+        display:flex;
+        align-items:center;
+        gap:12px;
+        flex-wrap:wrap;
+      }
+      .checkPill{
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        padding:8px 12px;
+        border-radius:999px;
+        border:1px solid var(--line);
+        background:#fff;
+        font-weight:650;
+        font-size:13px;
+        cursor:pointer;
+        user-select:none;
+      }
+      .checkPill input{
+        accent-color:#0b1220;
+      }
+      .btn{
+        display:inline-flex; align-items:center; gap:10px;
+        padding:10px 14px;
+        border-radius:12px;
+        border:1px solid #0b1220;
+        background:#0b1220;
+        color:#fff; cursor:pointer;
+        font-weight:650; font-size:14px;
+      }
+      .btn.secondary{
+        background:#fff;
+        color:#0b1220;
+        border-color:var(--line);
+      }
+      .btn svg{ width:16px; height:16px; }
+
+      .card{
+        background:var(--card);
+        border:1px solid var(--line);
+        border-radius:20px;
+        box-shadow: var(--shadow);
+        overflow:hidden;
+      }
+
+      .tableWrap{
+        padding:clamp(10px, 1.6vw, 18px);
+      }
+
+      table{
+        width:100%;
+        border-collapse:separate;
+        border-spacing:0 8px;
+      }
+      thead{ display:none; }
+      thead th{
+        text-align:left;
+        font-size:12px;
+        letter-spacing:0.09em;
+        color:#475569;
+        padding:14px 18px;
+        background:#f8fbff;
+        border-bottom:1px solid var(--line);
+      }
+      tbody{ display:block; }
+      tbody tr{
+        display:grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap:8px 12px;
+        padding:10px;
+        border:1px solid var(--line);
+        border-radius:18px;
+        background:#fff;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+      }
+      tbody tr.justSaved{
+        border-color:#0f766e;
+        box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18), 0 10px 24px rgba(15, 23, 42, 0.10);
+      }
+      tbody tr + tr{ margin-top:8px; }
+      tbody tr.groupRow{
+        display:block;
+        padding:0;
+        border:0;
+        background:transparent;
+        box-shadow:none;
+      }
+      tbody tr.groupRow td{
+        padding:0;
+      }
+      tbody tr.groupRow td::before{
+        display:none;
+      }
+      .groupHeader{
+        display:flex;
+        align-items:center;
+        justify-content:flex-start;
+        gap:8px;
+        padding:8px 12px;
+        border:1px solid var(--line);
+        border-radius:14px;
+        background:#f8fafc;
+        font-size:12px;
+        font-weight:700;
+        letter-spacing:0.02em;
+        text-transform:none;
+        color:#475569;
+      }
+      .groupPill{
+        display:inline-flex;
+        align-items:center;
+        padding:6px 10px;
+        border-radius:999px;
+        border:1px solid var(--pill-line);
+        background:#fff;
+        font-weight:700;
+      }
+      .groupCountPill{
+        display:inline-flex;
+        align-items:center;
+        padding:6px 10px;
+        border-radius:999px;
+        border:1px solid var(--line);
+        background:#eef2ff;
+        font-weight:700;
+        color:#334155;
+      }
+      tbody td{
+        padding:0;
+        border-bottom:0;
+        vertical-align:middle;
+        min-width:0;
+      }
+      tbody td::before{
+        content: attr(data-label);
+        display:block;
+        font-size:10px;
+        letter-spacing:0.08em;
+        color:#94a3b8;
+        margin-bottom:4px;
+        text-transform:uppercase;
+      }
+
+      .imgCell{
+        display:flex; align-items:center; gap:8px;
+        flex-wrap:nowrap;
+      }
+      .thumb{
+        width:var(--thumb); height:var(--thumb);
+        border-radius:12px;
+        background:#eef2ff;
+        border:1px solid var(--line);
+        display:flex; align-items:center; justify-content:center;
+        overflow:hidden;
+      }
+      .thumb.clickable{ cursor:pointer; }
+      .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+      .miniBtn{
+        display:inline-flex; align-items:center; gap:8px;
+        padding:6px 10px;
+        border-radius:14px;
+        border:1px solid var(--line);
+        background:#fff;
+        cursor:pointer;
+        font-weight:650;
+        font-size:13px;
+      }
+      .miniBtn.primary{
+        background:#0b1220; border-color:#0b1220; color:#fff;
+      }
+      .miniBtn svg{ width:14px; height:14px; }
+
+      .pill{
+        display:inline-flex;
+        align-items:center;
+        background:var(--pill);
+        border:1px solid var(--pill-line);
+        color:#0f172a;
+        border-radius:999px;
+        padding:6px 10px;
+        font-size:13px;
+        max-width:100%;
+      }
+      .categorySelect{
+        width:100%;
+        max-width:100%;
+        padding:6px 10px;
+        border-radius:999px;
+        border:1px solid var(--pill-line);
+        background:#fff;
+        font-size:13px;
+        font-weight:600;
+        color:var(--text);
+      }
+      .categorySelect:focus{
+        outline:none;
+        border-color:#94a3b8;
+        box-shadow:0 0 0 3px rgba(148, 163, 184, 0.25);
+      }
+      .pill.editable{
+        cursor:pointer;
+        transition: box-shadow 0.15s ease, border-color 0.15s ease;
+      }
+      .pill.editable:hover{
+        border-color:#94a3b8;
+        box-shadow:0 0 0 3px rgba(148, 163, 184, 0.25);
+      }
+      .pill.mono{ font-variant-numeric: tabular-nums; }
+      .pill.trunc{
+        overflow:hidden;
+        white-space:nowrap;
+        text-overflow:ellipsis;
+      }
+      .pill.nameWrap{
+        display:block;
+        display:-webkit-box;
+        -webkit-box-orient:vertical;
+        -webkit-line-clamp:5;
+        white-space:normal;
+        overflow:hidden;
+        overflow-wrap:anywhere;
+        line-height:1.25;
+        max-height:var(--thumb);
+        align-items:flex-start;
+      }
+
+      .updatedCell{
+        color:#0f172a;
+        font-weight:650;
+        font-size:13px;
+      }
+
+      .filterCard{
+        border:1px solid var(--line);
+        border-radius:16px;
+        background:#fff;
+        padding:10px 12px;
+        margin-bottom:14px;
+        box-shadow: var(--shadow);
+      }
+      .filterHeader{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        margin-bottom:8px;
+      }
+      .filterTitle{
+        font-size:11px;
+        letter-spacing:0.12em;
+        text-transform:uppercase;
+        color:#64748b;
+        font-weight:700;
+      }
+      .filterGrid{
+        display:flex;
+        flex-wrap:wrap;
+        gap:8px;
+      }
+      .filterItem{
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+        padding:6px 10px;
+        border-radius:999px;
+        border:1px solid var(--line);
+        background:#f8fafc;
+        font-size:12px;
+        font-weight:600;
+        color:#0f172a;
+      }
+      .filterItem input{
+        accent-color:#0b1220;
+      }
+
+      dialog.modal{
+        border:1px solid var(--line);
+        border-radius:20px;
+        padding:0;
+        width:min(760px, 92vw);
+        box-shadow:var(--shadow);
+      }
+      dialog.modal::backdrop{
+        background:rgba(15, 23, 42, 0.35);
+      }
+      .modalHeader{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        padding:18px 22px;
+        border-bottom:1px solid var(--line);
+        background:#f8fbff;
+      }
+      .modalTitle{
+        font-weight:700;
+        font-size:16px;
+      }
+      .modalBody{
+        padding:18px 22px 6px;
+      }
+      .formGrid{
+        display:grid;
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+        gap:14px;
+      }
+      .formRow{
+        display:flex;
+        flex-direction:column;
+        gap:6px;
+      }
+      .formRow label{
+        font-size:12px;
+        color:var(--muted);
+        letter-spacing:0.06em;
+      }
+      .formRow input{
+        padding:10px 12px;
+        border-radius:12px;
+        border:1px solid var(--line);
+        font-size:14px;
+        font-weight:600;
+        color:var(--text);
+        background:#fff;
+      }
+      .formRow input:disabled{
+        background:#f1f5f9;
+        color:#94a3b8;
+      }
+      .modalFooter{
+        display:flex;
+        justify-content:flex-end;
+        gap:10px;
+        padding:16px 22px 20px;
+        border-top:1px solid var(--line);
+        background:#fff;
+      }
+      .hint{
+        font-size:12px;
+        color:var(--muted);
+      }
+
+      dialog.imageModal{
+        border:1px solid var(--line);
+        border-radius:20px;
+        padding:0;
+        width:min(980px, 92vw);
+        box-shadow:var(--shadow);
+        background:#0b1220;
+        color:#fff;
+      }
+      dialog.imageModal::backdrop{
+        background:rgba(2, 6, 23, 0.6);
+      }
+      .imageModalHeader{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        padding:14px 18px;
+        border-bottom:1px solid rgba(255, 255, 255, 0.1);
+        background:rgba(2, 6, 23, 0.55);
+      }
+      .imageModalTitle{
+        font-weight:650;
+        font-size:14px;
+      }
+      .imageModalBody{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:14px;
+      }
+      .imageModalBody img{
+        max-width:100%;
+        max-height:80vh;
+        border-radius:14px;
+        display:block;
+        box-shadow:0 20px 40px rgba(0, 0, 0, 0.35);
+      }
+
+      @media (max-width: 980px){
+        tbody tr{
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+        .formGrid{ grid-template-columns:1fr; }
+      }
+
+      @media (max-width: 640px){
+        .tableWrap{ padding:8px; }
+        tbody tr{ grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <div class="topbar">
+        <div class="topbarGroup">
+          <button id="addItemBtn" class="btn secondary" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14"></path><path d="M5 12h14"></path>
+            </svg>
+            Add Item
+          </button>
+        </div>
+        <div class="topbarGroup">
+          <button id="uploadCsvBtn" class="btn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            </svg>
+            Upload CSV
+          </button>
+          <input id="csvFile" type="file" accept=".csv" style="display:none" />
+          <label class="checkPill">
+            <input id="groupByCategoryToggle" type="checkbox" />
+            Group by category
+          </label>
+        </div>
+      </div>
+
+      <div id="categoryFilterCard" class="filterCard" hidden>
+        <div class="filterHeader">
+          <div class="filterTitle">Category Filters</div>
+        </div>
+        <div id="categoryCheckboxes" class="filterGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>IMG</th>
+                <th>NAME (EN)</th>
+                <th>NAME (CN)</th>
+                <th>QTY ORDERED</th>
+                <th>QTY ON HAND</th>
+                <th>UPDATED</th>
+                <th>SUPPLIER</th>
+                <th>CATEGORY</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <dialog id="itemDialog" class="modal">
+      <form id="itemForm" method="dialog">
+        <div class="modalHeader">
+          <div class="modalTitle" id="formTitle">Add Item</div>
+          <div class="hint" id="formSubtitle"></div>
+        </div>
+        <div class="modalBody">
+          <div class="formGrid">
+            <div class="formRow">
+              <label for="itemIdInput">ITEM ID</label>
+              <input id="itemIdInput" type="text" disabled />
+            </div>
+            <div class="formRow">
+              <label for="supplierInput">SUPPLIER *</label>
+              <input id="supplierInput" type="text" required />
+            </div>
+            <div class="formRow">
+              <label for="nameEnInput">NAME (EN) *</label>
+              <input id="nameEnInput" type="text" required />
+            </div>
+            <div class="formRow">
+              <label for="nameCnInput">NAME (CN)</label>
+              <input id="nameCnInput" type="text" />
+            </div>
+            <div class="formRow">
+              <label for="qtyOrderedInput">QTY ORDERED</label>
+              <input id="qtyOrderedInput" type="number" step="1" min="0" />
+            </div>
+            <div class="formRow">
+              <label for="qtyOnHandInput">QTY ON HAND</label>
+              <input id="qtyOnHandInput" type="number" step="1" min="0" />
+            </div>
+            <div class="formRow">
+              <label for="updatedInput">UPDATED (ON HAND)</label>
+              <input id="updatedInput" type="datetime-local" />
+            </div>
+          </div>
+          <div class="hint" style="margin-top:12px;">* required fields. Updating quantity on hand will auto-set the Updated date if empty.</div>
+        </div>
+        <div class="modalFooter">
+          <button id="cancelBtn" class="btn secondary" type="button">Cancel</button>
+          <button id="saveBtn" class="btn" type="submit">Save Item</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="imageDialog" class="imageModal">
+      <div class="imageModalHeader">
+        <div class="imageModalTitle" id="imageCaption">Item image</div>
+        <button id="imageCloseBtn" class="btn secondary" type="button">Close</button>
+      </div>
+      <div class="imageModalBody">
+        <img id="imagePreview" alt="Item image" />
+      </div>
+    </dialog>
+
+    <script>
+      const tbody = document.getElementById("tbody");
+      const uploadCsvBtn = document.getElementById("uploadCsvBtn");
+      const csvFile = document.getElementById("csvFile");
+      const addItemBtn = document.getElementById("addItemBtn");
+      const itemDialog = document.getElementById("itemDialog");
+      const itemForm = document.getElementById("itemForm");
+      const formTitle = document.getElementById("formTitle");
+      const formSubtitle = document.getElementById("formSubtitle");
+      const itemIdInput = document.getElementById("itemIdInput");
+      const supplierInput = document.getElementById("supplierInput");
+      const nameEnInput = document.getElementById("nameEnInput");
+      const nameCnInput = document.getElementById("nameCnInput");
+      const qtyOrderedInput = document.getElementById("qtyOrderedInput");
+      const qtyOnHandInput = document.getElementById("qtyOnHandInput");
+      const updatedInput = document.getElementById("updatedInput");
+      const cancelBtn = document.getElementById("cancelBtn");
+      const saveBtn = document.getElementById("saveBtn");
+      const imageDialog = document.getElementById("imageDialog");
+      const imagePreview = document.getElementById("imagePreview");
+      const imageCaption = document.getElementById("imageCaption");
+      const imageCloseBtn = document.getElementById("imageCloseBtn");
+      const groupByCategoryToggle = document.getElementById("groupByCategoryToggle");
+      const categoryFilterCard = document.getElementById("categoryFilterCard");
+      const categoryCheckboxes = document.getElementById("categoryCheckboxes");
+
+      let items = [];
+      let editingId = null;
+      let categories = [];
+      let groupByCategory = false;
+      let selectedCategoryFilters = new Set();
+      let knownCategories = new Set();
+      let showUncategorized = true;
+      let lastSavedItemId = null;
+      const UNCATEGORIZED_KEY = "__uncategorized__";
+      const ADD_CATEGORY_VALUE = "__add_category__";
+      const NO_CATEGORY_VALUE = "__no_category__";
+
+      function shortId(uuid) {
+        if (!uuid) return "—";
+        return uuid.length > 10 ? uuid.slice(0, 8).toUpperCase() : uuid;
+      }
+
+      function fmtDate(s) {
+        if (!s) return "—";
+        const d = new Date(s);
+        if (isNaN(d.getTime())) return "—";
+        return d.toLocaleString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function toLocalInputValue(s) {
+        if (!s) return "";
+        const d = new Date(s);
+        if (isNaN(d.getTime())) return "";
+        const pad = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      }
+
+      function readNumber(value) {
+        const t = value.trim();
+        if (t === "") return null;
+        const n = Number(t);
+        if (Number.isNaN(n)) return null;
+        return n;
+      }
+
+      function cleanCategory(value) {
+        return (value ?? "").toString().trim();
+      }
+
+      function normalizeCategories(list) {
+        const map = new Map();
+        list.forEach((c) => {
+          const cleaned = cleanCategory(c);
+          if (!cleaned) return;
+          const key = cleaned.toLowerCase();
+          if (!map.has(key)) map.set(key, cleaned);
+        });
+        return Array.from(map.values()).sort((a, b) =>
+          a.localeCompare(b, undefined, { sensitivity: "base" })
+        );
+      }
+
+      function availableCategories() {
+        const combined = [];
+        categories.forEach((c) => combined.push(c));
+        items.forEach((it) => combined.push(it?.category));
+        return normalizeCategories(combined);
+      }
+
+      function categoryFor(item) {
+        const raw = cleanCategory(item?.category);
+        if (!raw) return "";
+        const existing = availableCategories().find(
+          (c) => c.toLowerCase() === raw.toLowerCase()
+        );
+        return existing || raw;
+      }
+
+      async function loadCategories() {
+        try {
+          const res = await fetch("/api/categories", { cache: "no-store" });
+          if (!res.ok) throw new Error("Bad response");
+          const data = await res.json();
+          categories = Array.isArray(data) ? data : [];
+        } catch {
+          categories = [];
+        }
+      }
+
+      function rebuildCategoryFilters() {
+        const list = availableCategories();
+        const listLower = new Map(list.map((c) => [c.toLowerCase(), c]));
+        const nextSelected = new Set();
+
+        selectedCategoryFilters.forEach((sel) => {
+          const key = sel.toLowerCase();
+          if (listLower.has(key)) nextSelected.add(listLower.get(key));
+        });
+
+        list.forEach((cat) => {
+          const key = cat.toLowerCase();
+          if (!knownCategories.has(key)) {
+            nextSelected.add(cat);
+          }
+        });
+
+        selectedCategoryFilters = nextSelected;
+        knownCategories = new Set(list.map((c) => c.toLowerCase()));
+
+        categoryCheckboxes.innerHTML = "";
+
+        const uncLabel = document.createElement("label");
+        uncLabel.className = "filterItem";
+        const uncCheck = document.createElement("input");
+        uncCheck.type = "checkbox";
+        uncCheck.checked = showUncategorized;
+        uncCheck.onchange = () => {
+          showUncategorized = uncCheck.checked;
+          render();
+        };
+        const uncText = document.createElement("span");
+        uncText.textContent = "Uncategorized";
+        uncLabel.appendChild(uncCheck);
+        uncLabel.appendChild(uncText);
+        categoryCheckboxes.appendChild(uncLabel);
+
+        list.forEach((cat) => {
+          const label = document.createElement("label");
+          label.className = "filterItem";
+          const check = document.createElement("input");
+          check.type = "checkbox";
+          check.checked = selectedCategoryFilters.has(cat);
+          check.onchange = () => {
+            if (check.checked) {
+              selectedCategoryFilters.add(cat);
+            } else {
+              selectedCategoryFilters.delete(cat);
+            }
+            render();
+          };
+          const text = document.createElement("span");
+          text.textContent = cat;
+          label.appendChild(check);
+          label.appendChild(text);
+          categoryCheckboxes.appendChild(label);
+        });
+      }
+
+      function buildCategorySelect(currentCategory) {
+        const select = document.createElement("select");
+        select.className = "categorySelect";
+        const list = availableCategories();
+
+        const optNone = document.createElement("option");
+        optNone.value = NO_CATEGORY_VALUE;
+        optNone.textContent = "Uncategorized";
+        select.appendChild(optNone);
+
+        list.forEach((cat) => {
+          const opt = document.createElement("option");
+          opt.value = cat;
+          opt.textContent = cat;
+          select.appendChild(opt);
+        });
+
+        const optAdd = document.createElement("option");
+        optAdd.value = ADD_CATEGORY_VALUE;
+        optAdd.textContent = "+ Add category";
+        select.appendChild(optAdd);
+
+        select.value = currentCategory ? currentCategory : NO_CATEGORY_VALUE;
+        select.dataset.current = currentCategory || "";
+        return select;
+      }
+
+      async function setItemCategory(item, category) {
+        const res = await fetch(`/api/items/${item.item_id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ category }),
+        });
+        const out = await res.json();
+        if (!res.ok) {
+          alert(out.error || "Category update failed");
+          return false;
+        }
+        await loadItems();
+        return true;
+      }
+
+      async function handleCategorySelection(item, select) {
+        const previous = select.dataset.current || "";
+        const value = select.value;
+
+        if (value === ADD_CATEGORY_VALUE) {
+          const input = prompt("New category name:");
+          const cleaned = cleanCategory(input);
+          if (!cleaned) {
+            select.value = previous ? previous : NO_CATEGORY_VALUE;
+            return;
+          }
+
+          const existing = availableCategories().find(
+            (c) => c.toLowerCase() === cleaned.toLowerCase()
+          );
+          const finalValue = existing || cleaned;
+
+          const ok = await setItemCategory(item, finalValue);
+          if (!ok) {
+            select.value = previous ? previous : NO_CATEGORY_VALUE;
+          }
+          return;
+        }
+
+        if (value === NO_CATEGORY_VALUE) {
+          const ok = await setItemCategory(item, null);
+          if (!ok) select.value = previous ? previous : NO_CATEGORY_VALUE;
+          return;
+        }
+
+        const ok = await setItemCategory(item, value);
+        if (!ok) select.value = previous ? previous : NO_CATEGORY_VALUE;
+      }
+
+      function groupedItems(sourceItems) {
+        const groups = new Map();
+
+        sourceItems.forEach((it) => {
+          const cat = categoryFor(it);
+          const key = cat ? cat.toLowerCase() : UNCATEGORIZED_KEY;
+          const label = cat || "Uncategorized";
+
+          if (groupByCategory) {
+            if (!cat && !showUncategorized) return;
+            if (cat && !selectedCategoryFilters.has(cat)) {
+              return;
+            }
+          }
+
+          if (!groups.has(key)) {
+            groups.set(key, { label, items: [] });
+          }
+          groups.get(key).items.push(it);
+        });
+
+        const entries = Array.from(groups.entries());
+        entries.sort((a, b) => {
+          if (a[0] === UNCATEGORIZED_KEY) return 1;
+          if (b[0] === UNCATEGORIZED_KEY) return -1;
+          return a[1].label.localeCompare(b[1].label, undefined, { sensitivity: "base" });
+        });
+
+        return entries;
+      }
+
+      function iconUpload() {
+        return `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          </svg>
+        `;
+      }
+
+      function placeholderSvg() {
+        return `
+          <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="width:18px;height:18px">
+            <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+            <path d="M7 14l3-3 4 4 3-3 3 3"></path>
+            <circle cx="9" cy="9" r="1"></circle>
+          </svg>
+        `;
+      }
+
+      function resolveImageUrl(url) {
+        if (!url) return "";
+        if (!/^https?:\/\//i.test(url)) return url;
+        return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+      }
+
+      async function loadItems({ alertOnError = true } = {}) {
+        try {
+          const res = await fetch("/api/items", { cache: "no-store" });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(data.error || "Failed to load items.");
+          }
+          items = Array.isArray(data) ? data : [];
+          await loadCategories();
+          rebuildCategoryFilters();
+          render();
+          return true;
+        } catch (err) {
+          items = [];
+          rebuildCategoryFilters();
+          render();
+          if (alertOnError) {
+            alert(err.message || "Failed to load items.");
+          }
+          return false;
+        }
+      }
+
+      function render() {
+        tbody.innerHTML = "";
+
+        const renderItemRow = (it) => {
+          const tr = document.createElement("tr");
+          tr.dataset.itemId = it.item_id || "";
+          if (lastSavedItemId && it.item_id === lastSavedItemId) {
+            tr.classList.add("justSaved");
+          }
+
+          // IMG cell
+          const imgTd = document.createElement("td");
+          imgTd.dataset.label = "Image";
+          const imgWrap = document.createElement("div");
+          imgWrap.className = "imgCell";
+
+          const thumb = document.createElement("div");
+          thumb.className = "thumb";
+          if (it.image_url) {
+            const im = document.createElement("img");
+            im.src = resolveImageUrl(it.image_url);
+            im.alt = "item image";
+            im.onerror = () => {
+              thumb.innerHTML = placeholderSvg();
+            };
+            thumb.appendChild(im);
+            thumb.classList.add("clickable");
+            thumb.onclick = () => openImageDialog(it);
+          } else {
+            thumb.innerHTML = placeholderSvg();
+          }
+
+          const file = document.createElement("input");
+          file.type = "file";
+          file.accept = "image/*";
+          file.style.display = "none";
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "miniBtn " + (it.image_url ? "" : "primary");
+          btn.innerHTML = `${iconUpload()} ${it.image_url ? "Change" : "Add"}`;
+          btn.onclick = () => file.click();
+
+          file.onchange = async () => {
+            if (!file.files || !file.files[0]) return;
+            const fd = new FormData();
+            fd.append("image", file.files[0]);
+
+            btn.disabled = true;
+            btn.style.opacity = "0.7";
+
+            const r = await fetch(`/api/items/${it.item_id}/image`, { method: "POST", body: fd });
+            const out = await r.json();
+
+            btn.disabled = false;
+            btn.style.opacity = "1";
+
+            if (!r.ok) return alert(out.error || "Upload failed");
+            await loadItems();
+          };
+
+          imgWrap.appendChild(thumb);
+          imgWrap.appendChild(btn);
+          imgWrap.appendChild(file);
+          imgTd.appendChild(imgWrap);
+
+          const enTd = document.createElement("td");
+          enTd.dataset.label = "Name (EN)";
+          enTd.innerHTML = `<span class="pill nameWrap" title="${it.item_name_english || ""}">${it.item_name_english || "—"}</span>`;
+
+          const cnTd = document.createElement("td");
+          cnTd.dataset.label = "Name (CN)";
+          const cnPill = document.createElement("span");
+          cnPill.className = "pill nameWrap editable";
+          cnPill.title = it.item_name_chinese ? "Click to edit CN name" : "Click to add CN name";
+          cnPill.textContent = it.item_name_chinese || "—";
+          cnPill.onclick = () => openItemDialog("edit", it, { focus: "cn" });
+          cnTd.appendChild(cnPill);
+
+          const qoTd = document.createElement("td");
+          qoTd.dataset.label = "Qty Ordered";
+          qoTd.innerHTML = `<span class="pill mono">${(it.quantity_ordered ?? "—")}</span>`;
+
+          const qhTd = document.createElement("td");
+          qhTd.dataset.label = "Qty On Hand";
+          qhTd.innerHTML = `<span class="pill mono">${(it.quantity_on_hand ?? "—")}</span>`;
+
+          const updTd = document.createElement("td");
+          updTd.dataset.label = "Updated";
+          updTd.innerHTML = `<div class="updatedCell">${fmtDate(it.on_hand_quantity_updated_date)}</div>`;
+
+          const supplierTd = document.createElement("td");
+          supplierTd.dataset.label = "Supplier";
+          supplierTd.innerHTML = `<span class="pill trunc" title="${it.supplier || ""}">${it.supplier || "—"}</span>`;
+
+          const catTd = document.createElement("td");
+          catTd.dataset.label = "Category";
+          const currentCategory = categoryFor(it);
+          const catSelect = buildCategorySelect(currentCategory);
+          catSelect.onchange = () => handleCategorySelection(it, catSelect);
+          catTd.appendChild(catSelect);
+
+          const actionsTd = document.createElement("td");
+          actionsTd.dataset.label = "Actions";
+          const editBtn = document.createElement("button");
+          editBtn.type = "button";
+          editBtn.className = "miniBtn";
+          editBtn.textContent = "Edit Info";
+          editBtn.onclick = () => openItemDialog("edit", it);
+          actionsTd.appendChild(editBtn);
+
+          tr.appendChild(imgTd);
+          tr.appendChild(enTd);
+          tr.appendChild(cnTd);
+          tr.appendChild(qoTd);
+          tr.appendChild(qhTd);
+          tr.appendChild(updTd);
+          tr.appendChild(supplierTd);
+          tr.appendChild(catTd);
+          tr.appendChild(actionsTd);
+
+          tbody.appendChild(tr);
+        };
+
+        if (groupByCategory) {
+          const groups = groupedItems(items);
+          groups.forEach(([, group]) => {
+            const headerRow = document.createElement("tr");
+            headerRow.className = "groupRow";
+            const headerCell = document.createElement("td");
+            headerCell.colSpan = 9;
+            headerCell.innerHTML = `
+              <div class="groupHeader">
+                <span class="groupPill">${group.label}</span>
+                <span class="groupCountPill">${group.items.length}</span>
+              </div>
+            `;
+            headerRow.appendChild(headerCell);
+            tbody.appendChild(headerRow);
+
+            group.items.forEach((it) => renderItemRow(it));
+          });
+        } else {
+          items.forEach((it) => renderItemRow(it));
+        }
+
+        const savedRow = tbody.querySelector("tr.justSaved");
+        if (savedRow) {
+          savedRow.scrollIntoView({ behavior: "smooth", block: "center" });
+          window.setTimeout(() => {
+            savedRow.classList.remove("justSaved");
+          }, 1800);
+          lastSavedItemId = null;
+        }
+      }
+
+      function openItemDialog(mode, item = {}, opts = {}) {
+        editingId = mode === "edit" ? item.item_id : null;
+        formTitle.textContent = mode === "edit" ? "Edit Item" : "Add Item";
+        formSubtitle.textContent = mode === "edit" ? shortId(item.item_id) : "New item";
+        itemIdInput.value = item.item_id || "New";
+        supplierInput.value = item.supplier || "";
+        nameEnInput.value = item.item_name_english || "";
+        nameCnInput.value = item.item_name_chinese || "";
+        qtyOrderedInput.value = item.quantity_ordered ?? "";
+        qtyOnHandInput.value = item.quantity_on_hand ?? "";
+        updatedInput.value = toLocalInputValue(item.on_hand_quantity_updated_date);
+        itemDialog.showModal();
+
+        if (opts.focus === "cn") {
+          setTimeout(() => {
+            nameCnInput.focus();
+            nameCnInput.select();
+          }, 0);
+        }
+      }
+
+      function closeItemDialog() {
+        itemDialog.close();
+        itemForm.reset();
+        editingId = null;
+      }
+
+      function openImageDialog(item) {
+        if (!item?.image_url) return;
+        imagePreview.src = resolveImageUrl(item.image_url);
+        imagePreview.alt = item.item_name_english || "Item image";
+        imageCaption.textContent = item.item_name_english || "Item image";
+        imageDialog.showModal();
+      }
+
+      // Upload CSV
+      uploadCsvBtn.onclick = () => csvFile.click();
+
+      csvFile.onchange = async () => {
+        const f = csvFile.files?.[0];
+        if (!f) return;
+
+        const fd = new FormData();
+        fd.append("file", f);
+
+        uploadCsvBtn.disabled = true;
+        uploadCsvBtn.style.opacity = "0.75";
+
+        const res = await fetch("/api/upload-csv", { method: "POST", body: fd });
+        const out = await res.json();
+
+        uploadCsvBtn.disabled = false;
+        uploadCsvBtn.style.opacity = "1";
+        csvFile.value = "";
+
+        if (!res.ok) return alert(out.error || "CSV upload failed");
+        alert(`OK: ${out.inserted} rows inserted`);
+        await loadItems();
+      };
+
+      addItemBtn.onclick = () => openItemDialog("add");
+      cancelBtn.onclick = () => closeItemDialog();
+      imageCloseBtn.onclick = () => imageDialog.close();
+      groupByCategoryToggle.onchange = () => {
+        groupByCategory = groupByCategoryToggle.checked;
+        categoryFilterCard.hidden = !groupByCategory;
+        render();
+      };
+      itemDialog.addEventListener("click", (e) => {
+        if (e.target === itemDialog) closeItemDialog();
+      });
+      imageDialog.addEventListener("click", (e) => {
+        if (e.target === imageDialog) imageDialog.close();
+      });
+
+      itemForm.onsubmit = async (e) => {
+        e.preventDefault();
+
+        const supplier = supplierInput.value.trim();
+        const nameEn = nameEnInput.value.trim();
+        const nameCn = nameCnInput.value.trim();
+        const qtyOrdered = readNumber(qtyOrderedInput.value);
+        const qtyOnHand = readNumber(qtyOnHandInput.value);
+        const updatedVal = updatedInput.value;
+
+        if (!supplier || !nameEn) {
+          return alert("Supplier and Name (EN) are required.");
+        }
+
+        const payload = {
+          supplier,
+          item_name_english: nameEn,
+          item_name_chinese: nameCn || null,
+          quantity_ordered: qtyOrdered,
+          quantity_on_hand: qtyOnHand,
+        };
+
+        if (updatedVal) {
+          const d = new Date(updatedVal);
+          if (isNaN(d.getTime())) {
+            return alert("Updated date is invalid.");
+          }
+          payload.on_hand_quantity_updated_date = d.toISOString();
+        }
+
+        saveBtn.disabled = true;
+        saveBtn.style.opacity = "0.7";
+
+        const isEdit = Boolean(editingId);
+        const method = isEdit ? "PATCH" : "POST";
+        const url = isEdit ? `/api/items/${editingId}` : "/api/items";
+        let res;
+        let out = {};
+        try {
+          res = await fetch(url, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          out = await res.json().catch(() => ({}));
+        } catch (err) {
+          saveBtn.disabled = false;
+          saveBtn.style.opacity = "1";
+          alert(`Save failed: ${err.message || err}`);
+          return;
+        }
+
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = "1";
+
+        if (!res.ok) {
+          return alert(out.error || "Save failed");
+        }
+
+        if (!isEdit && groupByCategory) {
+          const savedCategory = cleanCategory(out?.category);
+          if (savedCategory) {
+            selectedCategoryFilters.add(savedCategory);
+          } else {
+            showUncategorized = true;
+          }
+        }
+
+        const savedItemId = out?.item_id || editingId || null;
+        lastSavedItemId = savedItemId;
+        closeItemDialog();
+        const reloaded = await loadItems({ alertOnError: false });
+
+        if (!reloaded) {
+          lastSavedItemId = null;
+          alert("Item saved, but reloading the list failed.");
+          return;
+        }
+
+        if (savedItemId && !items.some((it) => it.item_id === savedItemId)) {
+          lastSavedItemId = null;
+          alert("Item saved, but the refreshed list did not return it. Check filters or database select permissions.");
+        }
+      };
+
+      loadItems();
+    </script>
+  </body>
+</html>

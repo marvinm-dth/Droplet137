@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Scanner Detection</title>
+    <style>
+        body {
+            font-family: "Arial", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 350px;
+            transition: background-color 0.3s ease-in-out;
+        }
+        h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        p {
+            font-size: 14px;
+            color: #555;
+        }
+        input {
+            width: calc(100% - 50px);
+            padding: 12px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+            text-align: center;
+            transition: border 0.3s;
+            margin-top: 10px;
+        }
+        input:focus {
+            border-color: #007BFF;
+        }
+        .message {
+            margin-top: 15px;
+            font-size: 16px;
+            color: #007BFF;
+            font-weight: bold;
+            display: none;
+        }
+        .slider-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .slider {
+            width: calc(100% - 50px);
+        }
+        .threshold-label {
+            font-size: 14px;
+            color: #555;
+            font-weight: bold;
+        }
+        .key-instructions {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #444;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .highlight {
+            color: #007BFF;
+            font-weight: bold;
+        }
+    </style>
+<!--     <link rel="manifest" crossorigin="use-credentials" href="/manifest.json">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(() => console.log('Service Worker Registered'))
+                .catch(err => console.error('Service Worker Registration Failed', err));
+        }
+    </script> -->
+</head>
+<body>
+    <div class="container" id="container">
+        <h2>Barcode Scanner Detection</h2>
+        <p>Map buttons to <span class="highlight">F2, F4, F8, or F9</span> and change the background color</p>
+
+        <input type="text" id="scannerInput" placeholder="Scan here..." autofocus>
+        <p class="message" id="scanMessage"></p>
+
+        <div class="slider-container">
+            <label class="threshold-label">Scan Threshold: <span id="thresholdValue">50</span> ms</label>
+            <input type="range" id="thresholdSlider" class="slider" min="5" max="200" step="5" value="50">
+        </div>
+    </div>
+
+    <script>
+        let scanBuffer = "";
+        let lastScanTime = 0;
+
+        document.addEventListener("keydown", (event) => {
+            const currentTime = new Date().getTime();
+            const scanThreshold = window.scanThreshold || 50;
+
+            if (currentTime - lastScanTime > scanThreshold) {
+                scanBuffer = "";
+            }
+
+            if (event.key === "Enter") {
+                if (scanBuffer.length > 3) {
+                    const scanEvent = new CustomEvent("scan_detect", { detail: { value: scanBuffer } });
+                    document.dispatchEvent(scanEvent);
+                }
+                scanBuffer = "";
+            } else {
+                if(event.key == "Shift") return;
+                if(event.key == "Unidentified") return;
+                scanBuffer += event.key;
+            }
+
+            lastScanTime = currentTime;
+
+            let customEventName = null;
+            switch (event.key) {
+                case "F2":
+                    customEventName = "custom_btn_1";
+                    break;
+                case "F4":
+                    customEventName = "custom_btn_2";
+                    break;
+                case "F8":
+                    customEventName = "custom_btn_3";
+                    break;
+                case "F9":
+                    customEventName = "custom_btn_4";
+                    break;
+            }
+
+            if (customEventName) {
+                const customEvent = new CustomEvent(customEventName);
+                document.dispatchEvent(customEvent);
+            }
+        });
+
+    </script>
+
+    <script>
+        const thresholdSlider = document.getElementById("thresholdSlider");
+        const thresholdValueLabel = document.getElementById("thresholdValue");
+
+        thresholdSlider.addEventListener("input", () => {
+            thresholdValueLabel.textContent = thresholdSlider.value;
+            window.scanThreshold = parseInt(thresholdSlider.value);
+        });
+
+        document.addEventListener("scan_detect", (e) => {
+            const scanMessage = document.getElementById("scanMessage");
+            scanMessage.textContent = `Scanning detected:\n${e.detail.value}`;
+            scanMessage.style.display = "block";
+
+            setTimeout(() => {
+                scanMessage.style.display = "none";
+            }, 3000);
+        });
+
+        document.addEventListener("custom_btn_1", () => {
+            document.getElementById("container").style.backgroundColor = "#E3F2FD "; // Nice Blue
+        });
+
+        document.addEventListener("custom_btn_2", () => {
+            document.getElementById("container").style.backgroundColor = "#D4EDDA "; // Nice Green
+        });
+
+        document.addEventListener("custom_btn_3", () => {
+            document.getElementById("container").style.backgroundColor = "#FFF3CD "; // Nice Yellow
+        });
+
+        document.addEventListener("custom_btn_4", () => {
+            document.getElementById("container").style.backgroundColor = "#FDEDEC "; // Nice Red
+        });
+
+        window.scanThreshold = parseInt(thresholdSlider.value);
+    </script>
+</body>
+</html>

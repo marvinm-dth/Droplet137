@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="scripts/daypilot-all.min.js"></script>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        #login-screen,
+        #dashboard,
+        #user-info-panel {
+            overflow-y: auto;
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .user-table th,
+        .user-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .user-table th {
+            background-color: #f2f2f2;
+        }
+
+        .user-form {
+            margin-top: 20px;
+        }
+
+        .user-form input,
+        .user-form label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        #login-screen,
+        #dashboard {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #dashboard {
+            display: none;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            padding: 20px;
+        }
+
+        #user-info-panel {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            height: 100%;
+            background-color: #f0f0f0;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .user-table th,
+        .user-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .user-table th {
+            background-color: #f2f2f2;
+        }
+
+        .user-form {
+            margin-top: 20px;
+        }
+
+        .user-form input,
+        .user-form label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .logout-button {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .card-row {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .card {
+            width: 200px;
+            height: 150px;
+            margin: 10px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow: auto;
+        }
+
+        .card.enlarged {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            z-index: 1000;
+            overflow: auto;
+        }
+
+        .back-button,
+        .close-button,
+        .user-info-button,
+        .add-project-button {
+            position: fixed;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .back-button {
+            top: 20px;
+            left: 20px;
+        }
+
+        .close-button {
+            top: 20px;
+            right: 20px;
+        }
+
+        .user-info-button {
+            top: 20px;
+            right: 20px;
+        }
+
+        .add-project-button {
+            bottom: 20px;
+            right: 20px;
+        }
+
+        .project-cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .project-card {
+            width: 200px;
+            height: 150px;
+            margin: 10px;
+            padding: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+
+
+        .project-card.zoomed {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            z-index: 1002;
+            background-color: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            cursor: default;
+            overflow: auto;
+            padding: 20px;
+            /* Add some padding */
+            border-radius: 10px;
+            /* Rounded corners */
+        }
+
+
+        .progress-bar {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .progress {
+            width: 0;
+            height: 20px;
+            background-color: #4CAF50;
+            border-radius: 5px;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+        }
+
+        .tab.active {
+            background-color: #fff;
+            border-bottom: none;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .search-field {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        .employee-card {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+
+        .employee-picture {
+            width: 50px;
+            height: 50px;
+            background-color: #ddd;
+            border-radius: 25px;
+            margin-right: 10px;
+        }
+
+        .employee-info {
+            flex-grow: 1;
+        }
+
+        .task {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 5px;
+            background-color: #e0e0e0;
+            border-radius: 15px;
+        }
+
+        .assign-task-button {
+            width: 30px;
+            height: 30px;
+            border-radius: 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .expand-button {
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .logout-button {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="login-screen">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
+
+    <div id="dashboard">
+        <button class="user-info-button" onclick="showUserInfo()">User Info</button>
+        <div class="card-row">
+            <div class="card" onclick="enlargeCard(this)" data-content="projects">Projects</div>
+            <div class="card" onclick="enlargeCard(this)">My Tasks</div>
+            <div class="card" onclick="enlargeCard(this)">Material Lookup</div>
+        </div>
+        <div class="card-row">
+            <div class="card" onclick="enlargeCard(this)">BOMs</div>
+            <div class="card" onclick="enlargeCard(this)">Sales</div>
+            <div class="card" onclick="enlargeCard(this)">Material Pull</div>
+        </div>
+        <div class="card-row">
+            <div class="card" onclick="enlargeCard(this)">Resources</div>
+            <div class="card" onclick="enlargeCard(this)">Tools</div>
+            <div class="card" onclick="enlargeCard(this)">Checklist Approval</div>
+        </div>
+        <div class="card-row">
+            <div class="card" onclick="enlargeCard(this)">Noah Inspection Reports</div>
+        </div>
+    </div>
+
+    <div id="user-info-panel">
+        <h2>User Management</h2>
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>EID</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Password</th>
+                    <th>Sites Access</th>
+                    <th>Tech Dumb</th>
+                    <th>User Manager</th>
+                    <th>Project Manager</th>
+                    <th>Is Jacob</th>
+                    <th>IT Access</th>
+                    <th>Status Logged</th>
+                    <th>Login Duration</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="user-list">
+                <!-- User list will be populated here -->
+            </tbody>
+        </table>
+        <button onclick="addUser()">Add New User</button>
+        <button class="back-button" onclick="hideUserInfo()">Back</button>
+    </div>
+    <button class="back-button" onclick="restoreCard()" style="display:none;">Back</button>
+
+    <script>
+
+        let taskMap = {}; // Global map to store tasks by id_specific
+
+        function login() {
+            const username = $('#username').val();
+            const password = $('#password').val();
+
+            $.ajax({
+                url: 'http://137.184.148.164:5021/authenticate', // The Node.js server URL
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ username, password }),
+                success: function (response) {
+                    if (response.token) {
+                        // Store the token in memory (or local storage, but here we'll use a variable)
+                        sessionStorage.setItem('authToken', response.token);
+
+                        // Load the dashboard
+                        $('#login-screen').hide();
+                        $('#dashboard').show();
+                        $('#info-username').text(username);
+                        // Populate other user information...
+                    } else {
+                        alert('Invalid login credentials.');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert('Error during authentication: ' + error);
+                }
+            });
+        }
+
+        function logout() {
+            sessionStorage.removeItem('authToken');
+            $('#dashboard').hide();
+            $('#login-screen').show();
+            $('#username').val('');
+            $('#password').val('');
+        }
+        function showUserInfo() {
+            document.getElementById('dashboard').style.left = '-100%';
+            document.getElementById('user-info-panel').style.left = '0';
+            fetchUsers();
+        }
+
+
+
+        function fetchUsers() {
+            const token = sessionStorage.getItem('authToken');
+            $.ajax({
+                url: 'http://137.184.148.164:5021/users',
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                success: function (users) {
+                    const userList = $('#user-list');
+                    userList.empty();
+                    users.forEach(user => {
+                        userList.append(`
+                            <tr data-eid="${user.eid || ''}">
+                                <td onclick="editCell(this, 'text')">${user.eid || ''}</td>
+                                <td onclick="editCell(this, 'text')">${user.username || ''}</td>
+                                <td onclick="editCell(this, 'text')">${user.email || ''}</td>
+                                <td onclick="editCell(this, 'password')">********</td>
+                                <td onclick="editCell(this, 'text')">${(user.sites_access_level || []).join(', ')}</td>
+                                <td>${createCheckbox(user.is_techdumb)}</td>
+                                <td>${createCheckbox(user.user_manager)}</td>
+                                <td>${createCheckbox(user.project_manager)}</td>
+                                <td>${createCheckbox(user.is_user_jacob)}</td>
+                                <td>${createCheckbox(user.it_access)}</td>
+                                <td>${createCheckbox(user.status_logged)}</td>
+                                <td onclick="editCell(this, 'number')">${user.login_duration || 0}</td>
+                                <td>
+                                    <button onclick="deleteUser('${user.eid || ''}')">Delete</button>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                },
+                error: function (xhr, status, error) {
+                    alert('Error fetching users: ' + error);
+                }
+            });
+        }
+
+        function createCheckbox(checked) {
+            return `<input type="checkbox" ${checked ? 'checked' : ''} onchange="updateUser(this)">`;
+        }
+
+        function editCell(cell, type) {
+            const currentValue = $(cell).text();
+            let input;
+
+            if (type === 'password') {
+                input = $('<input>').attr('type', 'password').val('');
+            } else if (type === 'number') {
+                input = $('<input>').attr('type', 'number').val(currentValue);
+            } else {
+                input = $('<input>').attr('type', 'text').val(currentValue);
+            }
+
+            $(cell).html(input);
+            input.focus();
+
+            input.on('blur', function () {
+                let newValue = $(this).val();
+                if (type === 'password') {
+                    newValue = newValue ? '********' : '';
+                }
+                $(cell).text(newValue);
+                updateUser(cell);
+            });
+
+            input.on('keypress', function (e) {
+                if (e.which === 13) {
+                    $(this).blur();
+                }
+            });
+        }
+
+
+        function updateUser(element) {
+            const row = $(element).closest('tr');
+            const eid = row.data('eid');
+            const token = sessionStorage.getItem('authToken');
+
+            const userData = {
+                eid: row.find('td:eq(0)').text() || null,
+                username: row.find('td:eq(1)').text() || null,
+                email: row.find('td:eq(2)').text() || null,
+                password: row.find('td:eq(3)').text() !== '********' ? row.find('td:eq(3)').text() : undefined,
+                sites_access_level: row.find('td:eq(4)').text() ? row.find('td:eq(4)').text().split(',').map(s => s.trim()) : [],
+                is_techdumb: row.find('td:eq(5) input').prop('checked'),
+                user_manager: row.find('td:eq(6) input').prop('checked'),
+                project_manager: row.find('td:eq(7) input').prop('checked'),
+                is_user_jacob: row.find('td:eq(8) input').prop('checked'),
+                it_access: row.find('td:eq(9) input').prop('checked'),
+                status_logged: row.find('td:eq(10) input').prop('checked'),
+                login_duration: parseInt(row.find('td:eq(11)').text()) || 0
+            };
+
+            $.ajax({
+                url: `http://137.184.148.164:5021/users/${eid}`,
+                method: 'PUT',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                contentType: 'application/json',
+                data: JSON.stringify(userData),
+                success: function (response) {
+                    console.log('User updated successfully');
+                },
+                error: function (xhr, status, error) {
+                    alert('Error updating user: ' + error);
+                    fetchUsers(); // Refresh the table to revert changes
+                }
+            });
+        }
+
+
+        function deleteUser(eid) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                const token = sessionStorage.getItem('authToken');
+                $.ajax({
+                    url: `http://137.184.148.164:5021/users/${eid}`,
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    success: function (response) {
+                        alert('User deleted successfully');
+                        fetchUsers();
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Error deleting user: ' + error);
+                    }
+                });
+            }
+        }
+
+        function addUser() {
+            const newRow = $(`
+                <tr data-eid="new">
+                    <td onclick="editCell(this, 'text')">New EID</td>
+                    <td onclick="editCell(this, 'text')">New Username</td>
+                    <td onclick="editCell(this, 'text')">email@example.com</td>
+                    <td onclick="editCell(this, 'password')"></td>
+                    <td onclick="editCell(this, 'text')">site1, site2</td>
+                    <td>${createCheckbox(false)}</td>
+                    <td>${createCheckbox(false)}</td>
+                    <td>${createCheckbox(false)}</td>
+                    <td>${createCheckbox(false)}</td>
+                    <td>${createCheckbox(false)}</td>
+                    <td>${createCheckbox(false)}</td>
+                    <td onclick="editCell(this, 'number')">0</td>
+                    <td>
+                        <button onclick="saveNewUser(this)">Save</button>
+                        <button onclick="$(this).closest('tr').remove()">Cancel</button>
+                    </td>
+                </tr>
+            `);
+            $('#user-list').append(newRow);
+        }
+
+
+
+        function saveNewUser(button) {
+            const row = $(button).closest('tr');
+            const userData = {
+                eid: row.find('td:eq(0)').text() || null,
+                username: row.find('td:eq(1)').text() || null,
+                email: row.find('td:eq(2)').text() || null,
+                password: row.find('td:eq(3)').text() || null,
+                sites_access_level: row.find('td:eq(4)').text() ? row.find('td:eq(4)').text().split(',').map(s => s.trim()) : [],
+                is_techdumb: row.find('td:eq(5) input').prop('checked'),
+                user_manager: row.find('td:eq(6) input').prop('checked'),
+                project_manager: row.find('td:eq(7) input').prop('checked'),
+                is_user_jacob: row.find('td:eq(8) input').prop('checked'),
+                it_access: row.find('td:eq(9) input').prop('checked'),
+                status_logged: row.find('td:eq(10) input').prop('checked'),
+                login_duration: parseInt(row.find('td:eq(11)').text()) || 0
+            };
+
+            const token = sessionStorage.getItem('authToken');
+
+            $.ajax({
+                url: 'http://137.184.148.164:5021/users',
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                contentType: 'application/json',
+                data: JSON.stringify(userData),
+                success: function (response) {
+                    console.log('User added successfully');
+                    fetchUsers(); // Refresh the user list
+                },
+                error: function (xhr, status, error) {
+                    alert('Error adding user: ' + error);
+                    fetchUsers(); // Refresh the user list to revert changes
+                }
+            });
+        }
+
+        function hideUserInfo() {
+            document.getElementById('dashboard').style.left = '0';
+            document.getElementById('user-info-panel').style.left = '100%';
+        }
+
+
+
+        // function enlargeCard(card) {
+        //     $(card).data('original-content', $(card).html());  // Store original content
+        //     $(card).addClass('enlarged');
+        //     $('.back-button').show();
+
+        //     if ($(card).data('content') === 'projects') {
+        //         let projectsContent = `
+        //     <h2>Projects</h2>
+        //     <div id="scheduler"></div>
+        //     <div class="project-cards-container">
+        //         ${generateProjectCards()}
+        //     </div>
+        //     <button class="add-project-button" onclick="addProject()">Add Project</button>
+        // `;
+        //         $(card).html(projectsContent);
+        //     } else {
+        //         $(card).html('<h2>' + $(card).text() + '</h2><p>This is the detailed content for ' + $(card).text() + '</p>');
+        //     }
+        // }
+
+        // function enlargeCard(card) {
+        //     $(card).data('original-content', $(card).html());
+        //     $(card).addClass('enlarged');
+        //     $('.back-button').show();
+
+        //     if ($(card).data('content') === 'projects') {
+        //         let projectsContent = `
+        //     <h2>Projects</h2>
+        //     <div id="scheduler"></div>
+
+        //     <div class="project-cards-container">
+        //         ${generateProjectCards()}
+        //     </div>
+        //     <button class="add-project-button" onclick="addProject()">Add Project</button>
+        // `;
+        //         $(card).html(projectsContent);
+        //         fetchEmployeeData(sessionStorage.getItem('authToken'));
+        //     } else {
+        //         $(card).html('<h2>' + $(card).text() + '</h2><p>This is the detailed content for ' + $(card).text() + '</p>');
+        //     }
+        // }
+
+
+        function enlargeCard(card) {
+            $(card).data('original-content', $(card).html());
+            $(card).addClass('enlarged');
+            $('.back-button').show();
+
+            if ($(card).data('content') === 'projects') {
+                let projectsContent = `
+            <h2>Projects</h2>
+            <div id="scheduler"></div>
+            <div class="project-cards-container">
+                ${generateProjectCards()}
+            </div>
+            <button class="add-project-button" onclick="addProject()">Add Project</button>
+        `;
+                $(card).html(projectsContent);
+                fetchEmployeeData(sessionStorage.getItem('authToken'));
+
+                // Prevent card from refreshing when clicking on scheduler or project cards
+                $('#scheduler, .project-card').on('click', function (e) {
+                    e.stopPropagation();
+                });
+            } else {
+                $(card).html('<h2>' + $(card).text() + '</h2><p>This is the detailed content for ' + $(card).text() + '</p>');
+            }
+        }
+        function generateProjectCards() {
+            const projects = [
+                { name: "Project A", progress: 70 },
+                { name: "Project B", progress: 30 },
+                { name: "Project C", progress: 90 },
+                { name: "Project D", progress: 50 },
+                { name: "Project E", progress: 10 }
+            ];
+
+            return projects.map(project => `
+                <div class="project-card" onclick="zoomProjectCard(this)" data-name="${project.name}" data-progress="${project.progress}">
+                    <h3>${project.name}</h3>
+                    <div class="progress-bar"><div class="progress" style="width:${project.progress}%">${project.progress}%</div></div>
+                </div>
+            `).join('');
+        }
+
+
+
+        function zoomProjectCard(card) {
+            const projectName = $(card).data('name');
+            const projectProgress = $(card).data('progress');
+
+            $(card).addClass('zoomed');
+            $(card).html(`
+        <div class="card-header">
+            <button class="close-button" onclick="closeProjectCard(event, this)">Close</button>
+            <h2>${projectName}</h2>
+        </div>
+        <div class="progress-bar">
+            <div class="progress" style="width:${projectProgress}%">${projectProgress}%</div>
+        </div>
+        <iframe src="http://orcagroup.io/dth" width="100%" height="600px" frameborder="0"></iframe>
+    `);
+
+            event.stopPropagation();
+        }
+
+
+        function generateEmployeeCards() {
+            const employees = [
+                { name: "John Doe", tasks: ["Task 1", "Task 2"] },
+                { name: "Jane Smith", tasks: ["Task 3", "Task 4", "Task 5"] },
+                { name: "Bob Johnson", tasks: ["Task 6"] }
+            ];
+
+            return employees.map(employee => `
+                <div class="employee-card">
+                    <div class="employee-picture"></div>
+                    <div class="employee-info">
+                        <h4>${employee.name}</h4>
+                        <div class="tasks">
+                            ${employee.tasks.map(task => `<span class="task">${task}</span>`).join('')}
+                        </div>
+                    </div>
+                    <button class="assign-task-button">+</button>
+                    <span class="expand-button" onclick="expandEmployeeCard(this)">▼</span>
+                </div>
+            `).join('');
+        }
+
+        function expandEmployeeCard(button) {
+            $(button).closest('.employee-card').find('.tasks').toggleClass('expanded');
+        }
+
+        function closeProjectCard(event, button) {
+            event.stopPropagation();
+            const $card = $(button).closest('.project-card');
+            const projectName = $card.find('h2').text();
+            const projectProgress = $card.find('.progress').text();
+            $card.removeClass('zoomed').html(`
+                <h3>${projectName}</h3>
+                <div class="progress-bar"><div class="progress" style="width:${projectProgress}">${projectProgress}</div></div>
+            `);
+        }
+
+        function switchTab(tab, contentId) {
+            $(tab).siblings().removeClass('active');
+            $(tab).addClass('active');
+            $(tab).closest('.project-card').find('.tab-content').removeClass('active');
+            $(tab).closest('.project-card').find(`#${contentId}`).addClass('active');
+        }
+
+
+        function restoreCard() {
+            $('.card.enlarged').each(function () {
+                $(this).removeClass('enlarged');
+                const originalContent = $(this).data('original-content');
+                if (originalContent) {
+                    $(this).html(originalContent);
+                }
+            });
+            $('.back-button').hide();
+        }
+
+        function addProject() {
+            alert('Add Project functionality to be implemented');
+        }
+
+        // function fetchEmployeeData(token) {
+        //     $.ajax({
+        //         url: 'http://137.184.148.164:5019/employees-tasks-details',
+        //         method: 'GET',
+        //         headers: {
+        //             'Authorization': `Bearer ${token}`
+        //         },
+        //         success: function (data) {
+        //             console.log('Received employee data:', data);
+        //             initializeScheduler(data);
+        //             populateEmployeeTaskDetails(data);
+        //         },
+        //         error: function (xhr, status, error) {
+        //             console.error('Failed to fetch employee data:', error);
+        //         }
+        //     });
+        // }
+
+        // function fetchEmployeeData(token) {
+        //     $.ajax({
+        //         url: 'http://137.184.148.164:5019/employees-tasks-details',
+        //         method: 'GET',
+        //         headers: {
+        //             'Authorization': `Bearer ${token}`
+        //         },
+        //         success: function (data) {
+        //             console.log('Received employee data:', data);
+
+        //             // Populate the global taskMap
+        //             data.forEach(employee => {
+        //                 if (Array.isArray(employee.tasks)) {
+        //                     employee.tasks.forEach(task => {
+        //                         if (task && task.id_specific) {
+        //                             taskMap[task.id_specific] = task;
+        //                         }
+        //                     });
+        //                 }
+        //             });
+
+        //             initializeScheduler(data);
+        //             populateEmployeeTaskDetails(data);
+        //         },
+        //         error: function (xhr, status, error) {
+        //             console.error('Failed to fetch employee data:', error);
+        //         }
+        //     });
+        // }
+
+        let employeeTasksMap = {}; // Global map to store tasks by employee_id
+
+
+        function fetchEmployeeData(token) {
+            $.ajax({
+                url: 'http://137.184.148.164:5019/employees-tasks-details',
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                success: function (data) {
+                    console.log('Received employee data:', data);
+
+                    // Initialize employeeTasksMap
+                    employeeTasksMap = {};
+
+                    // Populate the global employeeTasksMap
+                    data.forEach(employee => {
+                        if (Array.isArray(employee.tasks)) {
+                            // Map employee_id to their tasks
+                            employeeTasksMap[employee.employee_id] = employee.tasks;
+                        } else {
+                            console.warn('No tasks for employee:', employee);
+                            employeeTasksMap[employee.employee_id] = [];
+                        }
+                    });
+
+                    // Console log the employeeTasksMap for debugging
+                    console.log('Employee Tasks Map:', employeeTasksMap);
+
+                    initializeScheduler(data);
+                    populateEmployeeTaskDetails(data);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Failed to fetch employee data:', error);
+                }
+            });
+        }
+
+        function initializeScheduler(employees) {
+            const scheduler = new DayPilot.Scheduler("scheduler", {
+                startDate: DayPilot.Date.today().addDays(-2),
+                days: 3,
+                scale: "Hour",
+                cellDuration: 60,
+                timeHeaders: [
+                    { groupBy: "Day", format: "dddd, MMMM d" },
+                    { groupBy: "Hour", format: "h tt" }
+                ],
+                cellWidth: 50,
+                eventMoveHandling: "Update",
+                eventResizeHandling: "Update",
+                eventClickHandling: "Enabled",
+                onTimeRangeSelected: async (args) => {
+                    const modal = await DayPilot.Modal.prompt("New event name:", "New Event");
+                    if (modal.result) {
+                        scheduler.events.add(new DayPilot.Event({
+                            start: args.start,
+                            end: args.end,
+                            id: DayPilot.guid(),
+                            resource: args.resource,
+                            text: modal.result
+                        }));
+                    }
+                    scheduler.clearSelection();
+                },
+
+                onEventClick: async (args) => {
+                    const event = args.e;
+                    console.log('Event clicked:', event);
+
+                    const employeeId = event.data ? event.data.employee_id : null;
+                    const taskId = event.data ? event.data.id_specific : null;
+
+                    console.log('Employee ID:', employeeId);
+                    console.log('Task ID:', taskId);
+
+                    if (employeeId && taskId && employeeTaskMap[employeeId]) {
+                        // Find the task in the employee's tasks array
+                        const task = employeeTaskMap[employeeId].find(t => t.id_specific === taskId);
+
+                        if (task) {
+                            showTaskDetailsModal(task, event);
+                        } else {
+                            console.error('Task not found in employeeTaskMap for this employee.');
+                            showTaskDetailsModal(null, event);
+                        }
+                    } else {
+                        console.error('Employee ID or Task ID is undefined, or employee not found.');
+                        showTaskDetailsModal(null, event);
+                    }
+                }
+            });
+
+            // Set the resources (employees)
+            scheduler.resources = employees.map(employee => ({
+                id: employee.employee_id,
+                name: employee.employee_shortname
+            }));
+
+            // Add events (tasks)
+            scheduler.events.list = [];
+            employees.forEach(employee => {
+                const tasks = employeeTaskMap[employee.employee_id]; // Use employee_id as the key
+                if (Array.isArray(tasks)) {
+                    tasks.forEach(task => {
+                        if (task && task.id_specific && task.task_start_date && task.task_end_date) {
+                            console.log('Adding task to scheduler:', task);
+
+                            // Add employee_id and id_specific to event data
+                            scheduler.events.add(new DayPilot.Event({
+                                id: `${employee.employee_id}-${task.id_specific}`,
+                                resource: employee.employee_id,
+                                start: new DayPilot.Date(task.task_start_date * 1000),
+                                end: new DayPilot.Date(task.task_end_date * 1000),
+                                text: task.task_shortname || 'Unnamed Task',
+                                data: {
+                                    employee_id: employee.employee_id,
+                                    id_specific: task.id_specific
+                                }
+                            }));
+                        } else {
+                            console.warn('Invalid task data found:', task);
+                        }
+                    });
+                } else {
+                    console.warn('No tasks for employee:', employee);
+                }
+            });
+
+            scheduler.init();
+        }
+        // function populateEmployeeTaskDetails(employees) {
+        //     const tableBody = $('#employee-task-rows');
+        //     tableBody.empty();
+
+        //     employees.forEach(employee => {
+        //         console.log('Employee:', employee.employee_shortname, 'Tasks:', employee.tasks);
+
+        //         const employeeRow = $('<tr></tr>');
+
+        //         const shortnameCell = $('<td></td>').text(employee.employee_shortname);
+        //         employeeRow.append(shortnameCell);
+
+        //         const tasksCell = $('<td></td>');
+        //         employee.tasks.forEach(task => {
+        //             if (task && task.id_specific) {
+        //                 const taskDetails = `<div>
+        //             <strong>Task ID:</strong> ${task.id_specific}<br>
+        //             <strong>Task Name:</strong> ${task.task_shortname || 'N/A'}<br>
+        //             <strong>Description:</strong> ${task.task_description || 'No description available'}<br>
+        //             <strong>Start Date:</strong> ${new Date(task.task_start_date * 1000).toLocaleString()}<br>
+        //             <strong>End Date:</strong> ${new Date(task.task_end_date * 1000).toLocaleString()}<br>
+        //         </div><br>`;
+        //                 tasksCell.append(taskDetails);
+        //             } else {
+        //                 console.warn('Invalid task data found:', task);
+        //             }
+        //         });
+
+        //         employeeRow.append(tasksCell);
+        //         tableBody.append(employeeRow);
+        //     });
+        // }
+        // Global variable to store the employee-task map
+        var employeeTaskMap = {};
+
+        function populateEmployeeTaskDetails(employees) {
+            const tableBody = $('#employee-task-rows');
+            tableBody.empty();
+
+            employees.forEach(employee => {
+                console.log('Employee:', employee.employee_shortname, 'Tasks:', employee.tasks);
+
+                // Store the tasks in the global map using employee shortname as the key
+                employeeTaskMap[employee.employee_shortname] = employee.tasks;
+
+                const employeeRow = $('<tr></tr>');
+
+                const shortnameCell = $('<td></td>').text(employee.employee_shortname);
+                employeeRow.append(shortnameCell);
+
+                const tasksCell = $('<td></td>');
+                employee.tasks.forEach(task => {
+                    if (task && task.id_specific) {
+                        const taskDetails = `<div>
+                    <strong>Task ID:</strong> ${task.id_specific}<br>
+                    <strong>Task Name:</strong> ${task.task_shortname || 'N/A'}<br>
+                    <strong>Description:</strong> ${task.task_description || 'No description available'}<br>
+                    <strong>Start Date:</strong> ${new Date(task.task_start_date * 1000).toLocaleString()}<br>
+                    <strong>End Date:</strong> ${new Date(task.task_end_date * 1000).toLocaleString()}<br>
+                </div><br>`;
+                        tasksCell.append(taskDetails);
+                    } else {
+                        console.warn('Invalid task data found:', task);
+                    }
+                });
+
+                employeeRow.append(tasksCell);
+                tableBody.append(employeeRow);
+            });
+        }
+
+        function deleteTask(taskId, employeeId, event) {
+            if (!confirm('Are you sure you want to delete this task?')) {
+                return;
+            }
+
+            const token = sessionStorage.getItem('authToken');
+            $.ajax({
+                url: `http://137.184.148.164:5017/tasks/${taskId}`,
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                success: function (response) {
+                    alert('Task deleted successfully.');
+                    // Remove the event from the scheduler
+                    event.calendar.events.remove(event);
+                    // Remove the task from employeeTasksMap
+                    if (employeeTasksMap[employeeId]) {
+                        employeeTasksMap[employeeId] = employeeTasksMap[employeeId].filter(t => t.id_specific !== taskId);
+                    }
+                    // Close the modal
+                    closeTaskDetailsModal();
+                },
+                error: function (xhr, status, error) {
+                    alert('Failed to delete task: ' + error);
+                }
+            });
+        }
+
+        function showTaskDetailsModal(task, event) {
+            if (!task) {
+                alert("Task details are not available.");
+                return;
+            }
+
+            const html = `
+        <div style="padding: 20px;">
+            <h3>${task.task_shortname || 'Unnamed Task'}</h3>
+            <p><strong>Description:</strong> ${task.task_description || 'No description available'}</p>
+            <p><strong>Start Date:</strong> ${new Date(task.task_start_date * 1000).toLocaleString()}</p>
+            <p><strong>End Date:</strong> ${new Date(task.task_end_date * 1000).toLocaleString()}</p>
+            <div style="margin-top: 20px;">
+                <button id="delete-task-button" style="margin-right: 10px;">Delete Task</button>
+                <button id="close-modal-button">Close</button>
+            </div>
+        </div>
+    `;
+
+            const modal = new DayPilot.Modal();
+            modal.onShow = function () {
+                document.getElementById("delete-task-button").addEventListener("click", function () {
+                    if (confirm("Are you sure you want to delete this task?")) {
+                        // Remove from scheduler
+                        event.remove();
+
+                        // Remove from employeeTaskMap
+                        const employeeId = event.data.employee_id;
+                        const taskId = event.data.id_specific;
+
+                        if (employeeTaskMap[employeeId]) {
+                            employeeTaskMap[employeeId] = employeeTaskMap[employeeId].filter(t => t.id_specific !== taskId);
+                        }
+
+                        // Optionally, perform any server-side deletion if necessary
+                        // Example:
+                        // $.ajax({
+                        //     url: '/delete_task',
+                        //     method: 'POST',
+                        //     data: { task_id: taskId },
+                        //     success: function(response) {
+                        //         console.log('Task deleted on server.');
+                        //     },
+                        //     error: function(error) {
+                        //         console.error('Error deleting task on server:', error);
+                        //     }
+                        // });
+
+                        alert("Task deleted.");
+
+                        // Close the modal
+                        modal.hide();
+                    }
+                });
+
+                document.getElementById("close-modal-button").addEventListener("click", function () {
+                    modal.hide();
+                });
+            };
+            modal.showHtml(html);
+        }
+
+        function initializeScheduler(employees) {
+            const scheduler = new DayPilot.Scheduler("scheduler", {
+                startDate: DayPilot.Date.today().addDays(-2),
+                days: 3,
+                scale: "Hour",
+                cellDuration: 60,
+                timeHeaders: [
+                    { groupBy: "Day", format: "dddd, MMMM d" },
+                    { groupBy: "Hour", format: "h tt" }
+                ],
+                cellWidth: 50,
+                eventMoveHandling: "Update",
+                eventResizeHandling: "Update",
+                eventClickHandling: "Enabled",
+                onTimeRangeSelected: async (args) => {
+                    const modal = await DayPilot.Modal.prompt("New event name:", "New Event");
+                    if (modal.result) {
+                        scheduler.events.add(new DayPilot.Event({
+                            start: args.start,
+                            end: args.end,
+                            id: DayPilot.guid(),
+                            resource: args.resource,
+                            text: modal.result
+                        }));
+                    }
+                    scheduler.clearSelection();
+                },
+
+                onEventClick: function (args) {
+                    const event = args.e;
+                    console.log('Event clicked:', event);
+
+                    const employeeId = event.data ? event.data.employee_id : null;
+                    const taskId = event.data ? event.data.id_specific : null;
+
+                    console.log('Employee ID:', employeeId);
+                    console.log('Task ID:', taskId);
+
+                    if (employeeId && taskId && employeeTaskMap[employeeId]) {
+                        // Find the task in the employee's tasks array
+                        const task = employeeTaskMap[employeeId].find(t => t.id_specific === taskId);
+
+                        if (task) {
+                            showTaskDetailsModal(task, event);
+                        } else {
+                            console.error('Task not found in employeeTaskMap for this employee.');
+                            alert('Task details are not available.');
+                        }
+                    } else {
+                        console.error('Employee ID or Task ID is undefined, or employee not found.');
+                        alert('Task details are not available.');
+                    }
+                }
+            });
+
+            // Set the resources (employees)
+            scheduler.resources = employees.map(employee => ({
+                id: employee.employee_id,
+                name: employee.employee_shortname
+            }));
+
+            // Add events (tasks)
+            scheduler.events.list = [];
+            employees.forEach(employee => {
+                const tasks = employeeTaskMap[employee.employee_id]; // Use employee_id as the key
+                if (Array.isArray(tasks)) {
+                    tasks.forEach(task => {
+                        if (task && task.id_specific && task.task_start_date && task.task_end_date) {
+                            console.log('Adding task to scheduler:', task);
+
+                            // Add employee_id and id_specific to event data
+                            scheduler.events.add(new DayPilot.Event({
+                                id: `${employee.employee_id}-${task.id_specific}`,
+                                resource: employee.employee_id,
+                                start: new DayPilot.Date(task.task_start_date * 1000),
+                                end: new DayPilot.Date(task.task_end_date * 1000),
+                                text: task.task_shortname || 'Unnamed Task',
+                                data: {
+                                    employee_id: employee.employee_id,
+                                    id_specific: task.id_specific
+                                }
+                            }));
+                        } else {
+                            console.warn('Invalid task data found:', task);
+                        }
+                    });
+                } else {
+                    console.warn('No tasks for employee:', employee);
+                }
+            });
+
+            scheduler.init();
+        }
+        function closeTaskDetailsModal() {
+            $('#task-details-modal').hide();
+        }
+
+
+    </script>
+</body>
+
+</html>

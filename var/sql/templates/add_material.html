@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Items to Table</title>
+    
+    <!-- ============================
+            BEGIN: Base + Responsive Styles
+    ============================ -->
+    <style>
+        /* ===== Base Page Styles ===== */
+        body {
+        font-family: 'Poppins', sans-serif;
+        text-align: center;
+        background-color: #f8f9fa;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        }
+    
+        /* Container wrapper */
+        .container_info {
+        width: 90%;
+        max-width: 800px;
+        margin: 20px auto;
+        background-color: #fff;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-sizing: border-box;
+        }
+    
+        /* Header row (home icon, “Add Item” title, logout) */
+        .header {
+        display: flex;
+        align-items: center;
+        justify-content: start;
+        position: relative;
+        padding-bottom: 20px;
+        }
+        .header a.logo img {
+        width: 30px;
+        height: 30px;
+        margin-right: 10px;
+        }
+        .header h1 {
+        font-size: 2.5em;
+        font-weight: 700;
+        color: #333;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        margin: 0;
+        white-space: nowrap;
+        }
+        .link-button {
+        margin-left: 10px;
+        padding: 8px 15px;
+        background-color: #17a2b8;
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background-color 0.3s ease;
+        font-size: 1em;
+        }
+        .link-button:hover {
+        background-color: #138496;
+        }
+        .logout-button {
+        margin-left: auto;
+        padding: 10px 20px;
+        background-color: #cc716c;
+        color: #fff;
+        font-size: 1em;
+        font-weight: bold;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: background-color 0.3s ease;
+        text-decoration: none;
+        }
+        .logout-button:hover {
+        background-color: #b3534e;
+        }
+    
+        /* Language selector row */
+        .language-select-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        margin-bottom: 20px;
+        padding-left: 10px;
+        }
+        .language-select-wrapper label {
+        font-weight: 500;
+        margin-right: 10px;
+        font-size: 0.95em;
+        }
+        .language-select-wrapper select {
+        padding: 6px 10px;
+        font-size: 0.9em;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        }
+    
+        /* Form group (label + input) */
+        form .form-group {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        }
+        form .form-group label {
+        width: 180px;
+        font-weight: bold;
+        text-align: left;
+        font-size: 0.95em;
+        margin-right: 10px;
+        box-sizing: border-box;
+        }
+        form .form-group input[type="number"],
+        form .form-group input[type="text"] {
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 0.9em;
+        flex: 1 1 300px;
+        max-width: 100%;
+        box-sizing: border-box;
+        }
+        form .form-group input.product_desc {
+        height: 150px;
+        resize: vertical;
+        overflow-y: auto;
+        white-space: normal;
+        }
+    
+        /* Image preview styling */
+        #imagePreview {
+        display: none;
+        max-width: 200px;
+        margin-top: 10px;
+        border-radius: 4px;
+        }
+    
+        /* Submit buttons */
+        .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 25px;
+        margin: 0 5px;
+        border-radius: 12px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        color: #fff;
+        background-color: #28a745;
+        transition: background-color 0.3s ease;
+        font-size: 1em;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .button:hover {
+        background-color: #218838;
+        }
+        .button-text {
+        margin-right: 8px;
+        }
+        .loading-spinner {
+        font-size: 1em;
+        color: #fff;
+        }
+    
+        /* Modal overlay */
+        .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow-y: auto;
+        background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+        background-color: #fff;
+        margin: 10% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 90%;
+        max-width: 400px;
+        border-radius: 10px;
+        text-align: left;
+        box-sizing: border-box;
+        }
+        .modal-content h2 {
+        margin-top: 0;
+        font-size: 1.5em;
+        }
+        .modal-content .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        }
+        .modal-content .close:hover,
+        .modal-content .close:focus {
+        color: #000;
+        text-decoration: none;
+        cursor: pointer;
+        }
+        .modal-content .add-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 15px;
+        font-size: 0.9em;
+        background-color: #28a745;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        }
+        .modal-content .add-btn:hover {
+        background-color: #218838;
+        }
+        .btn-text {
+        margin-right: 8px;
+        }
+        .btn-spinner {
+        font-size: 1em;
+        color: #fff;
+        }
+    
+        /* =========================================================================
+            Responsive: Tablets (≤768px)
+        ========================================================================== */
+        @media (max-width: 768px) {
+        .container_info {
+            width: 95%;
+            padding: 15px;
+        }
+        .header h1 {
+            font-size: 2em;
+        }
+        .link-button, .logout-button {
+            padding: 8px 16px;
+            font-size: 0.9em;
+        }
+        .language-select-wrapper label {
+            font-size: 0.9em;
+        }
+        .language-select-wrapper select {
+            font-size: 0.9em;
+        }
+        form .form-group label {
+            width: 140px;
+            font-size: 0.9em;
+        }
+        form .form-group input[type="number"],
+        form .form-group input[type="text"] {
+            font-size: 0.85em;
+            padding: 8px;
+        }
+        form .form-group input.product_desc {
+            height: 120px;
+        }
+        .button {
+            padding: 10px 20px;
+            font-size: 0.9em;
+        }
+        .modal-content {
+            width: 95%;
+        }
+        .modal-content h2 {
+            font-size: 1.3em;
+        }
+        .modal-content .add-btn {
+            width: 100%;
+            margin-top: 10px;
+        }
+        }
+    
+        /* =========================================================================
+            Responsive: Phones (≤480px)
+        ========================================================================== */
+        /* =========================================================================
+   On phones, stack “Add via Link” below the header row
+======================================================================== */
+        @media (max-width: 480px) {
+        .header {
+            /* allow children to wrap into multiple rows */
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .header a.logo {
+            order: 0; /* Home icon stays first */
+        }
+
+        .header h1 {
+            /* Title becomes a full‐width row in the middle */
+            order: 1;
+            position: relative;     /* no longer absolute‐center on mobile */
+            left: auto;
+            transform: none;
+            width: 100%;
+            text-align: center;
+            margin: 10px 0 5px;      /* a bit of breathing room */
+        }
+
+        .header .link-button {
+            /* Push “Add via Link” onto its own full‐width line just below the title */
+            order: 2;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .header .logout-button {
+            /* Logout moves below “Add via Link” if needed, or shares that second row */
+            order: 3;
+            margin-left: 0;          /* remove auto‐left so it doesn’t float right */
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        /* Full‐width container, no margin */
+        .container_info {
+            width: 100%;
+            margin: 0;
+            padding: 10px;
+            box-shadow: none;
+        }
+    
+        .link-button, .logout-button {
+            padding: 8px 12px;
+            font-size: 0.9em;
+        }
+        /* Center language selector */
+        .language-select-wrapper {
+            justify-content: center;
+        }
+        .language-select-wrapper label {
+            font-size: 0.85em;
+        }
+        .language-select-wrapper select {
+            font-size: 0.85em;
+            padding: 5px 8px;
+        }
+        /* Stack form‐groups vertically */
+        form .form-group {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        form .form-group label {
+            width: 100%;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+        }
+        form .form-group input[type="number"],
+        form .form-group input[type="text"] {
+            width: 100%;
+            flex: 1 1 auto;
+            padding: 8px;
+            font-size: 0.85em;
+        }
+        form .form-group input.product_desc {
+            height: 100px;
+        }
+        /* Image preview shrink */
+        #imagePreview {
+            max-width: 150px;
+        }
+        /* Submit button full‐width */
+        .button {
+            width: 100%;
+            margin: 8px 0;
+            padding: 10px;
+            font-size: 0.95em;
+        }
+        .button-text {
+            margin-right: 4px;
+        }
+        .loading-spinner {
+            font-size: 0.9em;
+        }
+        /* Modal adjustments */
+        .modal-content {
+            width: 100%;
+            margin: 10% auto;
+            padding: 15px;
+        }
+        .modal-content h2 {
+            font-size: 1.2em;
+        }
+        .modal-content .form-group {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .modal-content .form-group label {
+            width: 100%;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+        }
+        .modal-content .form-group input[type="text"] {
+            width: 100%;
+            padding: 6px;
+            font-size: 0.85em;
+        }
+        .modal-content .add-btn {
+            width: 100%;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        }
+    </style>
+    <!-- ============================
+            END: Base + Responsive Styles
+    ============================ -->
+    
+    <!-- FontAwesome for spinners -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    
+    <!-- Manifest + theme color -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#000000">
+    
+    <!-- Service Worker registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+            .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+        }
+    </script>
+    </head>
+<body>
+
+<div class="container_info" id="info-container" style="width: 100%; max-width: 800px; margin: 0 auto;">
+    <div class="header">
+        <!-- Home logo -->
+        <a href="{{ url_for('main') }}" class="logo">
+            <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;">
+        </a>
+        <!-- Add via Link button -->
+        <button id="addViaLinkBtn" class="link-button">Add via Link</button>
+
+        <h1>Add Item</h1>
+
+        <!-- Logout buttons -->
+        <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+        <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <div style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+        <label for="languageSelect" class="description data-english">Choose Language:</label>
+        <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言: </label>
+        <select id="languageSelect" onchange="updateDescriptions()" style="margin-left: 10px;">
+            <option value="english">English</option>
+            <option value="chinese">Chinese</option>
+        </select>
+    </div>
+
+    <form action="/submit_material/{{ supplier_data.id }}" method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="supplier_sku_number" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Supplier SKU Number: </span>
+                    <span class="description data-mandarin" style="display: none;">供应商 SKU 编号: </span>
+                </b>
+            </label>
+            <input type="number" name="supplier_sku_number" required>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="item_desc" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Description:</span>
+                    <span class="description data-mandarin" style="display: none;">描述:</span>
+                </b>
+            </label>
+            <input type="text" name="item_desc" required>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="price" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Item Price:</span>
+                    <span class="description data-mandarin" style="display: none;">物品价格:</span>
+                </b>
+            </label>
+            <input type="number" step="0.01" name="price" required>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="product_details" style="display: flex; align-items: left; justify-content: left;">
+                <b>
+                    <span class="description data-english">Product Details:</span>
+                    <span class="description data-mandarin" style="display: none;">产品详情:</span>
+                </b>
+            </label>
+            <input type="text" name="product_details", class="product_desc">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="inv_location" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Inventory Location:</span>
+                    <span class="description data-mandarin" style="display: none;">库存位置:</span>
+                </b>
+            </label>
+            <input type="text" name="inv_location">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="reorder_point" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Reorder Point:</span>
+                    <span class="description data-mandarin" style="display: none;">补货点:</span>
+                </b>
+            </label>
+            <input type="number"  name="reorder_point" value="0">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="pack_size" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Pack Size:</span>
+                    <span class="description data-mandarin" style="display: none;">包装规格:</span>
+                </b>
+            </label>
+            <input type="number"  name="pack_size" value="1">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="keywords" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Keywords:</span>
+                    <span class="description data-mandarin" style="display: none;">关键词:</span>
+                </b>
+            </label>
+            <input type="text" name="keywords">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="image" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Image:</span>
+                    <span class="description data-mandarin" style="display: none;">图片:</span>
+                </b>
+            </label>
+            <input type="file" name="image" id="imageInput" accept="image/*" required>
+            <img
+                id="imagePreview"
+                src=""
+                alt="Image preview"
+                style="display:none; max-width:200px; margin-top:10px;"
+            />
+        </div>
+
+        <div style="display: flex 1;">
+            <button type="submit" class="button data-english" id="submit_material" style="float: left; margin-left:5px;">
+                <span class="button-text">Submit</span>
+                <i class="fas fa-spinner fa-spin loading-spinner" style="display:none;"></i>
+            </button>
+            <button type="submit" class="button data-mandarin" id="submit_material" style="float: left; margin-left: 5px; display: none;">
+                <span class="button-text">提交</span>
+                <i class="fas fa-spinner fa-spin loading-spinner" style="display:none;"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Modal for adding via link -->
+<div id="linkModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="modalCloseBtn">&times;</span>
+        <h2>Add Item via URL</h2>
+
+        <div class="form-group" style="display: none;">
+            <label for="modalSupplierName"><b>Supplier Name:</b></label>
+            <input type="text" id="modalSupplierName" value="{{ supplier_data.supplier_name }}" readonly />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label for="fetchUrl"><b>Item URL:</b></label>
+            <input type="text" id="fetchUrl" placeholder="Enter item URL" />
+        </div>
+
+        <button id="fetchBtn" class="add-btn">
+            <span class="btn-text">Add Item</span>
+            <i class="fas fa-spinner fa-spin btn-spinner" style="display:none; margin-left:8px;"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+    function showLoading() {
+            // Disable the submit button to prevent multiple submissions
+            const buttons = document.querySelectorAll('.button');
+            buttons.forEach(button => {
+                button.disabled = true;
+            });
+
+            // Hide button text and show the loading spinner
+            const buttonTexts = document.querySelectorAll('.button-text');
+            const spinners = document.querySelectorAll('.loading-spinner');
+
+            buttonTexts.forEach(text => text.style.display = 'none');
+            spinners.forEach(spinner => spinner.style.display = 'inline-block');
+        }
+
+    function updateDescriptions() {
+        const language = document.getElementById('languageSelect').value;
+
+        // Save the selected language in local storage
+        localStorage.setItem('selectedLanguage', language);
+
+        // Get all elements with class 'data-english' and 'data-mandarin'
+        const englishElements = document.querySelectorAll('.data-english');
+        const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+        if (language === 'english') {
+            englishElements.forEach(element => {
+                element.style.display = 'block';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'none';
+            });
+        } else if (language === 'chinese') {
+            englishElements.forEach(element => {
+                element.style.display = 'none';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'block';
+            });
+        }
+
+    }
+
+     // Modal logic
+     const modal = document.getElementById('linkModal');
+    const openBtn = document.getElementById('addViaLinkBtn');
+    const closeBtn = document.getElementById('modalCloseBtn');
+
+    openBtn.addEventListener('click', () => modal.style.display = 'block');
+    closeBtn.addEventListener('click', () => modal.style.display = 'none');
+    window.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+
+    document.getElementById('fetchBtn').onclick = () => {
+        const btn     = document.getElementById('fetchBtn');
+        const btnText = btn.querySelector('.btn-text');
+        const spinner = btn.querySelector('.btn-spinner');
+
+        // 1) show loading
+        btn.disabled       = true;
+        btnText.style.display   = 'none';
+        spinner.style.display   = 'inline-block';
+
+        const url = document.getElementById('fetchUrl').value.trim();
+        if (!url) {
+            alert('Please enter an item URL.');
+            // reset
+            btn.disabled       = false;
+            btnText.style.display   = 'inline';
+            spinner.style.display   = 'none';
+            return;
+        }
+
+        const supplierName = document.getElementById('modalSupplierName').value;
+        const qs = `?url=${encodeURIComponent(url)}&supplier_name=${encodeURIComponent(supplierName)}`;
+        fetch(`/fetch_item_details${qs}`)
+            .then(res => res.json())
+            .then(data => {
+                // Example field mappings; adjust keys as per your API
+                document.querySelector('input[name="supplier_sku_number"]').value = data.product_id;
+                document.querySelector('input[name="item_desc"]').value = data.sku;
+                document.querySelector('input[name="price"]').value = data.price;
+                document.querySelector('input[name="product_details"]').value = data.details;
+                document.querySelector('input[name="pack_size"]').value = data.pack_size;
+                // Close modal
+                modal.style.display = 'none';
+
+            // Then handle scraped image
+            if (data.item_image) {
+            const preview = document.getElementById('imagePreview');
+            
+            // 1) Show the base64 image
+            preview.src = data.item_image;
+            preview.style.display = 'block';
+
+            // 2) Decode the base64 into a Blob
+            const [header, b64Data] = data.item_image.split(',');
+            const contentType = header.match(/data:(.*);base64/)[1];
+            const byteChars = atob(b64Data);
+            const byteNumbers = new Array(byteChars.length);
+            for (let i = 0; i < byteChars.length; i++) {
+                byteNumbers[i] = byteChars.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: contentType });
+
+            // 3) Build a File using product_id as filename
+            const ext = contentType.split('/')[1] || 'jpg';
+            const filename = `${data.product_id}.${ext}`;
+            const file = new File([blob], filename, { type: contentType });
+
+            // 4) Assign it to the file input
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            document.getElementById('imageInput').files = dt.files;
+            }
+
+            // Close modal
+            modal.style.display = 'none';
+        })
+        .catch(err => console.error('Fetch error:', err))
+        .finally(() => {
+            // 2) hide loading (whether success or failure)
+            btn.disabled       = false;
+            btnText.style.display   = 'inline';
+            spinner.style.display   = 'none';
+            });
+    };
+</script>
+
+<!-- ─── EXTRA SCRIPT: HTTPS upload + server-side Supabase insert ─── -->
+<script>
+(function () {
+  const SERVER = "https://inventory.orcagroup.io:5024";
+  const UPLOAD = SERVER + "/upload?category=image";
+  const INSERT = SERVER + "/home-depot-items";
+
+  /* tiny helpers */
+  const $ = (s) => document.querySelector(s);
+  const val = (s) => ($(s) ? $(s).value : "");
+  const num = (s, d = null) => {
+    const v = val(s).trim();
+    const n = Number(v);
+    return v === "" || !Number.isFinite(n) ? d : n;
+  };
+
+  /* upload helpers (same payload shape as old mapper) */
+  async function uploadFile(file, meta) {
+    const fd = new FormData();
+    fd.append("image", file);
+    fd.append("file", file);
+    if (meta.name) fd.append("supplierName", meta.name);
+    if (meta.sku) fd.append("supplierSku", meta.sku);
+    const r = await fetch(UPLOAD, { method: "POST", body: fd });
+    if (!r.ok) throw new Error(`upload failed (${r.status})`);
+    return (await r.json()).url;
+  }
+  async function uploadByUrl(url, meta) {
+    const fd = new FormData();
+    fd.append("imageUrl", url);
+    if (meta.name) fd.append("supplierName", meta.name);
+    if (meta.sku) fd.append("supplierSku", meta.sku);
+    const r = await fetch(UPLOAD, { method: "POST", body: fd });
+    if (!r.ok) throw new Error(`upload-by-url failed (${r.status})`);
+    return (await r.json()).url;
+  }
+
+  /* build DB row for /home-depot-items */
+  function supplierIdFromAction(form) {
+    const m = (form.action || "").match(/\/submit_material\/(\d+)/);
+    return m ? Number(m[1]) : null;
+  }
+  const supplierName = $("#modalSupplierName")?.value || null;
+  function buildRow({ imageUrl, supplierId }) {
+    const sku = num('input[name="supplier_sku_number"]');
+    return {
+      internet_sku_number: sku,
+      sku_number: null,
+      item_desc: val('input[name="item_desc"]').trim() || null,
+      item_price: num('input[name="price"]', null),
+      item_details: val('input[name="product_details"]').trim() || null,
+      inventory_location: val('select[name="inv_location"]').value || null,
+      reorder_point: num('input[name="reorder_point"]', 0),
+      pack_size: num('input[name="pack_size"]', 1),
+      keywords: val('input[name="keywords"]').trim() || "",
+      item_brand: supplierName,
+      item_image: imageUrl || null,
+      supplier_id: supplierId,
+      inventory: 0
+      /* remaining cols default/null */
+    };
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();              /* stop Flask POST */
+    try {
+      showLoading();                 /* reuse your spinner helper */
+
+      const sku = num('input[name="supplier_sku_number"]', null);
+      const desc = val('input[name="item_desc"]').trim();
+      if (!sku || !desc) {
+        alert("Supplier SKU Number and Description are required.");
+        return;
+      }
+
+      /* upload image (file first, else URL from modal) */
+      let imageUrl = null;
+      const fileInp = $("#imageInput");
+      if (fileInp && fileInp.files && fileInp.files[0]) {
+        imageUrl = await uploadFile(fileInp.files[0], {
+          name: supplierName,
+          sku
+        });
+      } else {
+        const url = val("#fetchUrl");
+        if (url) imageUrl = await uploadByUrl(url, { name: supplierName, sku });
+      }
+
+      /* insert via server */
+      const row = buildRow({
+        imageUrl,
+        supplierId: supplierIdFromAction(e.currentTarget)
+      });
+      const r = await fetch(INSERT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(row)
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "insert failed");
+
+      alert("✅ Saved! material_id = " + j.material_id);
+      e.currentTarget.reset();
+      $("#imagePreview").style.display = "none";
+    } catch (err) {
+      console.error(err);
+      alert("Insert failed → " + err.message);
+    } finally {
+      /* restore buttons */
+      document.querySelectorAll(".button").forEach((b) => (b.disabled = false));
+      document
+        .querySelectorAll(".button-text")
+        .forEach((t) => (t.style.display = "inline"));
+      document
+        .querySelectorAll(".loading-spinner")
+        .forEach((s) => (s.style.display = "none"));
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    /* attach AFTER your original code has wired the modal etc. */
+    const form =
+      document.querySelector('form[action*="/submit_material"]') ||
+      document.querySelector("form");
+    form?.addEventListener("submit", handleSubmit, { passive: false });
+  });
+})();
+</script>
+<!-- ─── END EXTRA SCRIPT ─────────────────────────────────────────── -->
+
+</body>
+</html>

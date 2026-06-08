@@ -1,0 +1,44 @@
+<style>
+  .lightbox {
+            display: flex;
+            opacity: 0;
+            visibility: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000; /* Above Bootstrap modal */
+            transition: opacity 0.250s ease-in-out, visibility 0.250s ease-in-out;
+        }
+
+        .lightbox.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .lightbox img {
+            width: auto;
+            height: 95%;
+            border-radius: 10px;
+        }
+
+        .lightbox .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 30px;
+            color: white;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+</style>
+
+<div id="lightboxModal" class="lightbox" :class="isLightBoxOpen ? 'show':''" @click="isLightBoxOpen = false; lightboxImage = null;">
+  <button class="close-btn">&times;</button>
+  <img :src="lightboxImage" @click.stop="">
+</div>

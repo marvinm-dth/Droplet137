@@ -1,0 +1,29 @@
+body {
+    font-family: Arial, sans-serif;
+}
+form {
+    max-width: 600px;
+    margin: 0 auto;
+}
+.form-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+.form-group label {
+    width: 100%;
+    margin-bottom: 5px;
+}
+.form-control {
+    width: 300px;
+    padding: 100px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.form-group.half-width {
+    flex: 0 0 48%; /* Makes two columns each taking about half the space */
+}
+.form-group.third-width {
+    flex: 0 0 31%; /* Three columns for City, State, and Zip */
+}

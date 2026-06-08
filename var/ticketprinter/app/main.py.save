@@ -1,0 +1,2422 @@
+import io
+import os
+import re
+import uuid
+import json
+import threading
+import time
+import logging
+from pathlib import Path
+from datetime import datetime, timezone
+from urllib import request as urlrequest
+import urllib.request
+from flask import abort, redirect, render_template, request, send_file, url_for, make_response
+from sqlalchemy import inspect, text
+from sqlalchemy.orm import selectinload
+from app import app
+
+# Import your design (sample preview)
+from ticket_engine.designs import work_ticket_v1 as work_ticket_design
+from ticket_engine.designs import ticket_tracking_v1
+from ticket_engine.designs import ticket_tracking_v1
+from app.models import (
+    ChecklistItem,
+    Project,
+    Ticket,
+    TicketChecklistStatus,
+    TicketImage,
+    Template,
+    DB_PATH,
+    ensure_designs,
+    ensure_project_templates,
+    ensure_template_metadata,
+    engine,
+    get_session,
+    create_ticket,
+)
+from werkzeug.utils import secure_filename
+from openai import OpenAI
+
+IMAGE_UPLOAD_DIR = Path("data/images")
+IMAGE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+API_KEY = (
+    os.getenv("API_KEY")
+    or os.getenv("X_API_KEY")
+    or os.getenv("AUTH_TOKEN")
+    or os.getenv("BEARER_TOKEN")
+)
+BRIDGE_API_KEY = os.getenv("BRIDGE_API_KEY") or os.getenv("FLASK_API_KEY")
+CORS_ALLOW_ORIGIN = os.getenv("CORS_ALLOW_ORIGIN", "*")
+BRIDGE_CACHE_MODE = os.getenv("BRIDGE_CACHE_MODE", "off").strip().lower()
+BRIDGE_PENDING_ON_MISS = os.getenv("BRIDGE_PENDING_ON_MISS", "0") == "1"
+
+SERVER_PUSH_URL = os.getenv("SERVER_PUSH_URL", "")
+SERVER_POLL_URL = os.getenv("SERVER_POLL_URL", "")
+POLL_INTERVAL_SEC = 0.5
+BRIDGE_PENDING_URL = os.getenv("BRIDGE_PENDING_URL", "")
+BRIDGE_ONLY_PRINT = os.getenv("BRIDGE_ONLY_PRINT", "1") == "1"
+
+# Ensure verbose logging (INFO) for polling visibility
+app.logger.setLevel(logging.INFO)
+if not app.logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+    handler.setFormatter(formatter)
+    app.logger.addHandler(handler)
+
+_PENDING_REQUESTS: set[str] = set()
+_TICKETS_BY_UUID: dict[str, dict] = {}
+_TICKETS_BY_ID: dict[str, dict] = {}
+
+
+def _cache_enabled() -> bool:
+    return BRIDGE_CACHE_MODE in {"prefer", "fallback"}
+
+
+def _store_ticket_payload(payload: dict) -> bool:
+    if not payload or not isinstance(payload, dict):
+        return False
+    ticket = payload.get("ticket") or {}
+    ticket_uuid = ticket.get("uuid")
+    ticket_id = ticket.get("id")
+    if not ticket_uuid and ticket_id is None:
+        return False
+    if _cache_enabled():
+        if ticket_uuid:
+            _TICKETS_BY_UUID[str(ticket_uuid)] = payload
+        if ticket_id is not None:
+            _TICKETS_BY_ID[str(ticket_id)] = payload
+    return True
+
+
+def _get_cached_ticket(ticket_ref: str) -> dict | None:
+    if not _cache_enabled():
+        return None
+    key = str(ticket_ref)
+    return _TICKETS_BY_UUID.get(key) or _TICKETS_BY_ID.get(key)
+
+
+def _add_pending_request(ticket_ref: str) -> None:
+    if not ticket_ref:
+        return
+    ref = str(ticket_ref)
+    _PENDING_REQUESTS.add(ref)
+    app.logger.info(
+        "[bridge] pending request added ticketRef=%s total=%s",
+        ref,
+        len(_PENDING_REQUESTS),
+    )
+
+
+def _pending_response(ticket_ref: str, kind: str):
+    payload: dict = {
+        "status": "pending",
+        "ticketRef": str(ticket_ref),
+        "retryAfterMs": 500,
+    }
+    if kind == "checklist":
+        payload["checklist"] = []
+    elif kind == "images":
+        payload["ticketId"] = None
+        payload["images"] = []
+    resp = make_response(payload, 202)
+    resp.headers["Retry-After"] = "1"
+    return resp
+
+
+def _extract_api_token() -> str | None:
+    header_key = request.headers.get("x-api-key")
+    auth_header = request.headers.get("authorization", "")
+    bearer = (
+        auth_header[7:].strip()
+        if auth_header.lower().startswith("bearer ")
+        else None
+    )
+    return header_key or bearer
+
+
+@app.before_request
+def _bridge_middleware():
+    if request.path.startswith("/api"):
+        body_info = ""
+        if request.method not in {"GET", "HEAD"}:
+            try:
+                data = request.get_json(silent=True)
+                if data is None:
+                    data = request.data.decode("utf-8", errors="ignore")
+                body_info = f" body={json.dumps(data)[:200]}"
+            except Exception:
+                body_info = ""
+        path = request.path
+        if request.query_string:
+            path = f"{path}?{request.query_string.decode('utf-8', errors='ignore')}"
+        app.logger.info("[bridge] inbound %s %s%s", request.method, path, body_info)
+    if request.method == "OPTIONS":
+        return ("", 204)
+    if request.path.startswith("/api/bridge") and BRIDGE_API_KEY:
+        token = _extract_api_token()
+        if token != BRIDGE_API_KEY:
+            return {"error": "unauthorized"}, 401
+    if request.path.startswith("/api") and not request.path.startswith("/api/bridge") and API_KEY:
+        token = _extract_api_token()
+        if token != API_KEY:
+            return {"error": "unauthorized"}, 401
+    return None
+
+
+@app.after_request
+def _apply_cors_headers(response):
+    if request.path.startswith("/api"):
+        response.headers.setdefault("Access-Control-Allow-Origin", CORS_ALLOW_ORIGIN)
+        response.headers.setdefault("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS")
+        response.headers.setdefault(
+            "Access-Control-Allow-Headers",
+            "Content-Type, Authorization, X-API-Key",
+        )
+    return response
+
+
+# -----------------------------
+# Dashboard
+# -----------------------------
+@app.route("/")
+def dashboard():
+    return render_template("dashboard.html")
+
+
+@app.route("/dbview")
+def dbview():
+    inspector = inspect(engine)
+    tables = []
+    with engine.connect() as conn:
+        for table_name in inspector.get_table_names():
+            error_msg = None
+            rows = []
+            columns = []
+            try:
+                if table_name == "checklist_items":
+                    columns = [
+                        "uuid",
+                        "ticket_uuid",
+                        "order_on_list",
+                        "text_en",
+                        "text_cn",
+                        "status",
+                        "updated_when",
+                        "updated_by",
+                        "attachments_uuid",
+                        "thumbnail_uuid",
+                    ]
+                    result = conn.execute(
+                        text(
+                            """
+                            SELECT
+                                ci.uuid AS uuid,
+                                COALESCE(NULLIF(tcs.ticket_uuid, ''), t.uuid) AS ticket_uuid,
+                                ci.order_index AS order_on_list,
+                                COALESCE(NULLIF(tcs.text_en, ''), ci.text_en) AS text_en,
+                                COALESCE(NULLIF(tcs.text_cn, ''), ci.text_cn) AS text_cn,
+                                tcs.status AS status,
+                                tcs.checked_at AS updated_when,
+                                tcs.checked_by AS updated_by,
+                                attachments_agg.attachments_uuid AS attachments_uuid,
+                                thumbnails_agg.thumbnail_uuid AS thumbnail_uuid
+                            FROM checklist_items AS ci
+                            LEFT JOIN ticket_checklist_statuses AS tcs
+                                ON tcs.checklist_item_id = ci.id
+                            LEFT JOIN tickets AS t
+                                ON t.id = tcs.ticket_id
+                            LEFT JOIN (
+                                SELECT
+                                    ticket_id,
+                                    group_concat(uuid, ',') AS attachments_uuid
+                                FROM attachments
+                                GROUP BY ticket_id
+                            ) AS attachments_agg
+                                ON attachments_agg.ticket_id = t.id
+                            LEFT JOIN (
+                                SELECT
+                                    a.ticket_id AS ticket_id,
+                                    group_concat(th.uuid, ',') AS thumbnail_uuid
+                                FROM attachments AS a
+                                JOIN thumbnails AS th
+                                    ON th.attachment_id = a.id
+                                GROUP BY a.ticket_id
+                            ) AS thumbnails_agg
+                                ON thumbnails_agg.ticket_id = t.id
+                            ORDER BY ci.id, tcs.ticket_uuid
+                            LIMIT 50
+                            """
+                        )
+                    )
+                else:
+                    columns = [col["name"] for col in inspector.get_columns(table_name)]
+                    escaped_table_name = table_name.replace('"', '""')
+                    quoted_table = f"\"{escaped_table_name}\""
+                    result = conn.execute(text(f"SELECT * FROM {quoted_table} LIMIT 50"))
+                rows = [dict(row._mapping) for row in result]
+            except Exception as exc:  # pragma: no cover - safety for malformed tables
+                error_msg = str(exc)
+
+            tables.append(
+                {
+                    "name": table_name,
+                    "columns": columns,
+                    "rows": rows,
+                    "error": error_msg,
+                }
+            )
+
+    return render_template("dbview.html", tables=tables)
+
+
+@app.route("/db_view")
+def db_view_alias():
+    """Legacy alias for dbview."""
+    return redirect(url_for("dbview"))
+
+
+@app.route("/env_check")
+def env_check():
+    """
+    Debug: return whether OPENAI_API_KEY is visible to the server (no key exposed).
+    Also tells you where the server thinks the project root is and whether .env exists.
+    """
+    base_dir = Path(__file__).resolve().parent.parent
+    env_path = base_dir / ".env"
+    return {
+        "openai_key_present": bool(os.getenv("OPENAI_API_KEY")),
+        "cwd": str(Path().resolve()),
+        "base_dir": str(base_dir),
+        "env_path": str(env_path),
+        "env_exists": env_path.exists(),
+    }
+
+
+# -----------------------------
+# Ticket preview (for testing design)
+# -----------------------------
+@app.route("/preview")
+def preview():
+    img = work_ticket_design.render_sample_ticket()
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return send_file(buf, mimetype="image/png")
+
+
+@app.route("/preview/<design_id>")
+def preview_design(design_id: str):
+    """
+    Preview a specific design. Defaults to work_ticket_v1 if unknown.
+    """
+    design_map = {
+        "work_ticket_v1": work_ticket_design,
+        "ticket_tracking_v1": ticket_tracking_v1,
+    }
+    design = design_map.get(design_id, work_ticket_design)
+    render_fn = getattr(design, "render_sample_ticket", None)
+    if render_fn is None:
+        abort(404)
+    img = render_fn()
+    action = request.args.get("action")
+    if action == "print":
+        print_error = _print_ticket_image(img)
+        if print_error:
+            return {"error": print_error}, 500
+        return {"status": "sent to printer"}
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return send_file(buf, mimetype="image/png")
+
+
+# -----------------------------
+# Projects
+# -----------------------------
+@app.route("/projects", methods=["GET", "POST"])
+def projects():
+    errors: list[str] = []
+    message = request.args.get("message")
+    form_data = {"project_code": "", "description": ""}
+
+    if request.method == "POST":
+        action = request.form.get("action", "create")
+        if action == "create":
+            form_data = {
+                "project_code": request.form.get("project_code", "").strip(),
+                "description": request.form.get("description", "").strip(),
+            }
+            if not form_data["project_code"]:
+                errors.append("Project code (DTH number) is required.")
+
+            if not errors:
+                session = get_session()
+                try:
+                    existing = (
+                        session.query(Project)
+                        .filter(Project.project_code == form_data["project_code"])
+                        .one_or_none()
+                    )
+                    if existing:
+                        errors.append("That project already exists.")
+                    else:
+                        now = datetime.now(timezone.utc)
+                        project = Project(
+                            project_code=form_data["project_code"],
+                            name=form_data["project_code"],
+                            description=form_data["description"],
+                            status="active",
+                            created_at=now,
+                            updated_at=now,
+                        )
+                        session.add(project)
+                        session.flush()
+                        ensure_designs(session)
+                        base_templates = (
+                            session.query(Template)
+                            .filter(Template.design_id == "work_ticket_v1")
+                            .all()
+                        )
+                        ensure_project_templates(session, project, base_templates)
+                        session.commit()
+                        return redirect(url_for("projects", message="Project created"))
+                except Exception:
+                    session.rollback()
+                    errors.append("Failed to create project.")
+                finally:
+                    session.close()
+        elif action == "update":
+            project_id = request.form.get("project_id")
+            name = request.form.get("name", "").strip()
+            description = request.form.get("description", "").strip()
+            status = request.form.get("status", "").strip() or "active"
+            new_project_code = request.form.get("project_code", "").strip()
+            if not new_project_code and name:
+                new_project_code = name  # keep code in sync with name when code not provided
+            session = get_session()
+            try:
+                proj = session.get(Project, int(project_id)) if project_id else None
+                if proj is None:
+                    errors.append("Project not found.")
+                else:
+                    if not new_project_code:
+                        errors.append("Project code is required.")
+                    else:
+                        existing_code = (
+                            session.query(Project)
+                            .filter(Project.project_code == new_project_code, Project.id != proj.id)
+                            .one_or_none()
+                        )
+                        if existing_code:
+                            errors.append("Another project already uses that code.")
+                    if not errors:
+                        old_code = proj.project_code
+                        proj.project_code = new_project_code
+                        proj.name = name or proj.project_code
+                        proj.description = description
+                        proj.status = status
+                        proj.updated_at = datetime.now(timezone.utc)
+                        session.query(Ticket).filter(Ticket.project_id == proj.id).update({Ticket.dth_number: new_project_code})
+                        session.commit()
+                        return redirect(url_for("project_detail", project_code=proj.project_code, message="Project updated"))
+            except Exception:
+                session.rollback()
+                errors.append("Failed to update project.")
+            finally:
+                session.close()
+        elif action == "update_ticket":
+            ticket_id = request.form.get("ticket_id")
+            project_code_param = request.form.get("project_code")
+            ticket_name = request.form.get("ticket_name", "").strip()
+            ticket_status = request.form.get("ticket_status", "").strip() or "open"
+            allowed_status = {"upcoming", "in_progress", "complete", "open", "new"}
+            if ticket_status not in allowed_status:
+                errors.append("Invalid ticket status.")
+            session = get_session()
+            try:
+                ticket = session.get(Ticket, int(ticket_id)) if ticket_id else None
+                if ticket is None:
+                    errors.append("Ticket not found.")
+                else:
+                    if ticket_name:
+                        ticket.name = ticket_name
+                    ticket.status = ticket_status
+                    if ticket.tracking_ticket_id:
+                        t_track = session.get(Ticket, ticket.tracking_ticket_id)
+                        if t_track:
+                            t_track.name = ticket.name
+                            t_track.status = ticket.status
+                            t_track.dth_number = ticket.dth_number
+                    session.commit()
+                    if project_code_param:
+                        return redirect(url_for("project_detail", project_code=project_code_param, message="Ticket updated"))
+                    return redirect(url_for("projects", message="Ticket updated"))
+            except Exception:
+                session.rollback()
+                errors.append("Failed to update ticket.")
+            finally:
+                session.close()
+        elif action == "print_both":
+            ticket_id = request.form.get("ticket_id")
+            project_code_param = request.form.get("project_code")
+            session = get_session()
+            try:
+                ticket = session.get(Ticket, int(ticket_id)) if ticket_id else None
+                if ticket is None:
+                    errors.append("Ticket not found.")
+                else:
+                    try:
+                        _enqueue_pending_ticket(ticket.uuid)
+                    except Exception:
+                        pass
+                    try:
+                        _push_ticket_to_server(ticket)
+                    except Exception:
+                        pass
+                    slots = _slots_from_ticket(ticket)
+                    img = _render_design_image(ticket.template.design_id if ticket.template else "work_ticket_v1", slots)
+                    err = _print_ticket_image(img)
+                    if err:
+                        errors.append(err)
+                    if not errors and ticket.tracking_ticket_id:
+                        tracking = session.get(Ticket, ticket.tracking_ticket_id)
+                        if tracking:
+                            try:
+                                _enqueue_pending_ticket(tracking.uuid)
+                            except Exception:
+                                pass
+                            try:
+                                _push_ticket_to_server(tracking)
+                            except Exception:
+                                pass
+                            t_slots = _slots_from_ticket(tracking)
+                            t_img = _render_design_image(tracking.template.design_id if tracking.template else "ticket_tracking_v1", t_slots)
+                            t_err = _print_ticket_image(t_img)
+                            if t_err:
+                                errors.append(f"Tracking ticket print error: {t_err}")
+                    if not errors:
+                        msg = "Ticket (and tracking ticket) sent to printer."
+                        if project_code_param:
+                            return redirect(url_for("project_detail", project_code=project_code_param, message=msg))
+                        return redirect(url_for("projects", message=msg))
+            except Exception as exc:
+                errors.append(f"Failed to print: {exc}")
+            finally:
+                session.close()
+        elif action == "delete":
+            project_id = request.form.get("project_id")
+            session = get_session()
+            try:
+                proj = session.get(Project, int(project_id)) if project_id else None
+                if proj is None:
+                    errors.append("Project not found.")
+                else:
+                    has_tickets = session.query(Ticket).filter(Ticket.project_id == proj.id).count() > 0
+                    if has_tickets:
+                        errors.append("Cannot delete a project that has tickets.")
+                    else:
+                        session.delete(proj)
+                        session.commit()
+                        return redirect(url_for("projects", message="Project deleted"))
+            except Exception:
+                session.rollback()
+                errors.append("Failed to delete project.")
+            finally:
+                session.close()
+        elif action == "archive":
+            project_id = request.form.get("project_id")
+            session = get_session()
+            try:
+                proj = session.get(Project, int(project_id)) if project_id else None
+                if proj is None:
+                    errors.append("Project not found.")
+                else:
+                    proj.status = "archived"
+                    proj.updated_at = datetime.now(timezone.utc)
+                    session.commit()
+                    return redirect(url_for("projects", message="Project archived"))
+            except Exception:
+                session.rollback()
+                errors.append("Failed to archive project.")
+            finally:
+                session.close()
+        elif action == "activate":
+            project_id = request.form.get("project_id")
+            session = get_session()
+            try:
+                proj = session.get(Project, int(project_id)) if project_id else None
+                if proj is None:
+                    errors.append("Project not found.")
+                else:
+                    proj.status = "active"
+                    proj.updated_at = datetime.now(timezone.utc)
+                    session.commit()
+                    return redirect(url_for("projects", message="Project activated"))
+            except Exception:
+                session.rollback()
+                errors.append("Failed to activate project.")
+            finally:
+                session.close()
+        elif action == "clone":
+            source_id = request.form.get("source_project_id")
+            new_code = request.form.get("new_project_code", "").strip()
+            if not source_id or not new_code:
+                errors.append("Source project and new project code are required for cloning.")
+            if not errors:
+                session = get_session()
+                try:
+                    source_proj = session.get(Project, int(source_id))
+                    if not source_proj:
+                        errors.append("Source project not found.")
+                    else:
+                        if session.query(Project).filter(Project.project_code == new_code).one_or_none():
+                            errors.append("A project with that code already exists.")
+                        else:
+                            now = datetime.now(timezone.utc)
+                            new_proj = Project(
+                                project_code=new_code,
+                                name=new_code,
+                                description=f"Cloned from {source_proj.project_code}",
+                                status="active",
+                                created_at=now,
+                                updated_at=now,
+                            )
+                            session.add(new_proj)
+                            session.flush()
+                            source_tickets = (
+                                session.query(Ticket)
+                                .options(selectinload(Ticket.images))
+                                .filter(Ticket.project_id == source_proj.id)
+                                .all()
+                            )
+                            for t in source_tickets:
+                                imgs = [{"file_path": img.file_path, "caption": img.caption, "order_index": img.order_index} for img in t.images]
+                                create_ticket(
+                                    session,
+                                    template_id=t.template_id,
+                                    project_id=new_proj.id,
+                                    dth_number=new_proj.project_code,
+                                    name=t.name,
+                                    notes_en=t.notes_en,
+                                    notes_cn=t.notes_cn,
+                                    status="new",
+                                    printed_by=None,
+                                    images=imgs,
+                                )
+                            session.commit()
+                            return redirect(url_for("projects", project_code=new_proj.project_code, message="Project cloned"))
+                except Exception:
+                    session.rollback()
+                    errors.append("Failed to clone project.")
+                finally:
+                    session.close()
+
+    selected_code = request.args.get("project_code")
+    session = get_session()
+    try:
+        projects_list = (
+            session.query(Project)
+            .options(selectinload(Project.tickets).selectinload(Ticket.template))
+            .filter(Project.status != "archived")
+            .order_by(Project.updated_at.desc().nullslast(), Project.id.desc())
+            .all()
+        )
+        archived_projects = (
+            session.query(Project)
+            .options(selectinload(Project.tickets).selectinload(Ticket.template))
+            .filter(Project.status == "archived")
+            .order_by(Project.updated_at.desc().nullslast(), Project.id.desc())
+            .all()
+        )
+        selected_project = None
+        project_tickets = []
+        ticket_pairs = []
+        if selected_code:
+            selected_project = (
+                session.query(Project)
+                .filter(Project.project_code == selected_code)
+                .one_or_none()
+            )
+            if selected_project:
+                project_tickets = (
+                    session.query(Ticket)
+                    .options(selectinload(Ticket.template))
+                    .filter(Ticket.project_id == selected_project.id)
+                    .all()
+                )
+                project_tickets = sorted(
+                    project_tickets,
+                    key=lambda t: (t.template.template_code if t.template else "", t.id),
+                )
+                for t in project_tickets:
+                    if t.template and t.template.design_id != "work_ticket_v1":
+                        continue
+                    tracking = None
+                    if t.tracking_ticket_id:
+                        tracking = session.get(Ticket, t.tracking_ticket_id)
+                    ticket_pairs.append({"base": t, "tracking": tracking})
+    finally:
+        session.close()
+
+        return render_template(
+            "projects.html",
+            projects=projects_list,
+            archived_projects=archived_projects,
+            selected_project=selected_project,
+            ticket_pairs=ticket_pairs,
+            message=message,
+            errors=errors,
+            form_data=form_data,
+    )
+
+
+@app.route("/projects/<project_code>")
+def project_detail(project_code: str):
+    session = get_session()
+    try:
+        projects_list = (
+            session.query(Project)
+            .options(selectinload(Project.tickets).selectinload(Ticket.template))
+            .filter(Project.status != "archived")
+            .order_by(Project.updated_at.desc().nullslast(), Project.id.desc())
+            .all()
+        )
+        archived_projects = (
+            session.query(Project)
+            .options(selectinload(Project.tickets).selectinload(Ticket.template))
+            .filter(Project.status == "archived")
+            .order_by(Project.updated_at.desc().nullslast(), Project.id.desc())
+            .all()
+        )
+        selected_project = (
+            session.query(Project)
+            .filter(Project.project_code == project_code)
+            .one_or_none()
+        )
+        if selected_project is None:
+            abort(404)
+        project_tickets = (
+            session.query(Ticket)
+            .options(selectinload(Ticket.template))
+            .filter(Ticket.project_id == selected_project.id)
+            .all()
+        )
+        project_tickets = sorted(
+            project_tickets,
+            key=lambda t: (t.template.template_code if t.template else "", t.id),
+        )
+        ticket_pairs = []
+        for t in project_tickets:
+            if t.template and t.template.design_id != "work_ticket_v1":
+                continue
+            tracking = None
+            if t.tracking_ticket_id:
+                tracking = session.get(Ticket, t.tracking_ticket_id)
+            ticket_pairs.append({"base": t, "tracking": tracking})
+    finally:
+        session.close()
+
+        return render_template(
+            "projects.html",
+            projects=projects_list,
+            archived_projects=archived_projects,
+            selected_project=selected_project,
+            ticket_pairs=ticket_pairs,
+            message=request.args.get("message"),
+            errors=[],
+            form_data={"project_code": "", "description": ""},
+    )
+
+
+def _slots_from_ticket(ticket: Ticket) -> dict:
+    return {
+        "template_code": ticket.template.template_code if ticket.template else "",
+        "job_type_en": ticket.template.job_type_en if ticket.template else "",
+        "job_type_cn": ticket.template.job_type_cn if ticket.template else "",
+        "checklist_items": [
+            {
+                "en": cs.text_en or (cs.checklist_item.text_en if cs.checklist_item else ""),
+                "cn": cs.text_cn or (cs.checklist_item.text_cn if cs.checklist_item else ""),
+            }
+            for cs in ticket.checklist_statuses
+        ],
+        "dth_number": ticket.dth_number or "",
+        "name": ticket.name or "",
+        "notes_en": ticket.notes_en or "",
+        "notes_cn": ticket.notes_cn or "",
+        "image_paths": [img.file_path for img in ticket.images],
+    }
+
+
+@app.route("/ticket/<uuid>", methods=["GET", "POST"])
+def ticket_detail(uuid: str):
+    action = request.form.get("action") if request.method == "POST" else request.args.get("action")
+    session = get_session()
+    try:
+        ticket = (
+            session.query(Ticket)
+            .options(
+                selectinload(Ticket.template),
+                selectinload(Ticket.project),
+                selectinload(Ticket.images),
+                selectinload(Ticket.checklist_statuses).selectinload(TicketChecklistStatus.checklist_item),
+            )
+            .filter(Ticket.uuid == uuid)
+            .one_or_none()
+        )
+        if ticket is None:
+            abort(404)
+
+        if request.method == "POST":
+            if action == "update_ticket":
+                new_name = request.form.get("ticket_name", "").strip()
+                new_status = request.form.get("ticket_status", ticket.status).strip() or ticket.status
+                if new_name:
+                    ticket.name = new_name
+                ticket.status = new_status
+                session.commit()
+                _push_ticket_to_server(ticket)
+                return redirect(url_for("ticket_detail", uuid=uuid, message="Ticket updated"))
+            if action == "update_checklist":
+                ids = request.form.getlist("cs_id[]")
+                statuses = request.form.getlist("cs_status[]")
+                allowed = {"pending", "in_progress", "complete", "not_started"}
+                template_items_by_text = {}
+                if ticket.template_id:
+                    template_items = (
+                        session.query(ChecklistItem)
+                        .filter(ChecklistItem.template_id == ticket.template_id)
+                        .order_by(ChecklistItem.order_index.asc(), ChecklistItem.id.asc())
+                        .all()
+                    )
+                    for item in template_items:
+                        key = ((item.text_en or "").strip(), (item.text_cn or "").strip())
+                        if key != ("", "") and key not in template_items_by_text:
+                            template_items_by_text[key] = item
+                for cs_id, status in zip(ids, statuses):
+                    if status not in allowed:
+                        continue
+                    try:
+                        cid_int = int(cs_id)
+                    except (TypeError, ValueError):
+                        continue
+                    cs_obj = session.get(TicketChecklistStatus, cid_int)
+                    if cs_obj and cs_obj.ticket_id == ticket.id:
+                        if status != cs_obj.status:
+                            cs_obj.status = status
+                            cs_obj.checked_at = datetime.now(timezone.utc)
+                            if ticket.name:
+                                cs_obj.checked_by = ticket.name
+                        if not cs_obj.ticket_uuid:
+                            cs_obj.ticket_uuid = ticket.uuid
+                        if cs_obj.checklist_item_id is None:
+                            key = ((cs_obj.text_en or "").strip(), (cs_obj.text_cn or "").strip())
+                            match = template_items_by_text.get(key)
+                            if match:
+                                cs_obj.checklist_item_id = match.id
+                                if not cs_obj.text_en:
+                                    cs_obj.text_en = match.text_en or ""
+                                if not cs_obj.text_cn:
+                                    cs_obj.text_cn = match.text_cn or ""
+                session.commit()
+                _push_ticket_to_server(ticket)
+                return redirect(url_for("ticket_detail", uuid=uuid, message="Checklist updated"))
+
+        # Snapshot ticket data to avoid lazy-loading after session close
+        ticket_data = {
+            "id": ticket.id,
+            "uuid": ticket.uuid,
+            "dth_number": ticket.dth_number,
+            "name": ticket.name,
+            "status": ticket.status,
+            "created_at": ticket.created_at,
+            "notes_en": ticket.notes_en,
+            "notes_cn": ticket.notes_cn,
+            "project": {"project_code": ticket.project.project_code, "id": ticket.project.id} if ticket.project else None,
+            "template": {
+                "template_id": ticket.template.template_id,
+                "template_code": ticket.template.template_code,
+                "job_type_en": ticket.template.job_type_en,
+                "job_type_cn": ticket.template.job_type_cn,
+            }
+            if ticket.template
+            else None,
+            "images": [{"file_path": img.file_path, "caption": img.caption} for img in ticket.images],
+            "checklist_statuses": [
+                {
+                    "id": cs.id,
+                    "status": cs.status,
+                    "checklist_item": {
+                        "text_en": cs.text_en or (cs.checklist_item.text_en if cs.checklist_item else ""),
+                        "text_cn": cs.text_cn or (cs.checklist_item.text_cn if cs.checklist_item else ""),
+                    },
+                }
+                for cs in ticket.checklist_statuses
+            ],
+        }
+        design_id = ticket.template.design_id if ticket.template else "work_ticket_v1"
+        if action == "print":
+            slots = _slots_from_ticket(ticket)
+            try:
+                _enqueue_pending_ticket(uuid)
+            except Exception:
+                pass
+            try:
+                _push_ticket_to_server(ticket)
+            except Exception:
+                pass
+            img = _render_design_image(design_id, slots)
+            print_error = _print_ticket_image(img)
+            if print_error:
+                return redirect(url_for("ticket_detail", uuid=uuid, message=print_error))
+            return redirect(url_for("ticket_detail", uuid=uuid, message="Ticket sent to printer"))
+        if action == "preview":
+            slots = _slots_from_ticket(ticket)
+            img = _render_design_image(design_id, slots)
+            buf = io.BytesIO()
+            img.save(buf, format="PNG")
+            buf.seek(0)
+            return send_file(buf, mimetype="image/png")
+    finally:
+        session.close()
+
+    return render_template("ticket_detail.html", ticket=ticket_data, message=request.args.get("message"))
+
+
+@app.route("/translate", methods=["POST"])
+def translate_text():
+    try:
+        payload = request.get_json(silent=True) or {}
+        texts = payload.get("texts")
+        if not texts or not isinstance(texts, list):
+            return {"error": "Invalid payload"}, 400
+        client = _get_openai_client()
+        if client is None:
+            return {"error": "OPENAI_API_KEY is not set on the server."}, 400
+        print(f"[translate] request count={len(texts)}")  # lightweight trace
+        translations = []
+        for text in texts:
+            if not text:
+                translations.append("")
+                continue
+            resp = client.chat.completions.create(
+                model=os.getenv("OPENAI_TRANSLATE_MODEL", "gpt-4o-mini"),
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Translate the user's text to Simplified Chinese. Return only the translation text.",
+                    },
+                    {"role": "user", "content": text},
+                ],
+                temperature=0.2,
+                max_tokens=200,
+            )
+            translations.append(resp.choices[0].message.content.strip())
+        return {"translations": translations}
+    except Exception as exc:
+        return {"error": str(exc)}, 500
+
+
+@app.route("/ticket/<uuid>/delete", methods=["POST"])
+def ticket_delete(uuid: str):
+    session = get_session()
+    try:
+        ticket = session.query(Ticket).filter(Ticket.uuid == uuid).one_or_none()
+        if ticket is None:
+            return redirect(url_for("projects", message="Ticket not found"))
+        project_code = ticket.project.project_code if ticket.project else None
+        session.delete(ticket)
+        session.commit()
+        if project_code:
+            return redirect(url_for("project_detail", project_code=project_code, message="Ticket deleted"))
+        return redirect(url_for("projects", message="Ticket deleted"))
+    finally:
+        session.close()
+
+
+# -----------------------------
+# Template fill & previFFdew
+# -----------------------------
+def _render_ticket_image(slots):
+    render_fn = getattr(work_ticket_design, "render_ticket", None)
+    if render_fn is None:
+        raise RuntimeError(
+            "render_ticket is not available in the design module. Please add it to ticket_engine/designs/work_ticket_v1.py."
+        )
+    return render_fn(slots)
+
+
+def _slugify(value: str) -> str:
+    """Create a simple lowercase slug for template IDs."""
+    value = value.strip().lower()
+    value = re.sub(r"[^a-z0-9]+", "-", value).strip("-")
+    if not value:
+        value = "template"
+    return value
+
+
+def _print_ticket_image(img):
+    """
+    Send a PIL image to the ESC/POS printer.
+
+    Returns None on success, or an error message string on failure.
+    """
+    if BRIDGE_ONLY_PRINT:
+        return None
+    try:
+        from escpos.printer import File  # type: ignore
+    except Exception as exc:  # pragma: no cover - best effort import
+        return f"ESC/POS printer module not available: {exc}"
+
+    device_path = os.getenv("PRINTER_DEVICE", "/dev/usb/lp0")
+    try:
+        printer = File(device_path)
+    except Exception as exc:
+        return f"Could not open printer device {device_path}: {exc}"
+
+    try:
+        printer.image(img)
+        printer.cut()
+    except Exception as exc:
+        return f"Failed to print: {exc}"
+    finally:
+        try:
+            printer.close()
+        except Exception:
+            pass
+    return None
+
+
+def _render_design_image(design_id: str, slots: dict):
+    if design_id == "ticket_tracking_v1":
+        return ticket_tracking_v1.render_ticket(slots)
+    return _render_ticket_image(slots)
+
+
+def _build_ticket_qr_url(ticket: Ticket) -> str:
+    """
+    Build the QR payload for a ticket.
+    Default: just the ticket UUID (no protocol/host). Optional override via QR_PATH.
+    """
+    ticket_uuid = ticket.uuid
+    ticket_id = getattr(ticket, "id", None)
+    path_template = os.getenv("QR_PATH")
+    if not path_template:
+        return ticket_uuid
+    try:
+        return path_template.format(id=ticket_id, uuid=ticket_uuid, ticket=ticket_uuid)
+    except Exception:
+        return path_template
+
+
+def _ensure_tracking_template(session, base_template: Template) -> Template:
+    tracking_template_id = f"tracking-{base_template.template_id}"
+    existing = (
+        session.query(Template)
+        .filter(Template.template_id == tracking_template_id, Template.design_id == "ticket_tracking_v1")
+        .one_or_none()
+    )
+    if existing:
+        return existing
+    now = datetime.now(timezone.utc)
+    tracking_tpl = Template(
+        template_id=tracking_template_id,
+        name=f"{base_template.name} Tracking",
+        design_id="ticket_tracking_v1",
+        template_code=f"{base_template.template_code}-T",
+        job_type_en=base_template.job_type_en,
+        job_type_cn=base_template.job_type_cn,
+        created_at=now,
+        updated_at=now,
+        is_active=True,
+    )
+    session.add(tracking_tpl)
+    session.flush()
+    return tracking_tpl
+
+
+def _sync_tracking_ticket(session, base_ticket: Ticket, tracking_template: Template) -> Ticket:
+    tracking_ticket = None
+    if base_ticket.tracking_ticket_id:
+        tracking_ticket = session.get(Ticket, base_ticket.tracking_ticket_id)
+    if tracking_ticket is None:
+        tracking_ticket = Ticket(
+            uuid=str(uuid.uuid4()),
+            template_id=tracking_template.id,
+            project_id=base_ticket.project_id,
+            dth_number=base_ticket.dth_number,
+            name=base_ticket.name,
+            notes_en=base_ticket.notes_en,
+            notes_cn=base_ticket.notes_cn,
+            created_at=datetime.now(timezone.utc),
+            printed_at=None,
+            status=base_ticket.status,
+        )
+        session.add(tracking_ticket)
+        session.flush()
+        base_ticket.tracking_ticket_id = tracking_ticket.id
+    else:
+        tracking_ticket.project_id = base_ticket.project_id
+        tracking_ticket.dth_number = base_ticket.dth_number
+        tracking_ticket.name = base_ticket.name
+        tracking_ticket.notes_en = base_ticket.notes_en
+        tracking_ticket.notes_cn = base_ticket.notes_cn
+        tracking_ticket.status = base_ticket.status
+    session.commit()
+    session.refresh(tracking_ticket)
+    return tracking_ticket
+
+
+def _get_openai_client() -> OpenAI | None:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return None
+    try:
+        return OpenAI(api_key=api_key)
+    except TypeError as exc:
+        # Happens when openai pins an httpx version that differs from ours; disable translation gracefully.
+        app.logger.warning("OpenAI client init failed (likely httpx mismatch): %s", exc)
+    except Exception:
+        # Catch-all so UI keeps working even if OpenAI fails to initialize.
+        app.logger.exception("OpenAI client init failed unexpectedly.")
+    return None
+
+
+@app.route("/image_thumb")
+def image_thumb():
+    """
+    Serve image files (used for thumbnails) but only from the data directory for safety.
+    """
+    path = request.args.get("path", "")
+    if not path:
+        abort(404)
+    try:
+        resolved = Path(path).resolve()
+    except Exception:
+        abort(404)
+    data_root = Path("data").resolve()
+    try:
+        resolved.relative_to(data_root)
+    except Exception:
+        abort(404)
+    if not resolved.exists() or not resolved.is_file():
+        abort(404)
+    return send_file(resolved)
+
+
+@app.route("/designs")
+def designs_gallery():
+    """
+    Lightweight page to show available ticket designs.
+    """
+    designs = [
+        {
+            "id": "work_ticket_v1",
+            "name": "Work Ticket v1",
+            "description": "Default receipt design used by work tickets.",
+            "preview_url": url_for("preview_design", design_id="work_ticket_v1"),
+        },
+        {
+            "id": "ticket_tracking_v1",
+            "name": "Ticket Tracking v1",
+            "description": "Tracking ticket header/crop to top section for quick status capture.",
+            "preview_url": url_for("preview_design", design_id="ticket_tracking_v1"),
+        },
+    ]
+    return render_template("designs.html", designs=designs)
+
+
+@app.route("/templates")
+def templates_home():
+    """Landing page to choose between creating or editing templates."""
+    return render_template("templates_home.html")
+
+
+@app.route("/ticket_fill", methods=["GET", "POST"])
+def ticket_fill():
+    session = get_session()
+    try:
+        templates = (
+            session.query(Template)
+            .filter(Template.design_id == "work_ticket_v1", Template.is_active.is_(True))
+            .order_by(Template.updated_at.desc().nullslast(), Template.id.asc())
+            .all()
+        )
+        projects = (
+            session.query(Project)
+            .filter(Project.status != "archived")
+            .order_by(Project.updated_at.desc().nullslast(), Project.id.desc())
+            .all()
+        )
+    finally:
+        session.close()
+
+    translation_enabled = _get_openai_client() is not None
+    errors = []
+    message = request.args.get("message")
+    template_rows: list[dict] = []
+    form_data = {
+        "template_id": request.args.get("template_id", "").strip(),
+        "project_id": request.args.get("project_id", "").strip(),
+        "dth_number": "",
+        "name": "",
+        "notes_en": "",
+        "notes_cn": "",
+        "image_paths": "",
+        "checklist_rows": [],
+    }
+
+    selected_template = None
+    selected_project = None
+    last_ticket = None
+
+    if form_data["template_id"]:
+        session = get_session()
+        try:
+            selected_template = (
+                session.query(Template)
+                .filter(Template.template_id == form_data["template_id"], Template.is_active.is_(True))
+                .one_or_none()
+            )
+            if selected_template:
+                _ = selected_template.checklist_items  # load relationships
+            if form_data["project_id"]:
+                try:
+                    project_id_int = int(form_data["project_id"])
+                except ValueError:
+                    project_id_int = None
+                if project_id_int:
+                    selected_project = session.get(Project, project_id_int)
+            if selected_template:
+                template_rows = [{"en": item.text_en, "cn": item.text_cn} for item in selected_template.checklist_items]
+            if selected_template and selected_project:
+                last_ticket = (
+                    session.query(Ticket)
+                    .filter(
+                        Ticket.template_id == selected_template.id,
+                        Ticket.project_id == selected_project.id,
+                    )
+                    .order_by(Ticket.created_at.desc().nullslast(), Ticket.id.desc())
+                    .first()
+                )
+                if last_ticket:
+                    rows_from_ticket = [
+                        {
+                            "en": cs.text_en or (cs.checklist_item.text_en if cs.checklist_item else ""),
+                            "cn": cs.text_cn or (cs.checklist_item.text_cn if cs.checklist_item else ""),
+                        }
+                        for cs in last_ticket.checklist_statuses
+                    ]
+                    form_data["checklist_rows"] = rows_from_ticket or template_rows
+                    form_data.update(
+                        {
+                            "dth_number": last_ticket.dth_number or selected_project.project_code,
+                            "name": last_ticket.name or "",
+                            "notes_en": last_ticket.notes_en or "",
+                            "notes_cn": last_ticket.notes_cn or "",
+                            "image_paths": ", ".join(img.file_path for img in last_ticket.images),
+                            "project_id": str(selected_project.id),
+                        }
+                    )
+                elif selected_project:
+                    form_data["dth_number"] = selected_project.project_code
+                    form_data["checklist_rows"] = template_rows
+            elif selected_template:
+                form_data["checklist_rows"] = template_rows
+        finally:
+            session.close()
+        if selected_template is None:
+            errors.append("Selected template not found.")
+
+    # Final fallback to ensure initial load always shows template defaults
+    if selected_template and template_rows and not form_data["checklist_rows"]:
+        form_data["checklist_rows"] = template_rows
+    if selected_template:
+        if not form_data["notes_en"]:
+            form_data["notes_en"] = (
+                (selected_template.default_notes_en or "").strip()
+                or selected_template.job_type_en
+                or ""
+            )
+        if not form_data["notes_cn"]:
+            form_data["notes_cn"] = (
+                (selected_template.default_notes_cn or "").strip()
+                or selected_template.job_type_cn
+                or ""
+            )
+    if selected_project and not form_data["dth_number"]:
+        form_data["dth_number"] = selected_project.project_code
+
+    if request.method == "POST":
+        form_data = {
+            "template_id": request.form.get("template_id", "").strip(),
+            "project_id": request.form.get("project_id", "").strip(),
+            "dth_number": request.form.get("dth_number", "").strip(),
+            "name": request.form.get("name", "").strip(),
+            "notes_en": request.form.get("notes_en", "").strip(),
+            "notes_cn": request.form.get("notes_cn", "").strip(),
+            "image_paths": request.form.get("image_paths", "").strip(),
+            "checklist_rows": [],
+        }
+        action = request.form.get("action", "preview")
+        check_en = request.form.getlist("check_en[]")
+        check_cn = request.form.getlist("check_cn[]")
+        for en, cn in zip(check_en, check_cn):
+            en = en.strip()
+            cn = cn.strip()
+            if not en and not cn:
+                continue
+            form_data["checklist_rows"].append({"en": en, "cn": cn})
+
+        if not form_data["template_id"]:
+            errors.append("Please choose a template.")
+        else:
+            session = get_session()
+            try:
+                selected_template = (
+                    session.query(Template)
+                    .filter(Template.template_id == form_data["template_id"], Template.is_active.is_(True))
+                    .one_or_none()
+                )
+                if form_data["project_id"]:
+                    try:
+                        pid = int(form_data["project_id"])
+                    except ValueError:
+                        pid = None
+                    if pid:
+                        selected_project = session.get(Project, pid)
+            finally:
+                session.close()
+            if not selected_template:
+                errors.append("Selected template not found.")
+            if form_data["project_id"] and not selected_project:
+                errors.append("Selected project not found.")
+        if not form_data["checklist_rows"]:
+            errors.append("At least one checklist item is required.")
+
+        if not errors and selected_template:
+            image_paths = [
+                val.strip()
+                for val in form_data["image_paths"].split(",")
+                if val.strip()
+            ]
+            uploaded_files = request.files.getlist("image_files")
+            for f in uploaded_files:
+                if f and f.filename:
+                    filename = secure_filename(f.filename)
+                    save_name = f"{uuid.uuid4().hex}_{filename}"
+                    save_path = IMAGE_UPLOAD_DIR / save_name
+                    f.save(save_path)
+                    image_paths.append(str(save_path))
+
+            session = get_session()
+            try:
+                # reload with session to attach objects
+                template_db = (
+                    session.query(Template)
+                    .filter(Template.id == selected_template.id)
+                    .one()
+                )
+                ensure_designs(session)
+                ensure_template_metadata(session, template_db)
+                if selected_project:
+                    ensure_project_templates(session, selected_project, [template_db])
+                now = datetime.now(timezone.utc)
+                import uuid as _uuid
+
+                # reuse last ticket for this project+template if exists
+                existing_ticket = None
+                if selected_project:
+                    existing_ticket = (
+                        session.query(Ticket)
+                        .filter(
+                            Ticket.template_id == template_db.id,
+                            Ticket.project_id == selected_project.id,
+                        )
+                        .order_by(Ticket.created_at.desc(), Ticket.id.desc())
+                        .first()
+                    )
+                if existing_ticket:
+                    ticket = existing_ticket
+                    ticket.name = form_data["name"]
+                    ticket.notes_en = form_data["notes_en"]
+                    ticket.notes_cn = form_data["notes_cn"]
+                    ticket.dth_number = form_data["dth_number"]
+                    ticket.printed_at = now
+                    ticket.status = "open"
+                    # replace images and checklist
+                    session.query(TicketImage).filter(TicketImage.ticket_id == ticket.id).delete()
+                    session.query(TicketChecklistStatus).filter(TicketChecklistStatus.ticket_id == ticket.id).delete()
+                else:
+                    ticket = Ticket(
+                        uuid=str(_uuid.uuid4()),
+                        template_id=template_db.id,
+                        project_id=selected_project.id if selected_project else None,
+                        dth_number=form_data["dth_number"],
+                        name=form_data["name"],
+                        notes_en=form_data["notes_en"],
+                        notes_cn=form_data["notes_cn"],
+                        created_at=now,
+                        printed_at=now,
+                        status="open",
+                    )
+                    session.add(ticket)
+                    session.flush()
+
+                template_items = list(template_db.checklist_items)
+                items_by_text = {}
+                for item in template_items:
+                    key = ((item.text_en or "").strip(), (item.text_cn or "").strip())
+                    if key != ("", "") and key not in items_by_text:
+                        items_by_text[key] = item
+
+                # add checklist rows from form
+                for idx, row in enumerate(form_data["checklist_rows"], start=1):
+                    text_en = (row.get("en") or "").strip()
+                    text_cn = (row.get("cn") or "").strip()
+                    match = items_by_text.get((text_en, text_cn))
+                    if match is None and idx <= len(template_items):
+                        match = template_items[idx - 1]
+                    session.add(
+                        TicketChecklistStatus(
+                            ticket_id=ticket.id,
+                            ticket_uuid=ticket.uuid,
+                            checklist_item_id=match.id if match else None,
+                            status="not_started",
+                            text_en=text_en,
+                            text_cn=text_cn,
+                        )
+                    )
+
+                for idx, path in enumerate(image_paths):
+                    session.add(
+                        TicketImage(
+                            ticket_id=ticket.id,
+                            file_path=path,
+                            order_index=idx,
+                        )
+                    )
+
+                session.commit()
+                session.refresh(ticket)
+                images_db = session.query(TicketImage).filter(TicketImage.ticket_id == ticket.id).order_by(TicketImage.order_index.asc()).all()
+                checklist_items = list(
+                    session.query(TicketChecklistStatus)
+                    .filter(TicketChecklistStatus.ticket_id == ticket.id)
+                    .all()
+                )
+                tracking_meta = None
+                if template_db.design_id == "work_ticket_v1":
+                    tracking_template = _ensure_tracking_template(session, template_db)
+                    tracking_ticket = _sync_tracking_ticket(session, ticket, tracking_template)
+                    tracking_meta = {
+                        "template_code": tracking_template.template_code,
+                        "job_type_en": tracking_template.job_type_en,
+                        "job_type_cn": tracking_template.job_type_cn,
+                        "dth_number": ticket.dth_number,
+                        "name": ticket.name,
+                        "notes_en": ticket.notes_en or "",
+                        "notes_cn": ticket.notes_cn or "",
+                        "checklist_items": [],
+                        "image_paths": [],
+                        "uuid": tracking_ticket.uuid,
+                    }
+                _push_ticket_to_server(ticket)
+            except Exception as exc:
+                session.rollback()
+                errors.append(f"Failed to create ticket: {exc}")
+                ticket = None
+                images_db = []
+                checklist_items = []
+                tracking_meta = None
+            finally:
+                session.close()
+
+            if not errors and ticket:
+                if action == "save":
+                    redirect_params = {"template_id": form_data["template_id"], "message": "Ticket saved."}
+                    if form_data.get("project_id"):
+                        redirect_params["project_id"] = form_data["project_id"]
+                    return redirect(url_for("ticket_fill", **redirect_params))
+
+                slots = {
+                    "template_code": template_db.template_code,
+                    "job_type_en": template_db.job_type_en,
+                    "job_type_cn": template_db.job_type_cn,
+                    "checklist_items": [{"en": item.text_en, "cn": item.text_cn} for item in checklist_items],
+                    "dth_number": ticket.dth_number,
+                    "name": ticket.name,
+                    "notes_en": ticket.notes_en or "",
+                    "notes_cn": ticket.notes_cn or "",
+                    "image_paths": [img.file_path for img in images_db],
+                    "qr_data": _build_ticket_qr_url(ticket),
+                }
+
+                try:
+                    img = _render_ticket_image(slots)
+                except Exception as exc:
+                    errors.append(str(exc))
+                    img = None
+
+                if not errors and img is not None:
+                    if action == "print":
+                        try:
+                            _enqueue_pending_ticket(ticket.uuid)
+                        except Exception:
+                            pass
+                        try:
+                            _push_ticket_to_server(ticket)
+                        except Exception:
+                            pass
+                        print_error = _print_ticket_image(img)
+                        if print_error:
+                            errors.append(print_error)
+                        if not errors:
+                            if tracking_meta:
+                                try:
+                                    tracking_img = _render_design_image("ticket_tracking_v1", tracking_meta)
+                                    t_err = _print_ticket_image(tracking_img)
+                                    if t_err:
+                                        errors.append(f"Tracking ticket print error: {t_err}")
+                                except Exception as exc:
+                                    errors.append(str(exc))
+                            if not errors:
+                                redirect_params = {
+                                    "template_id": form_data["template_id"],
+                                    "message": "Ticket sent to printer.",
+                                }
+                                if form_data.get("project_id"):
+                                    redirect_params["project_id"] = form_data["project_id"]
+                                return redirect(url_for("ticket_fill", **redirect_params))
+                    else:  # preview
+                        buf = io.BytesIO()
+                        img.save(buf, format="PNG")
+                        buf.seek(0)
+                        return send_file(buf, mimetype="image/png")
+                try:
+                    _enqueue_pending_ticket(ticket.uuid)
+                except Exception:
+                    pass
+
+    return render_template(
+        "ticket_fill.html",
+        templates=templates,
+        projects=projects,
+        selected_template=selected_template,
+        form_data=form_data,
+        errors=errors,
+        message=message,
+        translation_enabled=translation_enabled,
+    )
+
+
+@app.route("/template_new", methods=["GET", "POST"])
+def template_new():
+    translation_enabled = _get_openai_client() is not None
+    errors = []
+    form_data = {
+        "name": "",
+        "template_id": "",
+        "template_code": "",
+        "job_type_en": "",
+        "job_type_cn": "",
+        "default_notes_en": "",
+        "default_notes_cn": "",
+        "checklist_items": "",
+    }
+
+    if request.method == "POST":
+        check_en = request.form.getlist("check_en[]")
+        check_cn = request.form.getlist("check_cn[]")
+        form_data = {
+            "name": request.form.get("name", "").strip(),
+            "template_code": request.form.get("template_code", "").strip(),
+            "job_type_en": request.form.get("job_type_en", "").strip(),
+            "job_type_cn": request.form.get("job_type_cn", "").strip(),
+            "default_notes_en": request.form.get("default_notes_en", "").strip(),
+            "default_notes_cn": request.form.get("default_notes_cn", "").strip(),
+            "template_id": request.form.get("template_id", "").strip(),
+            "checklist_items": "",
+        }
+
+        required_fields = {
+            "name": "Template Name is required.",
+            "template_code": "Template Code is required.",
+            "job_type_en": "Job Type (English) is required.",
+            "job_type_cn": "Job Type (Chinese) is required.",
+        }
+        for key, msg in required_fields.items():
+            if not form_data[key]:
+                errors.append(msg)
+
+        template_id = _slugify(form_data["name"] or form_data["template_code"])
+
+        checklist_items = []
+        pairs = zip(check_en, check_cn)
+        for en, cn in pairs:
+            en = en.strip()
+            cn = cn.strip()
+            if not en and not cn:
+                continue
+            checklist_items.append({"en": en, "cn": cn})
+
+        if not checklist_items:
+            errors.append("At least one checklist item is required.")
+
+        if not errors:
+            session = get_session()
+            try:
+                now = datetime.now(timezone.utc)
+                ensure_designs(session)
+                template = Template(
+                    template_id=template_id,
+                    name=form_data["name"],
+                    design_id="work_ticket_v1",
+                    template_code=form_data["template_code"],
+                    job_type_en=form_data["job_type_en"],
+                    job_type_cn=form_data["job_type_cn"],
+                    default_notes_en=form_data["default_notes_en"] or None,
+                    default_notes_cn=form_data["default_notes_cn"] or None,
+                    created_at=now,
+                    updated_at=now,
+                    is_active=True,
+                )
+                session.add(template)
+                session.flush()
+
+                for idx, item in enumerate(checklist_items, start=1):
+                    session.add(
+                        ChecklistItem(
+                            template_id=template.id,
+                            order_index=idx,
+                            text_en=item["en"],
+                            text_cn=item["cn"],
+                            required=True,
+                        )
+                    )
+
+                session.flush()
+                ensure_template_metadata(session, template)
+                session.commit()
+            except Exception:
+                session.rollback()
+                errors.append("Failed to save template.")
+            finally:
+                session.close()
+
+            if not errors:
+                return redirect(url_for("template_edit", message="Template created"))
+
+    return render_template("template_new.html", errors=errors, form_data=form_data, translation_enabled=translation_enabled)
+
+
+@app.route("/template_edit")
+def template_edit():
+    translation_enabled = _get_openai_client() is not None
+    session = get_session()
+    try:
+        templates = (
+            session.query(Template)
+            .options(selectinload(Template.tickets))
+            .filter(Template.design_id == "work_ticket_v1", Template.is_active.is_(True))
+            .order_by(Template.updated_at.desc().nullslast(), Template.id.asc())
+            .all()
+        )
+        archived_templates = (
+            session.query(Template)
+            .options(selectinload(Template.tickets))
+            .filter(Template.design_id == "work_ticket_v1", Template.is_active.is_(False))
+            .order_by(Template.updated_at.desc().nullslast(), Template.id.asc())
+            .all()
+        )
+    finally:
+        session.close()
+    message = request.args.get("message")
+    return render_template(
+        "template_edit.html",
+        templates=templates,
+        archived_templates=archived_templates,
+        message=message,
+        edit_template=None,
+        form_data=None,
+        errors=[],
+        translation_enabled=translation_enabled,
+    )
+
+
+@app.route("/template_delete/<template_id>", methods=["POST"])
+def template_delete(template_id: str):
+    session = get_session()
+    try:
+        tpl = (
+            session.query(Template)
+            .filter(Template.template_id == template_id, Template.is_active.is_(True))
+            .one_or_none()
+        )
+        if tpl is None:
+            return redirect(url_for("template_edit", message="Template not found"))
+        has_tickets = session.query(Ticket).filter(Ticket.template_id == tpl.id).count() > 0
+        if has_tickets:
+            return redirect(url_for("template_edit", message="Cannot delete template with tickets"))
+        tpl.is_active = False
+        session.commit()
+        return redirect(url_for("template_edit", message="Template deleted"))
+    finally:
+        session.close()
+
+
+@app.route("/template_archive/<template_id>", methods=["POST"])
+def template_archive(template_id: str):
+    session = get_session()
+    try:
+        tpl = (
+            session.query(Template)
+            .filter(Template.template_id == template_id, Template.is_active.is_(True))
+            .one_or_none()
+        )
+        if tpl is None:
+            return redirect(url_for("template_edit", message="Template not found"))
+        tpl.is_active = False
+        session.commit()
+        return redirect(url_for("template_edit", message="Template archived"))
+    finally:
+        session.close()
+
+
+@app.route("/template_edit/<template_id>", methods=["GET", "POST"])
+def template_edit_detail(template_id: str):
+    session = get_session()
+    try:
+        existing = (
+            session.query(Template)
+            .filter(Template.template_id == template_id, Template.is_active.is_(True))
+            .one_or_none()
+        )
+        if existing is None:
+            abort(404)
+
+        checklist_items_db = (
+            session.query(ChecklistItem)
+            .filter(ChecklistItem.template_id == existing.id)
+            .order_by(ChecklistItem.order_index.asc(), ChecklistItem.id.asc())
+            .all()
+        )
+    finally:
+        session.close()
+
+    errors = []
+    form_data = {
+        "name": existing.name,
+        "template_id": existing.template_id,
+        "template_code": existing.template_code,
+        "job_type_en": existing.job_type_en,
+        "job_type_cn": existing.job_type_cn,
+        "default_notes_en": existing.default_notes_en or "",
+        "default_notes_cn": existing.default_notes_cn or "",
+        "checklist_items": "\n".join(
+            f"{item.text_en.strip()} | {item.text_cn.strip()}" for item in checklist_items_db
+        ),
+    }
+
+    if request.method == "POST":
+        check_en = request.form.getlist("check_en[]")
+        check_cn = request.form.getlist("check_cn[]")
+        form_data = {
+            "name": request.form.get("name", "").strip(),
+            "template_id": request.form.get("template_id", "").strip(),
+            "template_code": request.form.get("template_code", "").strip(),
+            "job_type_en": request.form.get("job_type_en", "").strip(),
+            "job_type_cn": request.form.get("job_type_cn", "").strip(),
+            "default_notes_en": request.form.get("default_notes_en", "").strip(),
+            "default_notes_cn": request.form.get("default_notes_cn", "").strip(),
+            "checklist_items": "",
+        }
+
+        if form_data["template_id"] != template_id:
+            errors.append("Template ID cannot be changed for existing templates.")
+
+        required_fields = {
+            "name": "Template Name is required.",
+            "template_code": "Template Code is required.",
+            "job_type_en": "Job Type (English) is required.",
+            "job_type_cn": "Job Type (Chinese) is required.",
+        }
+        for key, msg in required_fields.items():
+            if not form_data[key]:
+                errors.append(msg)
+
+        checklist_items = []
+        for en, cn in zip(check_en, check_cn):
+            en = en.strip()
+            cn = cn.strip()
+            if not en and not cn:
+                continue
+            checklist_items.append({"en": en, "cn": cn})
+
+        if not checklist_items:
+            errors.append("At least one checklist item is required.")
+
+        if not errors:
+            session = get_session()
+            try:
+                existing_db = (
+                    session.query(Template)
+                    .filter(Template.template_id == template_id, Template.is_active.is_(True))
+                    .one_or_none()
+                )
+                if existing_db is None:
+                    abort(404)
+                existing_db.name = form_data["name"]
+                existing_db.template_code = form_data["template_code"]
+                existing_db.job_type_en = form_data["job_type_en"]
+                existing_db.job_type_cn = form_data["job_type_cn"]
+                existing_db.default_notes_en = form_data["default_notes_en"] or None
+                existing_db.default_notes_cn = form_data["default_notes_cn"] or None
+                existing_db.updated_at = datetime.now(timezone.utc)
+
+                session.query(ChecklistItem).filter(ChecklistItem.template_id == existing_db.id).delete()
+                session.flush()
+                for idx, item in enumerate(checklist_items, start=1):
+                    session.add(
+                        ChecklistItem(
+                            template_id=existing_db.id,
+                            order_index=idx,
+                            text_en=item["en"],
+                            text_cn=item["cn"],
+                            required=True,
+                        )
+                    )
+
+                session.flush()
+                ensure_template_metadata(session, existing_db)
+                session.commit()
+            except Exception:
+                session.rollback()
+                errors.append("Failed to update template.")
+            finally:
+                session.close()
+
+            if not errors:
+                return redirect(url_for("template_edit", message="Template updated"))
+
+    translation_enabled = _get_openai_client() is not None
+    return render_template(
+        "template_edit.html",
+        edit_template=existing,
+        form_data=form_data,
+        errors=errors,
+        templates=None,
+        message=None,
+        translation_enabled=translation_enabled,
+        archived_templates=[],
+    )
+
+
+# -----------------------------
+# Bridge API for external Node server / mobile app
+# -----------------------------
+
+@app.route("/api/health")
+def api_health():
+    now = datetime.now(timezone.utc).isoformat()
+    return {
+        "ok": True,
+        "proxying": False,
+        "flask": {"ok": True, "db_path": str(DB_PATH), "timestamp": now},
+        "apiKeyProtected": bool(API_KEY),
+        "timestamp": now,
+        "cacheMode": BRIDGE_CACHE_MODE,
+    }
+
+@app.route("/api/pending/requests", methods=["GET"])
+def pending_requests():
+    requests = list(_PENDING_REQUESTS)
+    app.logger.info(
+        "[bridge] pending poll count=%s tickets=%s",
+        len(requests),
+        ",".join(requests),
+    )
+    return {"requests": requests}
+
+
+@app.route("/api/pending/requests", methods=["POST"])
+def pending_requests_add():
+    payload = request.get_json(silent=True) or {}
+    refs = payload.get("requests")
+    if not isinstance(refs, list):
+        refs = []
+    added = 0
+    for ref in refs:
+        if not ref:
+            continue
+        key = str(ref)
+        if key not in _PENDING_REQUESTS:
+            added += 1
+        _add_pending_request(key)
+    app.logger.info(
+        "[bridge] pending add count=%s tickets=%s",
+        added,
+        ",".join(str(r) for r in refs),
+    )
+    return {"ok": True, "added": added}
+
+
+@app.route("/api/pending/consume", methods=["POST"])
+def pending_requests_consume():
+    payload = request.get_json(silent=True) or {}
+    refs = payload.get("requests")
+    if not isinstance(refs, list):
+        refs = []
+    removed = 0
+    for ref in refs:
+        if not ref:
+            continue
+        key = str(ref)
+        if key in _PENDING_REQUESTS:
+            _PENDING_REQUESTS.remove(key)
+            removed += 1
+    app.logger.info(
+        "[bridge] pending consume removed=%s tickets=%s remaining=%s",
+        removed,
+        ",".join(str(r) for r in refs),
+        len(_PENDING_REQUESTS),
+    )
+    return {"ok": True, "removed": removed, "remaining": len(_PENDING_REQUESTS)}
+
+
+@app.route("/api/push/tickets", methods=["POST"])
+def push_ticket_payload():
+    payload = request.get_json(silent=True) or {}
+    ok = _store_ticket_payload(payload)
+    ticket = payload.get("ticket") if isinstance(payload, dict) else None
+    app.logger.info(
+        "[bridge] push received ok=%s uuid=%s id=%s",
+        ok,
+        ticket.get("uuid") if isinstance(ticket, dict) else None,
+        ticket.get("id") if isinstance(ticket, dict) else None,
+    )
+    if not ok:
+        return {"error": "missing ticket in payload"}, 400
+    return {"ok": True}
+
+
+def _bridge_require_api_key():
+    # Auth enforced by _bridge_middleware when BRIDGE_API_KEY is set.
+    return
+
+
+def _iso(dt: datetime | None) -> str | None:
+    return dt.isoformat() if dt else None
+
+
+def _should_enqueue_pending(default: bool = True) -> bool:
+    val = request.args.get("enqueue")
+    if val is None:
+        return default
+    return str(val).lower() not in {"0", "false", "no"}
+
+
+def _serialize_ticket(ticket: Ticket) -> dict:
+    tpl = ticket.template
+    proj = ticket.project
+    return {
+        "ticket": {
+            "id": ticket.id,
+            "uuid": ticket.uuid,
+            "templateId": ticket.template_id,
+            "projectId": ticket.project_id,
+            "dthNumber": ticket.dth_number or "",
+            "name": ticket.name or "",
+            "notesEn": ticket.notes_en or "",
+            "notesCn": ticket.notes_cn or "",
+            "status": ticket.status,
+            "trackingTicketId": ticket.tracking_ticket_id,
+            "createdAt": _iso(ticket.created_at),
+            "printedAt": _iso(ticket.printed_at),
+            "printedBy": ticket.printed_by,
+        },
+        "template": None
+        if tpl is None
+        else {
+            "id": tpl.id,
+            "templateId": tpl.template_id,
+            "designId": tpl.design_id,
+            "name": tpl.name,
+            "templateCode": tpl.template_code,
+            "jobTypeEn": tpl.job_type_en,
+            "jobTypeCn": tpl.job_type_cn,
+            "defaultNotesEn": tpl.default_notes_en,
+            "defaultNotesCn": tpl.default_notes_cn,
+            "isActive": bool(tpl.is_active),
+            "createdAt": _iso(tpl.created_at),
+            "updatedAt": _iso(tpl.updated_at),
+        },
+        "project": None
+        if proj is None
+        else {
+            "id": proj.id,
+            "projectCode": proj.project_code,
+            "name": proj.name,
+            "description": proj.description,
+            "status": proj.status,
+            "createdAt": _iso(proj.created_at),
+            "updatedAt": _iso(proj.updated_at),
+        },
+    }
+
+
+def _serialize_checklist_status(cs: TicketChecklistStatus) -> dict:
+    item = cs.checklist_item
+    return {
+        "statusId": cs.id,
+        "ticketId": cs.ticket_id,
+        "checklistItemId": cs.checklist_item_id,
+        "status": cs.status,
+        "textEn": cs.text_en or "",
+        "textCn": cs.text_cn or "",
+        "checkedAt": _iso(cs.checked_at),
+        "checkedBy": cs.checked_by,
+        "checklistItem": None
+        if item is None
+        else {
+            "orderIndex": item.order_index,
+            "textEn": item.text_en,
+            "textCn": item.text_cn,
+            "required": bool(item.required),
+        },
+    }
+
+
+def _serialize_image(img: TicketImage) -> dict:
+    return {
+        "id": img.id,
+        "filePath": img.file_path,
+        "caption": img.caption,
+        "orderIndex": img.order_index,
+    }
+
+
+def _build_ticket_payload_full(ticket: Ticket) -> dict:
+    """
+    Full ticket payload including checklist and images.
+    """
+    payload = _serialize_ticket(ticket)
+    checklist = sorted(
+        ticket.checklist_statuses,
+        key=lambda cs: (
+            cs.checklist_item.order_index if cs.checklist_item else 999999,
+            cs.id,
+        ),
+    )
+    payload["checklist"] = [_serialize_checklist_status(cs) for cs in checklist]
+    images = sorted(ticket.images, key=lambda img: (img.order_index, img.id))
+    payload["images"] = [_serialize_image(img) for img in images]
+    return payload
+
+
+def _push_ticket_to_server(ticket: Ticket) -> None:
+    """
+    Best-effort push of full ticket payload to an upstream server.
+    Hardcoded SERVER_PUSH_URL; optional SERVER_PUSH_KEY for auth.
+    Endpoint expected: POST of full payload at SERVER_PUSH_URL.
+    """
+    target = SERVER_PUSH_URL
+    if not target:
+        return
+    api_key = os.getenv("SERVER_PUSH_KEY")
+    timeout_val = os.getenv("SERVER_PUSH_TIMEOUT")
+    try:
+        timeout = float(timeout_val) if timeout_val else 5.0
+    except (TypeError, ValueError):
+        timeout = 5.0
+
+    payload = _build_ticket_payload_full(ticket)
+    data = json.dumps(payload).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["x-api-key"] = api_key
+    req = urlrequest.Request(target, data=data, headers=headers, method="POST")
+    try:
+        app.logger.info("Pushing ticket %s to %s", ticket.uuid, target)
+        with urlrequest.urlopen(req, timeout=timeout) as resp:
+            body = resp.read()
+            app.logger.info(
+                "Push response status=%s length=%s body_preview=%s",
+                getattr(resp, "status", None),
+                len(body),
+                body[:200],
+            )
+    except Exception as exc:  # best-effort, do not block on push failures
+        app.logger.warning("Failed to push ticket to server: %s", exc)
+
+
+def _poll_server_for_ticket(ticket_ref: str) -> dict | None:
+    """
+    Best-effort poll for ticket payload from server.
+    """
+    target = SERVER_PUSH_URL
+    if not target:
+        return None
+    poll_url = target.replace("/push/tickets", f"/tickets/{ticket_ref}/full")
+    try:
+        app.logger.info("Polling server for ticket %s -> %s", ticket_ref, poll_url)
+        with urlrequest.urlopen(poll_url, timeout=5) as resp:
+            body = resp.read()
+            app.logger.info(
+                "Poll response status=%s length=%s body_preview=%s",
+                getattr(resp, "status", None),
+                len(body),
+                body[:200],
+            )
+            if resp.getcode() == 200 and body:
+                return json.loads(body.decode("utf-8"))
+    except Exception as exc:
+        app.logger.warning("Poll failed for ticket %s: %s", ticket_ref, exc)
+    return None
+
+
+def _load_ticket_for_push(ticket_ref: str) -> Ticket | None:
+    """
+    Fetch a ticket with related rows, by id or uuid.
+    """
+    session = get_session()
+    try:
+        base = (
+            session.query(Ticket)
+            .options(
+                selectinload(Ticket.template),
+                selectinload(Ticket.project),
+                selectinload(Ticket.images),
+                selectinload(Ticket.checklist_statuses).selectinload(TicketChecklistStatus.checklist_item),
+            )
+        )
+        ticket = None
+        if str(ticket_ref).isdigit():
+            ticket = base.filter(Ticket.id == int(ticket_ref)).one_or_none()
+        if ticket is None:
+            ticket = base.filter(Ticket.uuid == str(ticket_ref)).one_or_none()
+        return ticket
+    except Exception as exc:
+        app.logger.warning("Lookup failed for ticket %s: %s", ticket_ref, exc)
+        return None
+    finally:
+        session.close()
+
+
+def _poll_pending_requests_loop():
+    """
+    Poll the server for pending ticket requests every 500ms and push if found.
+    """
+    if not SERVER_POLL_URL:
+        app.logger.info("Pending poll disabled (no SERVER_POLL_URL)")
+        return
+    app.logger.info("Starting pending poll loop -> %s", SERVER_POLL_URL)
+    while True:
+        try:
+            with urlrequest.urlopen(SERVER_POLL_URL, timeout=5) as resp:
+                body = resp.read()
+                status = getattr(resp, "status", None)
+                app.logger.info(
+                    "Pending poll status=%s len=%s preview=%s",
+                    status,
+                    len(body),
+                    body[:200],
+                )
+                if status == 200 and body:
+                    try:
+                        data = json.loads(body.decode("utf-8") or "{}")
+                    except Exception as exc:
+                        app.logger.warning("Failed to parse pending payload: %s", exc)
+                        data = {}
+                    requests = data.get("requests") or []
+                    for ticket_ref in requests:
+                        app.logger.info("Handling pending ticket request %s", ticket_ref)
+                        ticket_obj = _load_ticket_for_push(str(ticket_ref))
+                        if ticket_obj:
+                            _push_ticket_to_server(ticket_obj)
+                        else:
+                            app.logger.warning("Ticket %s not found locally", ticket_ref)
+        except Exception as exc:
+            app.logger.warning("Pending poll failed: %s", exc)
+        time.sleep(POLL_INTERVAL_SEC)
+
+
+def _enqueue_pending_ticket(ticket_ref: str) -> None:
+    """
+    Notify the bridge server that a ticket is pending print.
+    """
+    if not ticket_ref:
+        return
+    if not BRIDGE_PENDING_URL:
+        _PENDING_REQUESTS.add(str(ticket_ref))
+        app.logger.info("Enqueued pending ticket %s (local)", ticket_ref)
+        return
+    payload = json.dumps({"requests": [ticket_ref]}).encode("utf-8")
+    req = urllib.request.Request(
+        BRIDGE_PENDING_URL,
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            resp.read()
+            app.logger.info("Enqueued pending ticket %s (status=%s)", ticket_ref, getattr(resp, "status", None))
+    except Exception as exc:
+        app.logger.warning("Failed to enqueue pending ticket %s: %s", ticket_ref, exc)
+
+
+_POLL_THREAD_STARTED = False
+
+
+def _ensure_poll_thread():
+    global _POLL_THREAD_STARTED
+    if _POLL_THREAD_STARTED or not SERVER_POLL_URL:
+        return
+    _POLL_THREAD_STARTED = True
+    t = threading.Thread(target=_poll_pending_requests_loop, daemon=True)
+    t.start()
+
+
+
+@app.route("/api/bridge/health")
+def bridge_health():
+    _bridge_require_api_key()
+    return {
+        "ok": True,
+        "db_path": str(DB_PATH),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def _load_ticket_with_related(session: "Session", ticket_ref: str) -> Ticket | None:
+    """
+    Load a ticket by DB id (preferred) or UUID, with related rows preloaded.
+    """
+    def base_query():
+        return (
+            session.query(Ticket)
+            .options(
+                selectinload(Ticket.template),
+                selectinload(Ticket.project),
+                selectinload(Ticket.images),
+                selectinload(Ticket.checklist_statuses).selectinload(TicketChecklistStatus.checklist_item),
+            )
+        )
+
+    ticket = None
+    if str(ticket_ref).isdigit():
+        ticket = base_query().filter(Ticket.id == int(ticket_ref)).one_or_none()
+    if ticket is None:
+        ticket = base_query().filter(Ticket.uuid == ticket_ref).one_or_none()
+    return ticket
+
+
+def _load_payload_for_api(ticket_ref: str) -> dict | None:
+    if BRIDGE_CACHE_MODE == "prefer":
+        cached = _get_cached_ticket(ticket_ref)
+        if cached:
+            app.logger.info(
+                "[bridge] served from cache ticketRef=%s",
+                ticket_ref,
+            )
+            return cached
+    session = get_session()
+    try:
+        ticket = _load_ticket_with_related(session, ticket_ref)
+        if ticket is None:
+            return None
+        payload = _build_ticket_payload_full(ticket)
+    finally:
+        session.close()
+    if _cache_enabled():
+        _store_ticket_payload(payload)
+    return payload
+
+
+@app.route("/api/bridge/tickets/<ticket_ref>")
+def bridge_ticket(ticket_ref: str):
+    _bridge_require_api_key()
+    session = get_session()
+    try:
+        ticket = _load_ticket_with_related(session, ticket_ref)
+        if ticket is None:
+            return {"error": "ticket not found"}, 404
+        payload = _serialize_ticket(ticket)
+        return payload
+    finally:
+        session.close()
+
+
+@app.route("/api/bridge/tickets/<ticket_ref>/full")
+def bridge_ticket_full(ticket_ref: str):
+    _bridge_require_api_key()
+    session = get_session()
+    try:
+        ticket = _load_ticket_with_related(session, ticket_ref)
+        if ticket is None:
+            return {"error": "ticket not found"}, 404
+        payload = _build_ticket_payload_full(ticket)
+        if _should_enqueue_pending():
+            _enqueue_pending_ticket(ticket_ref)
+        return payload
+    finally:
+        session.close()
+
+
+@app.route("/api/bridge/tickets/<ticket_ref>/checklist")
+def bridge_ticket_checklist(ticket_ref: str):
+    _bridge_require_api_key()
+    session = get_session()
+    try:
+        ticket = _load_ticket_with_related(session, ticket_ref)
+        if ticket is None:
+            return {"error": "ticket not found"}, 404
+        checklist = sorted(
+            ticket.checklist_statuses,
+            key=lambda cs: (
+                cs.checklist_item.order_index if cs.checklist_item else 999999,
+                cs.id,
+            ),
+        )
+        return {
+            "ticketId": ticket.id,
+            "checklist": [_serialize_checklist_status(cs) for cs in checklist],
+        }
+    finally:
+        session.close()
+
+
+@app.route("/api/bridge/tickets/<ticket_ref>/images")
+def bridge_ticket_images(ticket_ref: str):
+    _bridge_require_api_key()
+    session = get_session()
+    try:
+        ticket = _load_ticket_with_related(session, ticket_ref)
+        if ticket is None:
+            return {"error": "ticket not found"}, 404
+        images = sorted(ticket.images, key=lambda img: (img.order_index, img.id))
+        return {"ticketId": ticket.id, "images": [_serialize_image(img) for img in images]}
+    finally:
+        session.close()
+
+
+@app.route("/api/bridge/tickets/<ticket_ref>/checklist/<int:status_id>", methods=["PATCH"])
+@app.route("/api/tickets/<ticket_ref>/checklist/<int:status_id>", methods=["PATCH"])
+def bridge_update_checklist(ticket_ref: str, status_id: int):
+    _bridge_require_api_key()
+    payload = request.get_json(force=True, silent=True) or {}
+    session = get_session()
+    try:
+        ticket = _load_ticket_with_related(session, ticket_ref)
+        if ticket is None:
+            return {"error": "ticket not found"}, 404
+        status_row = (
+            session.query(TicketChecklistStatus)
+            .filter(
+                TicketChecklistStatus.id == status_id,
+                TicketChecklistStatus.ticket_id == ticket.id,
+            )
+            .one_or_none()
+        )
+        if status_row is None:
+            return {"error": "checklist status not found"}, 404
+
+        updated = False
+        if "status" in payload:
+            status_row.status = str(payload["status"])
+            updated = True
+        if "textEn" in payload:
+            status_row.text_en = payload.get("textEn") or ""
+            updated = True
+        if "textCn" in payload:
+            status_row.text_cn = payload.get("textCn") or ""
+            updated = True
+        if "checkedBy" in payload:
+            status_row.checked_by = payload.get("checkedBy") or None
+            updated = True
+
+        if "checkedAt" in payload:
+            val = payload.get("checkedAt")
+            status_row.checked_at = datetime.fromisoformat(val) if val else None
+            updated = True
+        elif "status" in payload:
+            status_row.checked_at = datetime.now(timezone.utc)
+            updated = True
+
+        if not updated:
+            return {"error": "no fields to update"}, 400
+
+        session.commit()
+        session.refresh(status_row)
+        _push_ticket_to_server(ticket)
+        return _serialize_checklist_status(status_row)
+    except Exception:
+        session.rollback()
+        raise
+
+
+# -----------------------------
+# Public API for full ticket payload (for app consumption)
+# -----------------------------
+
+
+@app.route("/api/tickets/<ticket_ref>")
+def api_ticket(ticket_ref: str):
+    payload = _load_payload_for_api(ticket_ref)
+    if payload is None:
+        if BRIDGE_PENDING_ON_MISS:
+            _add_pending_request(ticket_ref)
+            return _pending_response(ticket_ref, "ticket")
+        return {"error": "ticket not found"}, 404
+    return payload
+
+
+@app.route("/api/tickets/<ticket_ref>/full")
+def api_ticket_full(ticket_ref: str):
+    payload = _load_payload_for_api(ticket_ref)
+    if payload is None:
+        if BRIDGE_PENDING_ON_MISS:
+            _add_pending_request(ticket_ref)
+            return _pending_response(ticket_ref, "full")
+        return {"error": "ticket not found"}, 404
+    try:
+        if _should_enqueue_pending(default=False):
+            _enqueue_pending_ticket(ticket_ref)
+    except Exception:
+        pass
+    return payload
+
+
+@app.route("/api/tickets/<ticket_ref>/checklist")
+def api_ticket_checklist(ticket_ref: str):
+    payload = _load_payload_for_api(ticket_ref)
+    if payload is None:
+        if BRIDGE_PENDING_ON_MISS:
+            _add_pending_request(ticket_ref)
+            return _pending_response(ticket_ref, "checklist")
+        return {"error": "ticket not found"}, 404
+    checklist = payload.get("checklist") or []
+    ticket_id = (payload.get("ticket") or {}).get("id")
+    return {"ticketId": ticket_id, "checklist": checklist}
+
+
+@app.route("/api/tickets/<ticket_ref>/images")
+def api_ticket_images(ticket_ref: str):
+    payload = _load_payload_for_api(ticket_ref)
+    if payload is None:
+        if BRIDGE_PENDING_ON_MISS:
+            _add_pending_request(ticket_ref)
+            return _pending_response(ticket_ref, "images")
+        return {"error": "ticket not found"}, 404
+    images = payload.get("images") or []
+    ticket_id = (payload.get("ticket") or {}).get("id")
+    return {"ticketId": ticket_id, "images": images}
+
+
+# Kick off the polling thread on import
+_ensure_poll_thread()

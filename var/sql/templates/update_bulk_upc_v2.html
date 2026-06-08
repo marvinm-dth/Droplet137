@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update UPC</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      font-size: 14px;
+      background-color: #f8f8f8;
+    }
+    .header {
+      background-color: #fff;
+      padding: 10px 20px;
+      border-bottom: 2px solid #ddd;
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+    .header img {
+      width: 30px;
+      height: 30px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #343a40;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+    }
+    .logout-button {
+      margin-left: auto;
+      padding: 4px 8px;
+      background-color: #cc716c;
+      color: #333;
+      font-size: 0.8em;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      text-decoration: none;
+      transition: background-color 0.3s ease;
+    }
+    .logout-button:hover { background-color: #cc716c; }
+    .controls {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      padding: 15px 20px;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .controls label { font-weight: bold; }
+    .controls select,
+    .controls input[type="text"] {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+    .search-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .search-container input {
+      width: 200px;
+    }
+    .product-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 0 20px 40px;
+    }
+    .product-item {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 15px;
+      text-align: center;
+      position: relative;
+    }
+    .product-item img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      margin-bottom: 10px;
+    }
+    .truncate-text {
+      display: block;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 10px;
+      font-size: 0.9em;
+      color: #333;
+    }
+    .add-btn {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+    .add-btn:hover { background-color: #45a049; }
+    .update-btn {
+      background-color: #FFA500;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+    .update-btn:hover { background-color: #e69500; }
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+      overflow: auto;
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .modal-content img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      margin-bottom: 15px;
+    }
+    .close {
+      float: right;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #modal-tag-container {
+      border: 1px solid #ccc;
+      padding: 5px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .tag {
+      background: #e0e0e0;
+      border-radius: 3px;
+      padding: 3px 7px;
+      margin: 3px;
+      display: flex;
+      align-items: center;
+      font-size: 0.9em;
+    }
+    .tag .remove-tag {
+      margin-left: 5px;
+      cursor: pointer;
+      color: red;
+      font-weight: bold;
+    }
+    .tag-input {
+      border: none;
+      flex: 1;
+      min-width: 80px;
+      padding: 5px;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a href="{{ url_for('main') }}"><img src="/static/home-logo.png" alt="Home"></a>
+    <h1>Update UPC</h1>
+    <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+    <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display:none;">登出</a>
+  </header>
+
+  <div class="controls">
+    <div>
+      <label class="data-english">Filter:</label>
+      <select id="supplierFilter" onchange="filterItems()">
+        <option value="">All Suppliers</option>
+        {% for supplier in supplier_data %}
+        <option value="{{ supplier.supplier_name }}">{{ supplier.supplier_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="search-container">
+      <label class="data-english">Search:</label>
+      <input type="text" id="search" placeholder="Search...">
+    </div>
+    <div>
+      <label class="data-english">Language:</label>
+      <select id="languageSelect" onchange="updateDescriptions()">
+        <option value="english">English</option>
+        <option value="chinese">Chinese</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="product-list" id="product-list">
+    {% for item in home_depot_items %}
+    <div class="product-item" data-supplier="{{ item.supplier_name }}" data-name="{{ item.item_desc }}">
+      <img src="{{ item.item_image }}" alt="Item" loading="lazy">
+      <span class="truncate-text data-english">{{ item.item_desc }}</span>
+      <span class="truncate-text data-mandarin" style="display:none;">{{ item.item_desc_mandarin }}</span>
+      {% if item.upc|length > 0 %}
+      <button class="update-btn" onclick="openConfirmationModal(
+        '{{ item.material_id }}',
+        '{{ item.supplier_name }}',
+        '{{ item.internet_sku_number }}',
+        '{{ item.item_desc }}',
+        '{{ item.item_desc_mandarin }}',
+        '{{ item.item_image }}',
+        {{ item.upc|safe }}
+      )">Update UPC</button>
+      {% else %}
+      <button class="add-btn" onclick="openConfirmationModal(
+        '{{ item.material_id }}',
+        '{{ item.supplier_name }}',
+        '{{ item.internet_sku_number }}',
+        '{{ item.item_desc }}',
+        '{{ item.item_desc_mandarin }}',
+        '{{ item.item_image }}',
+        {{ item.upc|safe }}
+      )">Add UPC</button>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div id="confirmationModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeConfirmationModal()">&times;</span>
+      <img id="confirmImage" src="" alt="Product Image">
+      <p id="confirmName" style="font-weight:bold;"></p>
+      <div id="modal-tag-container" data-tags="">
+        <input type="text" class="tag-input" placeholder="Enter UPC">
+      </div>
+      <button onclick="confirmAddItem()">Submit</button>
+    </div>
+  </div>
+
+  <script>
+    // Filtering and search
+    const items = document.querySelectorAll('.product-item');
+    document.getElementById('search').addEventListener('input', e => {
+      const query = e.target.value.toLowerCase();
+      items.forEach(item => {
+        const name = item.getAttribute('data-name').toLowerCase();
+        item.style.display = name.includes(query) ? 'block' : 'none';
+      });
+    });
+    function filterItems() {
+      const sel = document.getElementById('supplierFilter').value;
+      items.forEach(item => {
+        item.style.display = (sel === '' || item.getAttribute('data-supplier') === sel) ? 'block' : 'none';
+      });
+    }
+    function updateDescriptions() {
+      const lang = document.getElementById('languageSelect').value;
+      document.querySelectorAll('.data-english').forEach(el => el.style.display = lang==='english' ? '' : 'none');
+      document.querySelectorAll('.data-mandarin').forEach(el => el.style.display = lang==='chinese' ? '' : 'none');
+    }
+
+    // Modal & tag logic
+    function createTag(text) {
+      const tag = document.createElement('span'); tag.className='tag';
+      const txt = document.createElement('span'); txt.textContent = text; tag.appendChild(txt);
+      const rm = document.createElement('span'); rm.textContent='×'; rm.className='remove-tag'; rm.onclick=() => tag.remove(); tag.appendChild(rm);
+      return tag;
+    }
+    function openConfirmationModal(sku, sup, inet, descE, descC, img, upcList) {
+      currentMaterialId = sku;  // store for confirm
+      document.getElementById('confirmImage').src = img;
+      document.getElementById('confirmName').textContent = descE;
+      const cont = document.getElementById('modal-tag-container'); cont.innerHTML = '';
+      upcList.forEach(u => cont.appendChild(createTag(u)));
+      const inp = document.createElement('input'); inp.type='text'; inp.className='tag-input'; inp.placeholder='Enter UPC';
+      inp.onkeydown = e => { if(e.key==='Enter'){ e.preventDefault(); const t=createTag(inp.value.trim()); cont.insertBefore(t, inp); inp.value=''; }};
+      cont.appendChild(inp);
+      document.getElementById('confirmationModal').style.display='block';
+    }
+    function closeConfirmationModal(){ document.getElementById('confirmationModal').style.display='none'; }
+    function confirmAddItem() {
+      const tags = document.querySelectorAll('#modal-tag-container .tag span:first-child');
+      const upcs = Array.from(tags).map(t => t.textContent.trim());
+      if (!confirm('Are you sure you want to update this item?')) return;
+      const payload = {
+        requestingItem: {
+          material_id: currentMaterialId,
+          upc: upcs
+        }
+      };
+      fetch('/submit_upc_update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        // Real-time UI update: change button text and style
+        const itemEl = document.querySelector(`.product-item[data-material-id="${currentMaterialId}"]`);
+        if (itemEl) {
+          const btn = itemEl.querySelector('button');
+          btn.textContent = upcs.length > 0 ? 'Update UPC' : 'Add UPC';
+          btn.className = upcs.length > 0 ? 'update-btn' : 'add-btn';
+        }
+      })
+      .finally(() => {
+        alert('UPC has been updated!');
+        closeConfirmationModal();
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Update UPC</title>
+        <style>
+            body {
+                font-family: 'Poppins', sans-serif;
+                text-align: center;
+                background-color: #f8f9fa;
+                color: #333;
+            }
+    
+            .container {
+                display: flex;
+                flex-wrap: nowrap; 
+                justify-content: space-around;
+                align-items: flex-start;
+                padding: 20px;
+                gap: 20px;
+            }
+
+            .header-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                position: relative;
+            }
+    
+            .prelisted-items-table {
+                width: 100%;
+                max-width: 100%;
+                background-color: #fff;
+                padding: 5px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+    
+            h1 {
+                font-size: 2.5em;
+                font-weight: 700;
+                color: #343a40;
+                margin-top: 20px;
+            }
+    
+            .cart-icon {
+                display: flex;
+                justify-content: space-between;
+                position: relative;
+                top: 20px;
+                right: 20px;
+                font-size: 2em;
+                cursor: pointer;
+                color: #007bff;
+            }
+
+            /* Modal styles */
+            .modal {
+                display: none;
+                position: fixed;
+                z-index: 1;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                overflow: auto;
+                background-color: rgba(0, 0, 0, 0.4);
+            }
+    
+            .modal-content {
+                background-color: #fefefe;
+                margin: 15% auto;
+                padding: 20px;
+                border: 1px solid #888;
+                width: 80%;
+                max-width: 1400px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            }
+    
+            .close {
+                color: #aaa;
+                float: right;
+                font-size: 28px;
+                font-weight: bold;
+            }
+    
+            .close:hover,
+            .close:focus {
+                color: black;
+                text-decoration: none;
+                cursor: pointer;
+            }
+    
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+    
+            th, td {
+                border: 1px solid #ddd;
+                padding: 15px;
+            }
+    
+            th {
+                background-color: #007bff;
+                color: #fff;
+                font-weight: 600;
+                font-size: 0.8em;
+            }
+    
+            td {
+                text-align: center;
+                font-size: 0.8em;
+            }
+    
+            .add-order-button {
+                margin-top: 20px;
+                text-align: center;
+            }
+    
+            .add-btn {
+                background-color: #28a745;
+                padding: 12px 25px;
+                color: #fff;
+                border: none;
+                border-radius: 12px;
+                cursor: pointer;
+                font-weight: bold;
+                transition: background-color 0.3s ease;
+            }
+
+            .form-group {
+                display: flex;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+            .form-group label {
+                width: 180px;
+                font-weight: bold;
+            }
+            .form-group input {
+                flex: 1;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+            }
+    
+            .add-btn:hover {
+                background-color: #218838;
+            }
+
+            /* Header container */
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px;
+                background-color: #f8f9fa;
+                position: relative;
+            }
+
+            /* Centered title */
+            .header h1 {
+                font-size: 2.5em;
+                font-weight: bold;
+                color: #333;
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                margin: 0;
+            }
+
+            /* Logout button styles */
+            .logout-button {
+                padding: 10px 20px;
+                background-color: #cc716c;
+                color: #333;
+                font-size: 1em;
+                font-weight: bold;
+                border: none;
+                border-radius: 12px;
+                cursor: pointer;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                transition: background-color 0.3s ease;
+                text-decoration: none;
+                margin-left: auto; /* Pushes the button to the right */
+            }
+
+            .logout-button:hover {
+                background-color: #cc716c;
+            }
+
+            .upc-entry {
+                display: inline-block;
+                padding: 5px 10px;
+                margin: 2px;
+                background: #e2e6ea;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+            }
+            .upc-entry .delete-btn {
+                cursor: pointer;
+                color: red;
+                margin-left: 5px;
+                font-weight: bold;
+            }
+
+            #tag-container {
+                border: 1px solid #ccc;
+                padding: 5px;
+                width: 300px;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                cursor: text;
+            }
+            /* Tag styling */
+            .tag {
+                background: #e0e0e0;
+                border-radius: 3px;
+                padding: 3px 7px;
+                margin: 3px;
+                display: flex;
+                align-items: center;
+            }
+            .tag .remove-tag {
+                margin-left: 5px;
+                cursor: pointer;
+                font-weight: bold;
+            }
+            /* Input styling */
+            #tag-input {
+                border: none;
+                flex: 1;
+                min-width: 100px;
+                padding: 5px;
+                outline: none;
+            }
+            /* Confirmation Modal (mini screen) styles */
+            #confirmationModal .modal-content {
+                max-width: 400px;
+                text-align: center;
+                font-size: 14px;
+                }
+            #confirmationModal img {
+                width: 100px;
+                height: 100px;
+                display: block;
+                margin: 0 auto;
+                }
+            #confirmationModal p {
+                font-weight: bold;
+                margin: 10px 0;
+                }
+            #confirmationModal input[type="text"] {
+                width: 100%;
+                padding: 5px;
+                margin: 10px 0;}
+            </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script type="text/javascript" src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+        <script>
+            $(document).ready(function() {
+                $('#prelisted-items-table').DataTable(); // Initialize DataTables on the table
+            });
+        </script>
+        <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+        <meta name="theme-color" content="#000000">
+        <script>
+            if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+                .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                })
+                .catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+            }
+        </script>
+        <script>
+            // Updated createTag function to allow inline editing on double-click.
+            function createTag(text) {
+                const tag = document.createElement('span');
+                tag.className = 'tag';
+
+                // Create a span to hold the tag text.
+                const textSpan = document.createElement('span');
+                textSpan.textContent = text;
+                textSpan.style.cursor = 'pointer';
+                tag.appendChild(textSpan);
+
+                // Create the remove button.
+                const removeBtn = document.createElement('span');
+                removeBtn.className = 'remove-tag';
+                removeBtn.textContent = ' ×';
+                removeBtn.addEventListener('click', () => {
+                    tag.parentNode.removeChild(tag);
+                });
+                tag.appendChild(removeBtn);
+
+                // Allow inline editing on double-click of the text span.
+                textSpan.addEventListener('dblclick', function(e) {
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = textSpan.textContent;
+                    // Optionally adjust the width to fit the text.
+                    input.style.width = (textSpan.textContent.length + 1) + 'ch';
+                    // Replace text span with input field.
+                    tag.replaceChild(input, textSpan);
+                    input.focus();
+                    
+                    // Function to finish editing.
+                    function finishEditing() {
+                        const newText = input.value.trim();
+                        if (newText === '') {
+                            // If empty, remove the tag.
+                            tag.parentNode.removeChild(tag);
+                        } else {
+                            textSpan.textContent = newText;
+                            tag.replaceChild(textSpan, input);
+                        }
+                    }
+                    input.addEventListener('blur', finishEditing);
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            finishEditing();
+                        }
+                    });
+                });
+
+                return tag;
+            }
+
+            // This function remains largely the same; it initializes the tag container by creating
+            // tags from any preexisting UPC data and wiring up the input for new UPCs.
+            function initTagContainerFor(container) {
+                if (!container) return;
+                
+                // Find the input inside this container.
+                const input = container.querySelector('.tag-input');
+                if (!input) return;
+
+                // Get preexisting tags from the data attribute.
+                const preexistingTags = container.getAttribute('data-tags');
+                if (preexistingTags) {
+                    preexistingTags.split(',').forEach(tagText => {
+                        tagText = tagText.trim();
+                        if (tagText !== "") {
+                            const newTag = createTag(tagText);
+                            container.insertBefore(newTag, input);
+                        }
+                    });
+                }
+                
+                // Add event listener for adding new tags on Enter.
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (input.value.trim() !== '') {
+                            const tagText = input.value.trim();
+                            const newTag = createTag(tagText);
+                            container.insertBefore(newTag, input);
+                            input.value = '';
+                        }
+                    }
+                });
+                
+                // Focus the input when clicking on the container.
+                container.addEventListener('click', function() {
+                    input.focus();
+                });
+    }
+            // Note: We now pass the product image and the UPC list.
+            function openConfirmationModal(sku_num, supplier_name, internet_num, description_english, description_mandarin, image, upc) {
+                selectedItem = { sku_num, supplier_name, internet_num, description_english, description_mandarin, image, upc };
+
+                document.getElementById('confirmImage').src = image;
+                document.getElementById('confirmName').textContent = description_english;
+
+                const modalTagContainer = document.getElementById('modal-tag-container');
+                modalTagContainer.innerHTML = ''; // Clear existing tags and input
+
+                // Create tags for each UPC
+                upc.forEach(tagText => {
+                    const tag = createTag(tagText);
+                    modalTagContainer.appendChild(tag);
+                });
+
+                // Recreate the input
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'tag-input';
+                input.placeholder = 'Enter UPC';
+                modalTagContainer.appendChild(input);
+
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const tagText = input.value.trim();
+                        if (tagText) {
+                            const newTag = createTag(tagText);
+                            modalTagContainer.insertBefore(newTag, input);
+                            input.value = '';
+                        }
+                    }
+                });
+
+                modalTagContainer.addEventListener('click', function() {
+                    input.focus();
+                });
+
+                document.getElementById('confirmationModal').style.display = 'block';
+            }
+
+            function closeConfirmationModal() {
+                document.getElementById('confirmationModal').style.display = 'none';
+                }
+
+            function confirmAddItem() {
+                // ✅ Extract UPCs from modal tag container
+                const modalTagContainer = document.getElementById('modal-tag-container');
+                const tagElements = modalTagContainer.querySelectorAll('.tag');
+                const upcList = [];
+
+                tagElements.forEach(tag => {
+                    const upcText = tag.firstChild?.textContent.trim();  // Get only the UPC, ignore the × button
+                    if (upcText) {
+                        upcList.push(upcText);
+                    }
+                });
+
+                console.log('Extracted UPCs:', upcList);
+
+                 // Ask the user to confirm before adding the item
+                if (confirm("Are you sure you want to update this item?")) {
+                    const newItem = {
+                        material_id: selectedItem.sku_num,
+                        supplier_name: selectedItem.supplier_name,
+                        internet_sku_number: selectedItem.internet_num,
+                        item_desc: selectedItem.description_english,
+                        item_desc_mandarin: selectedItem.description_mandarin,
+                        upc: upcList
+                        };
+                    fetch('/submit_upc_update', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ requestingItem: newItem })
+                    });
+                    alert("UPC has been updated!");
+                    closeConfirmationModal();
+                }}
+        </script>
+    </head>
+<body>
+
+<div class="container_info" id="info-container" style="width: 100%; max-width: 1200px; margin: 0 auto;">
+    <div class="header">
+        <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+            <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;">
+        </a>
+        <h1>Update UPC</h1>
+        <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+        <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <div class="cart-icon" onclick="openCartModal()" style="display: flex; align-items: right; justify-content: right; margin-bottom: 20px;">
+        <i class="fas fa-clipboard-list" style="margin-right: 5px;"></i>
+    </div>
+
+    <div style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+        <label for="languageSelect" class="description data-english">Choose Language:</label>
+        <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言: </label>
+        <select id="languageSelect" onchange="updateDescriptions()" style="margin-left: 10px;">
+            <option value="english">English</option>
+            <option value="chinese">Chinese</option>
+        </select>
+    </div>
+
+    <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+        <label for="supplierFilter" class="description data-english" style="display: block; text-align: left;">Filter by Supplier:</label>
+        <label for="supplierFilter" class="description data-mandarin" style="display: none; text-align: left;">按供应商筛选:</label>
+        <select id="supplierFilter" onchange="filterTable()" style="margin-left: 10px; width: 200px;">
+            <option value="">All Suppliers</option>
+            {% for supplier in supplier_data %}
+                <option value="{{ supplier.supplier_name }}">{{ supplier.supplier_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Confirmation Modal for Adding an Item -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+        <span class="close" onclick="closeConfirmationModal()" style="float: right; cursor: pointer;">&times;</span>
+        <img id="confirmImage" src="" alt="Product Image" style="max-width:100px; max-height:100px;" />
+        <p id="confirmName"></p>
+        <!-- Dedicated tag container for the modal UPC list -->
+        <div id="modal-tag-container" data-tags="">
+            <input type="text" class="tag-input" placeholder="Enter UPC" />
+        </div>
+        <button onclick="confirmAddItem()">Submit</button>
+        </div>
+    </div>
+
+    <!-- Container for the two tables (side by side layout) -->
+    <div class="container" id="table-container" style="width: 100%; max-width: 1200px;">
+        <!-- Prelisted Items Table (Right) -->
+        <table id="prelisted-items-table" style="width: 100%; max-width: 1200px;">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">Action</th>
+                    <th onclick="sortTable(1)">SKU Number</th>
+                    <th onclick="sortTable(2)">Supplier</th>
+                    <th onclick="sortTable(3)">Supplier SKU Number</th>
+                    <th onclick="sortTable(4)">Description</th>
+                    <th onclick="sortTable(5)">Price</th>
+                    <th>Image</th>
+                    <th style="display: none;">Keywords</th> <!-- Hidden column -->
+                    <th style="display: none;">Keywords Chinese</th> <!-- Hidden column -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in home_depot_items %}
+                <tr>
+                    <td>
+                        <button onclick="openConfirmationModal(
+                                    '{{ item.material_id | escape }}',
+                                    '{{ item.supplier_name | escape }}',
+                                    '{{ item.internet_sku_number | escape }}',
+                                    '{{ item.item_desc | escape }}',
+                                    '{{ item.item_desc_mandarin | escape }}',
+                                    '{{ item.item_image | escape }}',
+                                    ['{{ item.upc | map("string") | map("replace", "'", "\\'") | join("', '") | safe }}']
+                                )">
+                            Add Item
+                        </button>
+                    </td>
+                    <td data-order="{{ item.material_id | int }}">{{ item.material_id }}</td>
+                    <td>{{ item.supplier_name }}</td>
+                    <td>{{ item.internet_sku_number }}</td>
+                    <td>
+                        <div class="description data-english" style="width: 300px;">{{ item.item_desc | escape }}</div>
+                        <div class="description data-mandarin" style="width: 300px; display: none;">{{ item.item_desc_mandarin  | escape}}</div>
+                    </td>
+                    <td data-order="{{ item.item_price | float }}">{{ item.item_price }}</td>
+                    <td><img src="{{ item.item_image }}" width="80" height="80" loading="lazy"></td>
+                    <td style="display: none;">{{ item.keywords }}</td>
+                    <td style="display: none;">{{ item.keywords_ch }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let table;
+
+    $(document).ready(function() {
+        // Initialize DataTables on the table and store a reference to the DataTable instance
+        table = $('#prelisted-items-table').DataTable();
+
+        // Load saved filter if available
+        const savedFilter = localStorage.getItem('selectedSupplier');
+        if (savedFilter) {
+            $('#supplierFilter').val(savedFilter);
+            filterTable(); // Apply the filter when loading the page
+        }
+    });
+
+
+    // Global variable to store the selected item details.
+    let selectedItem = {};
+    
+    // Creating a JavaScript object that maps supplier names to their IDs
+    const supplierData = {};
+    {% for supplier in supplier_data %}
+        supplierData["{{ supplier.supplier_name }}"] = "{{ supplier.id }}";
+    {% endfor %}
+
+   function updateDescriptions() {
+        const language = document.getElementById('languageSelect').value;
+
+        // Save the selected language in local storage
+        localStorage.setItem('selectedLanguage', language);
+
+        // Get all elements with class 'data-english' and 'data-mandarin'
+        const englishElements = document.querySelectorAll('.data-english');
+        const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+        if (language === 'english') {
+            englishElements.forEach(element => {
+                element.style.display = 'block';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'none';
+            });
+        } else if (language === 'chinese') {
+            englishElements.forEach(element => {
+                element.style.display = 'none';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'block';
+            });
+        }
+    }
+
+
+    function filterTable() {
+        const filter = $('#supplierFilter').val();
+
+        // Save the selected supplier in local storage
+        localStorage.setItem('selectedSupplier', filter);
+
+        if (filter === "") {
+            table.column(2).search("").draw(); // Reset filter if "All Suppliers" is selected
+        } else {
+            table.column(2).search(filter, true, false).draw(); // Filter the supplier column
+        }
+    }
+
+    // Function to submit the order data and selected items
+    function submitUpc() {
+        const orderName = "{{ user.name }}";
+        const userId = "{{ user.id | escape }}";
+
+        // Collect selected items data, grouped by supplier
+        const selectedItems = [];
+        const supplierTables = document.querySelectorAll('.supplier-table');
+        
+        supplierTables.forEach(supplierTable => {
+            const rows = supplierTable.querySelectorAll('tbody tr');
+
+            rows.forEach(row => {
+                const sku_number = row.querySelector('td:nth-child(2)').textContent;
+
+                // Extract the UPC list from the UPC cell (column 5)
+                let upcList = [];
+                const upcContainer = row.querySelector('td:nth-child(5) .tag-container');
+                if (upcContainer) {
+                    // Select all elements with the class "tag" inside the container.
+                    const tagElements = upcContainer.querySelectorAll('.tag');
+                    tagElements.forEach(tag => {
+                        // Get the UPC text from the first text node of the tag (ignoring the remove button)
+                        const upcText = tag.firstChild ? tag.firstChild.textContent.trim() : "";
+                        if (upcText) {
+                            upcList.push(upcText);
+                        }
+                    });
+                }
+
+                selectedItems.push({
+                    material_id: sku_number,
+                    upc: upcList  ,
+                });
+                
+            });
+        });;
+
+        // Prepare the data payload to send to the backend
+        const orderData = {
+            order_name: orderName,
+            user_id: userId,
+            update_materials: selectedItems // Array of orders per supplier
+        };
+
+        // Check if there are any items to submit
+        if (selectedItems.length === 0) {
+            alert("Please add at least one item.");
+            return;
+        }
+
+        // Send the data to the backend using Fetch API
+        fetch('/submit_bulk_upc', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message && data.redirect_url) {
+                alert('Order successfully added: ' + data.message);
+                window.location.href = data.redirect_url;
+            } else {
+                console.error('Invalid response:', data);
+                alert('An error occurred while processing the order.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+    
+    // Function to load the saved language preference on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Get the selected language from local storage
+        const savedLanguage = localStorage.getItem('selectedLanguage');
+
+        // If there's a saved language, set it in the dropdown and update descriptions
+        if (savedLanguage) {
+            document.getElementById('languageSelect').value = savedLanguage;
+            updateDescriptions();
+        }
+       
+    });
+
+</script>
+</body>
+</html>

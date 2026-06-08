@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Create New Work Ticket Template</h1>
+
+{% if errors %}
+<div class="alert alert-warning">
+  <p>Please fix the following issues:</p>
+  <ul>
+    {% for error in errors %}
+    <li>{{ error }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<form method="post" class="template-form" enctype="multipart/form-data">
+  <div class="form-group">
+    <label for="name">Template Name</label>
+    <input type="text" id="name" name="name" value="{{ form_data.get('name', '') }}" required>
+  </div>
+
+  <div class="form-group">
+    <label for="template_id">Template ID</label>
+    <input type="text" id="template_id" name="template_id" value="{{ form_data.get('template_id', '') }}" readonly>
+    <small>Auto-generated from name.</small>
+  </div>
+
+  <div class="form-group">
+    <label for="template_code">Template Code</label>
+    <input type="text" id="template_code" name="template_code" value="{{ form_data.get('template_code', '') }}" required>
+  </div>
+
+  <div class="form-group">
+    <label for="job_type_en">Job Type (English)</label>
+    <input type="text" id="job_type_en" name="job_type_en" value="{{ form_data.get('job_type_en', '') }}" required>
+  </div>
+
+<div class="form-group">
+  <label for="job_type_cn">Job Type (Chinese)</label>
+  <input type="text" id="job_type_cn" name="job_type_cn" value="{{ form_data.get('job_type_cn', '') }}" required>
+</div>
+<div class="form-group">
+  <label for="default_notes_en">Default Notes (English)</label>
+  <textarea id="default_notes_en" name="default_notes_en" rows="3" placeholder="Optional default notes shown when using this template.">{{ form_data.get('default_notes_en', '') }}</textarea>
+</div>
+<div class="form-group">
+  <label for="default_notes_cn">Default Notes (Chinese)</label>
+  <textarea id="default_notes_cn" name="default_notes_cn" rows="3" placeholder="Optional default notes in Chinese.">{{ form_data.get('default_notes_cn', '') }}</textarea>
+</div>
+  <button type="button" id="translate-template" data-translate-enabled="{{ 'true' if translation_enabled else 'false' }}">Translate English to Chinese</button>
+
+  <div class="form-group">
+    <label for="template_images">Reference Images (optional)</label>
+    <input type="file" id="template_images" name="template_images" multiple accept="image/*">
+    <div class="muted">Select multiple images for reference/preview. (Not printed.)</div>
+    <div id="template-image-gallery" class="grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-top:10px;"></div>
+  </div>
+
+  <div class="form-group">
+    <label>Checklist Items</label>
+    <table id="checklist-table">
+      <thead>
+        <tr><th>English</th><th>Chinese</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% if form_data.get('checklist_items') %}
+          {% for line in form_data.get('checklist_items').splitlines() %}
+            {% set parts = line.split('|', 1) %}
+            <tr>
+              <td><input type="text" name="check_en[]" value="{{ parts[0].strip() if parts else '' }}"></td>
+              <td><input type="text" name="check_cn[]" value="{{ parts[1].strip() if parts|length>1 else '' }}"></td>
+              <td><button type="button" class="remove-row" onclick="removeRow(this)">X</button></td>
+            </tr>
+          {% endfor %}
+        {% else %}
+        <tr>
+          <td><input type="text" name="check_en[]" value=""></td>
+          <td><input type="text" name="check_cn[]" value=""></td>
+          <td><button type="button" class="remove-row" onclick="removeRow(this)">X</button></td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+    <button type="button" onclick="addRow()">Add Row</button>
+  </div>
+
+  <button type="submit">Save Template</button>
+</form>
+<script>
+function slugify(text) {
+  return text.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+document.getElementById('name').addEventListener('input', function() {
+  document.getElementById('template_id').value = slugify(this.value || 'template');
+});
+function addRow() {
+  const tbody = document.querySelector('#checklist-table tbody');
+  if (!tbody) return;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input type="text" name="check_en[]"></td>
+                  <td><input type="text" name="check_cn[]"></td>
+                  <td><button type="button" class="remove-row" onclick="removeRow(this)">X</button></td>`;
+  tbody.appendChild(tr);
+}
+function removeRow(btn) {
+  const tr = btn.closest('tr');
+  if (!tr) return;
+  const tbody = tr.parentElement;
+  if (tbody && tbody.children.length > 1) {
+    tr.remove();
+  }
+}
+
+async function translateTemplateForm() {
+  const jobEn = document.getElementById('job_type_en').value || '';
+  const jobCnField = document.getElementById('job_type_cn');
+  const notesEn = document.getElementById('default_notes_en').value || '';
+  const notesCnField = document.getElementById('default_notes_cn');
+  const checkEnFields = Array.from(document.querySelectorAll('input[name=\"check_en[]\"]'));
+  const checkCnFields = Array.from(document.querySelectorAll('input[name=\"check_cn[]\"]'));
+
+  const tasks = [];
+  if (jobEn && jobCnField && !(jobCnField.value || '').trim()) tasks.push({ type: 'job', text: jobEn });
+  if (notesEn && notesCnField && !(notesCnField.value || '').trim()) tasks.push({ type: 'notes', text: notesEn });
+  checkEnFields.forEach((enField, idx) => {
+    const enVal = enField.value || '';
+    const cnVal = (checkCnFields[idx]?.value || '').trim();
+    if (enVal && !cnVal) tasks.push({ type: 'check', idx, text: enVal });
+  });
+  if (!tasks.length) {
+    alert('Nothing to translate. Fill English fields or clear Chinese fields you want translated.');
+    return;
+  }
+  const payload = { texts: tasks.map(t => t.text) };
+  try {
+    const res = await fetch('{{ url_for("translate_text") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.translations) {
+      alert(data.error || 'Translation failed.');
+      return;
+    }
+    tasks.forEach((task, idx) => {
+      const translated = data.translations[idx] || '';
+      if (task.type === 'job' && jobCnField) jobCnField.value = translated;
+      if (task.type === 'notes' && notesCnField) notesCnField.value = translated;
+      if (task.type === 'check' && checkCnFields[task.idx]) checkCnFields[task.idx].value = translated;
+    });
+  } catch (e) {
+    alert('Translation error: ' + e);
+  }
+}
+document.getElementById('translate-template').addEventListener('click', translateTemplateForm);
+
+// Template image previews (client-side)
+(() => {
+  const input = document.getElementById('template_images');
+  const gallery = document.getElementById('template-image-gallery');
+  if (!input || !gallery) return;
+  input.addEventListener('change', () => {
+    gallery.innerHTML = '';
+    const files = Array.from(input.files || []);
+    files.forEach((file, idx) => {
+      const url = URL.createObjectURL(file);
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.padding = '8px';
+      card.innerHTML = `
+        <div style="display:flex; justify-content:center;">
+          <img src="${url}" alt="upload" style="max-width:100%; max-height:120px; border:1px solid var(--border); border-radius:8px; object-fit:contain;">
+        </div>
+        <div class="form-actions" style="margin-top:6px;">
+          <button type="button" class="btn btn-ghost btn-sm" data-remove="${idx}">Remove</button>
+        </div>
+      `;
+      gallery.appendChild(card);
+    });
+    gallery.querySelectorAll('[data-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const removeIdx = parseInt(btn.getAttribute('data-remove'), 10);
+        const dt = new DataTransfer();
+        Array.from(input.files || []).forEach((file, i) => {
+          if (i !== removeIdx) dt.items.add(file);
+        });
+        input.files = dt.files;
+        input.dispatchEvent(new Event('change'));
+      });
+    });
+  });
+})();
+</script>
+{% endblock %}

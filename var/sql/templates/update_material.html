@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Items to Table</title>
+    
+    <!-- ============================
+            BEGIN: Base + Responsive Styles
+    ============================ -->
+    <style>
+        /* ===== Base Page Styles ===== */
+        body {
+        font-family: 'Poppins', sans-serif;
+        text-align: center;
+        background-color: #f8f9fa;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        }
+    
+        /* Container that holds the form & header */
+        .container_info {
+        width: 90%;
+        max-width: 800px;
+        margin: 20px auto;
+        background-color: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        box-sizing: border-box;
+        }
+    
+        /* Header row (Home icon, title, logout) */
+        .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        padding-bottom: 20px;
+        }
+        .header img {
+        width: 30px;
+        height: 30px;
+        margin-right: 10px;
+        }
+        .header h1 {
+        font-size: 2em;
+        font-weight: 700;
+        color: #333;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        margin: 0;
+        }
+        .logout-button {
+        padding: 10px 20px;
+        background-color: #cc716c;
+        color: #fff;
+        font-size: 1em;
+        font-weight: bold;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s ease;
+        text-decoration: none;
+        }
+        .logout-button:hover {
+        background-color: #b3534e;
+        }
+    
+        /* Language selector row */
+        .language-select-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        margin-bottom: 20px;
+        padding-left: 10px;
+        }
+        .language-select-wrapper label {
+        font-weight: 500;
+        margin-right: 10px;
+        font-size: 0.95em;
+        }
+        .language-select-wrapper select {
+        padding: 6px 10px;
+        font-size: 0.9em;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        }
+    
+        /* Form group (label + input/button) */
+        form .form-group {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        }
+        form .form-group label {
+        width: 180px;
+        font-weight: bold;
+        text-align: left;
+        font-size: 0.95em;
+        margin-right: 10px;
+        }
+        form .form-group input[type="text"],
+        form .form-group input[type="number"] {
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 0.9em;
+        flex: 1 1 300px;
+        max-width: 100%;
+        box-sizing: border-box;
+        }
+        form .form-group input.product_desc {
+        /* Multiline style: use height for long text */
+        height: 120px;
+        resize: vertical;
+        }
+    
+        /* UPC tag container */
+        #tag-container {
+        border: 1px solid #ccc;
+        padding: 5px;
+        width: 100%;
+        max-width: 300px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        cursor: text;
+        box-sizing: border-box;
+        }
+        .tag {
+        background: #e0e0e0;
+        border-radius: 3px;
+        padding: 3px 7px;
+        margin: 3px;
+        display: flex;
+        align-items: center;
+        font-size: 0.9em;
+        }
+        .tag .remove-tag {
+        margin-left: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        }
+        #tag-input {
+        border: none;
+        flex: 1 1 100px;
+        padding: 5px;
+        font-size: 0.9em;
+        min-width: 80px;
+        box-sizing: border-box;
+        outline: none;
+        }
+    
+        /* File inputs (cover image & multiple images) */
+        .form-group input[type="file"] {
+        font-size: 0.9em;
+        border: none;
+        }
+    
+        /* Buttons at bottom */
+        .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 25px;
+        margin: 0 5px;
+        border-radius: 12px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        color: #ffffff;
+        background-color: #28a745;
+        transition: background-color 0.3s ease;
+        font-size: 1em;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .button:hover {
+        background-color: #218838;
+        }
+        .button-text {
+        margin-right: 8px;
+        }
+        .loading-spinner {
+        font-size: 1em;
+        color: #fff;
+        }
+    
+        /* Delete & Add single‐field buttons (if used) */
+        .delete-btn, .add-btn {
+        padding: 8px 15px;
+        font-size: 0.9em;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        color: #fff;
+        }
+        .delete-btn {
+        background-color: #dc3545;
+        }
+        .delete-btn:hover {
+        background-color: #c82333;
+        }
+        .add-btn {
+        background-color: #28a745;
+        }
+        .add-btn:hover {
+        background-color: #218838;
+        }
+
+        /* SKU Field Group Styling */
+        .sku-group label {
+            width: 100%;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .sku-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .sku-fields input,
+        .sku-fields select {
+            flex: 1 1 150px;
+            padding: 8px;
+            font-size: 0.9em;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            min-width: 140px;
+        }
+    
+        /* =========================================================================
+            Responsive: Tablets and Smaller (≤768px)
+        ========================================================================== */
+        @media (max-width: 768px) {
+        /* Shrink container padding & widths */
+        .container_info {
+            width: 95%;
+            padding: 15px;
+        }
+    
+        .header h1 {
+            font-size: 1.75em;
+        }
+    
+        /* Narrower label + input font */
+        form .form-group label {
+            width: 140px;
+            font-size: 0.9em;
+        }
+        form .form-group input[type="text"],
+        form .form-group input[type="number"] {
+            font-size: 0.85em;
+        }
+        form .form-group input.product_desc {
+            height: 100px;
+        }
+    
+        /* Button shrink */
+        .button {
+            padding: 10px 20px;
+            font-size: 0.9em;
+        }
+        .button-text {
+            margin-right: 6px;
+        }
+    
+        /* Tag container shrink */
+        #tag-container {
+            max-width: 100%;
+        }
+
+        .sku-fields input,
+        .sku-fields select {
+            flex: 1 1 100%;
+        }
+        }
+    
+        /* =========================================================================
+            Responsive: Phones (≤480px)
+        ========================================================================== */
+        @media (max-width: 480px) {
+        /* Full‐width container */
+        .container_info {
+            width: 100%;
+            margin: 0;
+            padding: 10px;
+            box-shadow: none;
+        }
+    
+        /* Header shrinks */
+        .header img {
+            width: 25px; height: 25px;
+        }
+        .header h1 {
+            font-size: 1.5em;
+            left: 50%;
+        }
+        .logout-button {
+            padding: 8px 16px;
+            font-size: 0.9em;
+        }
+    
+        /* Language selector centered */
+        .language-select-wrapper {
+            justify-content: center;
+        }
+        .language-select-wrapper label {
+            font-size: 0.85em;
+        }
+        .language-select-wrapper select {
+            font-size: 0.85em;
+            padding: 5px 8px;
+        }
+    
+        /* Stack form‐groups vertically */
+        form .form-group {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        form .form-group label {
+            width: 100%;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+        }
+        form .form-group input[type="text"],
+        form .form-group input[type="number"] {
+            width: 100%;
+            flex: 1 1 auto;
+            padding: 8px;
+            font-size: 0.85em;
+        }
+        form .form-group input.product_desc {
+            height: 80px;
+        }
+    
+        /* UPC tag container: full‐width */
+        #tag-container {
+            width: 100%;
+            padding: 4px;
+        }
+        .tag {
+            font-size: 0.85em;
+            padding: 2px 6px;
+            margin: 2px;
+        }
+        #tag-input {
+            font-size: 0.85em;
+            padding: 4px;
+        }
+    
+        /* File inputs & other inputs full‐width */
+        form .form-group input[type="file"] {
+            width: 100%;
+            margin-top: 4px;
+        }
+    
+        /* Buttons: full‐width and stacked */
+        .button {
+            width: 100%;
+            margin: 8px 0;
+            padding: 10px;
+            font-size: 0.95em;
+        }
+        .button-text {
+            margin-right: 4px;
+        }
+    
+        /* Delete/Add single‐field buttons full‐width if used */
+        .delete-btn, .add-btn {
+            width: 100%;
+            margin: 6px 0;
+            font-size: 0.85em;
+        }
+        .sku-fields input,
+        .sku-fields select {
+            flex: 1 1 100%;
+        }
+        }
+    </style>
+    <!-- ============================
+            END: Base + Responsive Styles
+    ============================ -->
+    
+    <!-- Font Awesome for spinner icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Manifest and theme color (PWA) -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#000000">
+    
+    <!-- Service Worker registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+            .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+        }
+    </script>
+</head>
+<body>
+
+<div class="container_info" id="info-container" style="width: 100%; max-width: 800px; margin: 0 auto;">
+    <div class="header">
+        <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+            <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;">
+        </a>
+        <h1>Update Item</h1>
+        <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+        <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <div style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+        <label for="languageSelect" class="description data-english">Choose Language:</label>
+        <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言: </label>
+        <select id="languageSelect" onchange="updateDescriptions()" style="margin-left: 10px;">
+            <option value="english">English</option>
+            <option value="chinese">Chinese</option>
+        </select>
+    </div>
+
+    <form action="/update_material/{{ item.material_id }}/submit" method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="supplier_sku_number" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Supplier SKU Number: </span>
+                    <span class="description data-mandarin" style="display: none;">供应商 SKU 编号: </span>
+                </b>
+            </label>
+            <input type="number" name="supplier_sku_number" value="{{item.internet_sku_number}}">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="item_desc" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Description:</span>
+                    <span class="description data-mandarin" style="display: none;">描述:</span>
+                </b>
+            </label>
+            <input type="text" name="item_desc" class="description data-english" value="{{ item.item_desc }}">
+            <input type="text" name="item_desc" class="description data-mandarin" style="display: none;" value="{{ item.item_desc_mandarin }}">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="price" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Item Price:</span>
+                    <span class="description data-mandarin" style="display: none;">物品价格:</span>
+                </b>
+            </label>
+            <input type="number" step="0.01" name="price" value="{{ item.item_price }}">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="product_details" style="display: flex; align-items: left; justify-content: left;">
+                <b>
+                    <span class="description data-english">Product Details:</span>
+                    <span class="description data-mandarin" style="display: none;">产品详情:</span>
+                </b>
+            </label>
+            <input type="text" name="product_details" class="product_desc data-english" value="{{ item.item_details }}">
+            <input type="text" name="product_details" class="product_desc data-mandarin" style="display: none;" value="{{ item.item_details_mandarin }}">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="inv_location" style="margin-bottom: 5px;">
+              <b>
+                <span class="description data-english">Inventory Location:</span>
+                <span class="description data-mandarin" style="display: none;">库存位置:</span>
+              </b>
+            </label>
+          
+            <div style="display: flex; align-items: left;">
+              <!-- dropdown of display_name -->
+              <select name="inv_location" id="inv_location" class="form-control">
+                {% for loc in inventory_loc %}
+                  <option
+                    value="{{ loc.id }}"
+                    data-image-url="{{ loc.image_url }}"
+                    {% if loc.id == item.inventory_location_id %}selected{% endif %}>
+                    {{ loc.display_name }}
+                  </option>
+                {% endfor %}
+              </select>
+          
+              <!-- thumbnail preview / zoom trigger -->
+              <img
+                id="loc-image-preview"
+                src=""
+                alt="Preview"
+                style="width:24px; height:24px; margin-left:8px; cursor: zoom-in; display: none;"
+              />
+            </div>
+          </div>
+          
+          <input type="hidden" name="inv_location_display_name" id="inv_location_display_name">
+          
+          <!-- simple modal for zooming -->
+          <div
+            id="imageModal"
+            style="
+              display: none;
+              position: fixed;
+              top: 0; left: 0; right: 0; bottom: 0;
+              background: rgba(0,0,0,0.8);
+              align-items: center;
+              justify-content: center;
+            "
+          >
+            <img
+              id="modal-image"
+              src=""
+              alt="Location Full-Size"
+              style="max-width: 90%; max-height: 90%; border: 4px solid white; border-radius: 4px;"
+            />
+          </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="keywords" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">English Keywords:</span>
+                    <span class="description data-mandarin" style="display: none;">英文关键词:</span>
+                </b>
+            </label>
+            <input type="text" name="keywords" value="{{ item.keywords }}">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="keywords_eng_to_ch" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">English Keywords to Chinese:</span>
+                    <span class="description data-mandarin" style="display: none;">英文关键词转中文:</span>
+                </b>
+            </label>
+            <input type="text" name="keywords_eng_to_ch" value="{{ item.keywords_eng_to_ch }}" readonly>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="keywords_ch" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Chinese Keywords:</span>
+                    <span class="description data-mandarin" style="display: none;">中文关键词:</span>
+                </b>
+            </label>
+            <input type="text" name="keywords_ch" value="{{ item.keywords_ch }}">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="keyword_ch_to_eng" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Chinese Keywords to English:</span>
+                    <span class="description data-mandarin" style="display: none;">中文关键词转英文:</span>
+                </b>
+            </label>
+            <input type="text" name="keyword_ch_to_eng" value="{{ item.keywords_ch_to_eng }}" readonly>
+        </div>
+
+        {% if user.role != "user" %}
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="inventory" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Stocks Available:</span>
+                    <span class="description data-mandarin" style="display: none;">可用库存:</span>
+                </b>
+            </label>
+            <input type="number"  name="inventory" value="{{ item.inventory }}">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="reorder_point" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Reorder Point:</span>
+                    <span class="description data-mandarin" style="display: none;">补货点:</span>
+                </b>
+            </label>
+            <input type="number"  name="reorder_point" value="{{ item.reorder_point }}">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="pack_size" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Pack Size:</span>
+                    <span class="description data-mandarin" style="display: none;">包装规格:</span>
+                </b>
+            </label>
+            <input type="number"  name="pack_size" value="{{ item.pack_size }}">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="default_order_qty" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Default Order Qty:</span>
+                    <span class="description data-mandarin" style="display: none;">默认订单数量:</span>
+                </b>
+            </label>
+            <input type="number"  name="default_order_qty" value="{{ item.default_order_qty }}">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; justify-content: left; margin-bottom: 20px;">
+            <label for="label_size" style="margin-right: 10px;">
+              <b>
+                <span class="description data-english">Label Size:</span>
+                <span class="description data-mandarin" style="display: none;">标签尺寸:</span>
+              </b>
+            </label>
+            <select id="label_size" name="label_size">
+              <option value="2x1" {% if item.label_size == '2x1' %}selected{% endif %}>
+                2 in wide × 1 in tall
+              </option>
+              <option value="3x2" {% if item.label_size == '3x2' %}selected{% endif %}>
+                3 in wide × 2 in tall
+              </option>
+              <option value="4x6" {% if item.label_size == '4x6' %}selected{% endif %}>
+                4 in wide × 6 in tall
+              </option>
+            </select>
+        </div>
+
+        <!-- New SKU row inserted below Label Size -->
+        <div class="form-group sku-group">
+            <label for="sku_prefix">
+                <b>SKU</b>
+            </label>
+            <div class="sku-fields">
+                <input type="text" id="sku_prefix" name="sku_prefix" value="DTH" readonly />
+                <select id="department" name="department" required>
+                    <option value="" disabled selected>Select Department</option>
+                    <option value="shop">Shop</option>
+                    <option value="office">Office</option>
+                    <option value="other">Other</option>
+                </select>
+                <select id="item_type" name="item_type" required>
+                    <option value="" disabled selected>Select Item Type</option>
+                    <optgroup label="Consumables (Inventory)">
+                        <option value="construction_materials">Construction materials</option>
+                        <option value="maintenance_consumables">Shop maintenance consumables</option>
+                        <option value="tool_consumables">Tool consumables</option>
+                        <option value="office_consumables">Office consumables</option>
+                    </optgroup>
+                    <optgroup label="Tools (Assets)">
+                        <option value="handheld_tools">Handheld tools</option>
+                        <option value="power_tools">Power tools</option>
+                        <option value="stationary_tools">Stationary large tools</option>
+                        <option value="office_tools">Office tools</option>
+                    </optgroup>
+                    <optgroup label="Items (Supplies)">
+                        <option value="shop_items">Shop related items</option>
+                        <option value="office_items">Office items</option>
+                        <option value="personal_items">Personal items</option>
+                    </optgroup>
+                </select>
+                <select id="category" name="category" required>
+                    <option value="" disabled selected>Select Category</option>
+                    <option value="implements">Implements</option>
+                    <option value="lumber">Lumber</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; justify-content: left; margin-bottom: 20px;">
+            <label for="reorder_enabled" style="margin-right: 10px;">
+              <b>
+                <span class="description data-english">Reorder?</span>
+                <span class="description data-mandarin" style="display: none;">是否补货？</span>
+              </b>
+            </label>
+            <input
+              type="checkbox"
+              id="reorder_enabled"
+              name="reorder_enabled"
+              value="true"
+              {% if item.is_reorder %}checked{% endif %}
+            >
+        </div>
+
+        <div id="tag-container" class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;" data-tags="{{ item.upc|join(', ') }}">
+            <label for="default_order_qty" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">UPC:</span>
+                    <span class="description data-mandarin" style="display: none;">统一产品代码:</span>
+                </b>
+            </label>
+            <input type="text" id="tag-input">
+        </div>
+        {% endif %}
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="image" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Cover Image:</span>
+                    <span class="description data-mandarin" style="display: none;">封面图片:</span>
+                </b>
+            </label>
+            <input type="file" name="image" accept="image/*">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="image" style="display: flex; align-items: center; justify-content: left;">
+                <b>
+                    <span class="description data-english">Images:</span>
+                    <span class="description data-mandarin" style="display: none;">图片:</span>
+                </b>
+            </label>
+            <input type="file" name="images" accept="image/*" multiple>
+        </div>
+
+        
+        <div style="display: flex 1;">
+            <button type="submit" class="button data-english" id="submit_material" style="float: left; margin-left:5px;">
+                <span class="button-text">Submit</span>
+                <i class="fas fa-spinner fa-spin loading-spinner" style="display:none;"></i>
+            </button>
+            <button type="submit" class="button data-mandarin" id="submit_material" style="float: left; margin-left: 5px; display: none;">
+                <span class="button-text">提交</span>
+                <i class="fas fa-spinner fa-spin loading-spinner" style="display:none;"></i>
+            </button>
+        </div>
+    </form>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+    const select   = document.getElementById('inv_location');
+    const preview  = document.getElementById('loc-image-preview');
+    const modal    = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modal-image');
+
+    // Update the little icon based on selected option
+    function updatePreview() {
+        const opt    = select.options[select.selectedIndex];
+        const imgUrl = opt.getAttribute('data-image-url');
+        if (imgUrl) {
+        preview.src = imgUrl;
+        preview.style.display = 'inline';
+        } else {
+        preview.style.display = 'none';
+        }
+    }
+
+    // On changing the dropdown
+    select.addEventListener('change', updatePreview);
+
+    // Clicking the thumbnail opens the modal
+    preview.addEventListener('click', () => {
+        modalImg.src = preview.src;
+        modal.style.display = 'flex';
+    });
+
+    // Clicking anywhere on the overlay closes it
+    modal.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    // Initialize on page load
+    updatePreview();
+    });
+    // Create a tag element with a remove button.
+    function createTag(text) {
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      // Create a text node for the UPC text.
+      const textNode = document.createTextNode(text);
+      tag.appendChild(textNode);
+      
+      // Create the remove button.
+      const removeBtn = document.createElement('span');
+      removeBtn.className = 'remove-tag';
+      removeBtn.textContent = ' ×';
+      removeBtn.addEventListener('click', () => {
+        tag.parentNode.removeChild(tag);
+      });
+      tag.appendChild(removeBtn);
+      
+      return tag;
+    }
+    
+    // Initialize the tag container.
+    (function initTagContainer() {
+      const container = document.getElementById('tag-container');
+      const input = document.getElementById('tag-input');
+      const preexistingTags = container.getAttribute('data-tags'); // e.g., "123, 456"
+      if (preexistingTags) {
+        preexistingTags.split(',').forEach(tagText => {
+          tagText = tagText.trim();
+          if (tagText !== "") {
+            const newTag = createTag(tagText);
+            container.insertBefore(newTag, input);
+          }
+        });
+      }
+      // Listen for the Enter key in the tag input to add a new tag.
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();  // Prevent the form from submitting.
+          if (input.value.trim() !== '') {
+            const tagText = input.value.trim();
+            const newTag = createTag(tagText);
+            container.insertBefore(newTag, input);
+            input.value = '';
+          }
+        }
+      });
+      // Focus the input when clicking anywhere in the tag container.
+      container.addEventListener('click', function() {
+        input.focus();
+      });
+    })();
+
+    // Global keydown listener on the form to prevent Enter submission
+    // except when the target is the tag input.
+    document.querySelector('form').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && e.target.id !== 'tag-input') {
+        e.preventDefault();
+      }
+    });
+
+    // Function to gather all UPC tags and create hidden inputs for each UPC value.
+    function updateHiddenUPC() {
+        const container = document.getElementById('tag-container');
+        const tagElements = container.querySelectorAll('.tag');
+        // Find the form element containing the tag container.
+        const form = container.closest('form');
+        
+        // Remove any previously created hidden inputs for UPC (if any)
+        const existingHiddenInputs = form.querySelectorAll('input[name="upc[]"]');
+        existingHiddenInputs.forEach(input => input.remove());
+        
+        // For each UPC tag, create a new hidden input with name "upc[]"
+        tagElements.forEach(tag => {
+            const tagText = tag.firstChild.nodeValue.trim();
+            if (tagText) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'upc[]'; // Using array notation so the backend receives a list
+                hiddenInput.value = tagText;
+                form.appendChild(hiddenInput);
+            }
+        });
+    }
+
+
+    // Attach the updateHiddenUPC function to the form's submit event
+    document.querySelector('form').addEventListener('submit', function(e) {
+        updateHiddenUPC();
+        // Optionally, call showLoading() here if needed
+        showLoading();
+    });
+
+    function showLoading() {
+            // Disable the submit button to prevent multiple submissions
+            const buttons = document.querySelectorAll('.button');
+            buttons.forEach(button => {
+                button.disabled = true;
+            });
+
+            // Hide button text and show the loading spinner
+            const buttonTexts = document.querySelectorAll('.button-text');
+            const spinners = document.querySelectorAll('.loading-spinner');
+
+            buttonTexts.forEach(text => text.style.display = 'none');
+            spinners.forEach(spinner => spinner.style.display = 'inline-block');
+        }
+    function updateDescriptions() {
+        const language = document.getElementById('languageSelect').value;
+
+        // Save the selected language in local storage
+        localStorage.setItem('selectedLanguage', language);
+
+        // Get all elements with class 'data-english' and 'data-mandarin'
+        const englishElements = document.querySelectorAll('.data-english');
+        const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+        if (language === 'english') {
+            englishElements.forEach(element => {
+                element.style.display = 'block';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'none';
+            });
+        } else if (language === 'chinese') {
+            englishElements.forEach(element => {
+                element.style.display = 'none';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'block';
+            });
+        }
+
+    }
+</script>
+</body>
+</html>

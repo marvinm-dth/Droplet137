@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receive Material</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            font-size: 14px;
+            background-color: #f8f8f8;
+        }
+
+        header {
+            background-color: #fff;
+            padding: 10px 20px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0;
+            flex: 1;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            width: 50%;
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .search-container input[type="text"] {
+            padding: 8px;
+            width: 75%;
+        }
+
+        .search-container button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 25%;
+        }
+
+        .logout-btn {
+            background-color: #FF6347;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .product-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .product-item {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .product-item img {
+            width: 100px;
+            height: 100px;
+        }
+
+        .product-item input[type="number"] {
+            padding: 5px;
+            width: 40px;
+            margin-right: 10px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            .icons {
+                justify-content: flex-end;
+                gap: 15px;
+            }
+
+            .product-list {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .header-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-right {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .search-container {
+                width: 100%;
+            }
+
+            .search-container input[type="text"] {
+                width: 70%;
+            }
+
+            .search-container button {
+                width: 30%;
+            }
+
+            .logout-btn {
+                width: 100%;
+            }
+        }
+
+        h1 {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: 700;
+            color: #343a40;
+            margin-top: 20px;
+            }
+        /* Logout button styles */
+        .logout-button {
+                padding: 4px 8px;
+                background-color: #cc716c;
+                color: #333;
+                font-size: 0.5em;
+                font-weight: bold;
+                border: none;
+                border-radius: 12px;
+                cursor: pointer;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                transition: background-color 0.3s ease;
+                text-decoration: none;
+                margin-left: auto; /* Pushes the button to the right */
+            }
+
+        .logout-button:hover {
+                background-color: #cc716c;
+            }
+        .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px;
+                background-color: #f8f9fa;
+                position: relative;
+            }
+
+            /* Centered title */
+        .header h1 {
+                font-weight: bold;
+                color: #333;
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        .truncate-text {
+            display: -webkit-box;
+            -webkit-line-clamp: 2; /* Allows two lines */
+            -webkit-box-orient: horizontal;
+            width: 120px; /* Adjust this to the desired width */
+            overflow: hidden; /* Hide the text that overflows */
+            text-overflow: ellipsis; /* Add the ellipsis (…) at the end */
+        }
+        .cart-icon {
+            display: flex;
+            align-items: right;
+            cursor: pointer;
+            color: #007bff;
+            font-size: 18px;
+            gap: 5px;
+        }
+
+            /* Modal styles */
+        .modal {
+                display: none;
+                position: fixed;
+                z-index: 1;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                overflow: auto;
+                background-color: rgba(0, 0, 0, 0.4);
+            }
+    
+        .modal-content {
+                background-color: #fefefe;
+                font-size: 10px;
+                margin: 15% auto;
+                padding: 20px;
+                border: 1px solid #888;
+                width: 80%;
+                max-width: 800px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            }
+        
+         .scanner-container {
+            width: 100px;   /* Adjust width as needed */
+            height: 120px;  /* Adjust height as needed */
+            margin: 0 auto;
+            border: 2px solid #ccc;  /* Optional: adds a border around the camera feed */
+        }
+
+        #scanner-container video {
+            width: 40%;  /* Fill the container */
+            height: 40%; /* Maintain aspect ratio */
+            object-fit: cover; /* Ensures the video fills the container without distortion */
+            margin-left: 20px;
+        }
+
+        #scanner-container canvas {
+            width: 0%;  /* Ensure the canvas matches the container size */
+            height: 0%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .image-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        .image-preview {
+            position: relative;
+            width: 50px;
+            height: 50px;
+            overflow: hidden;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .remove-btn {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 10px;
+            height: 10px;
+            font-size: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        /* Fullscreen modal styles */
+        .img-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+        }
+        .img-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 10px;
+        }
+        .img-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Confirmation Modal (mini screen) styles */
+        #confirmationModal .modal-content {
+            max-width: 400px;
+            text-align: center;
+            font-size: 14px;
+            }
+        #confirmationModal img {
+            width: 100px;
+            height: 100px;
+            display: block;
+            margin: 0 auto;
+            }
+        #confirmationModal p {
+            font-weight: bold;
+            margin: 10px 0;
+            }
+        #confirmationModal input[type="text"] {
+            width: 100%;
+            padding: 5px;
+            margin: 10px 0;}
+    </style>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#000000">
+    <script>
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+            .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+        }
+    </script>
+</head>
+<body>
+    <!-- Header Section -->
+ <div class="container_info" id="info-container" style="width: 100%;  margin: 0 auto;">
+    <div class="header" style="margin-bottom: 20px;">
+        <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+            <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;">
+        </a>
+        <h1>Receive Material</h1>
+        <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+        <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <div class="icons" style="display: flex; align-items: right; justify-content: flex-end; padding: 10px; width: 100%;">
+        <div class="cart-icon" onclick="openCartModal()" style="display: flex; align-items: right; cursor: pointer; gap: 8px;">
+            <i class="fas fa-shopping-cart" style="margin-right: 5px;"></i>
+            <span id="cart-count" class="cart-badge"  style="margin-right: 20px;">0</span>
+        </div>
+    </div>
+
+    <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px; margin-left: 20px;">
+        <label for="receiveImage" class="description data-english" style="display: block; text-align: left;">Images:</label>
+        <label for="receiveImage" class="description data-mandarin" style="display: none; text-align: left;">审批人:</label>
+        <input type="file" id="imageInput" accept="image/*" style="margin-left: 20px;" multiple>
+    </div>
+
+    <div class="image-preview-container" id="imagePreviewContainer"></div>
+
+    <div class="img-modal" id="imageModal">
+        <button class="img-modal-close" onclick="closeModal()">X</button>
+        <img id="modalImage" src="">
+    </div>
+
+    <!-- Modal for Cart -->
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCartModal()">&times;</span>
+            <h2>Received Materials</h2>
+            <div id="supplier-tables-container">
+                <!-- Individual supplier tables will be added here dynamically -->
+            </div>
+            <div class="add-order-button">
+                <button onclick="sendRequest()" class="add-btn">Send Request</button>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px; font-size: 10px; margin: 0 auto;">
+        <label for="languageSelect" class="description data-english" style="margin-left: 20px;">Choose Language:</label>
+        <label for="languageSelect" class="description data-mandarin" style="margin-left: 20px; display: none;">选择语言: </label>
+        <select id="languageSelect" onchange="updateDescriptions()" style="margin-left: 10px; font-size: 10px;">
+            <option value="english">English</option>
+            <option value="chinese">Chinese</option>
+        </select>
+    </div>
+
+    <div class="search-container" style="margin-top: 20px;">
+        <input type="text" id="search" placeholder="Search...">
+        <button id="search-btn">Search</button>
+    </div>
+
+    <!-- Modal for Non-Existent UPC -->
+    <div id="upcNotFoundModal" class="modal">
+        <div class="modal-content" style="max-width: 300px; text-align: center;">
+        <span class="close" onclick="closeUpcModal()" style="float: right; cursor: pointer;">&times;</span>
+        <p style="font-weight: bold;">UPC does not exist</p>
+        </div>
+    </div>
+
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+      
+          <span class="close" onclick="closeConfirmationModal()" style="float: right; cursor: pointer;">&times;</span>
+      
+          <!-- Step 1: Quantity -->
+          <div id="step1">
+            <img id="confirmImage" src="" alt="Product Image" />
+            <p id="confirmName"></p>
+            <label for="qty">Quantity:</label>
+            <input type="number" id="qty" placeholder="Enter Quantity" />
+            <button onclick="goToStep2()">Next</button>
+          </div>
+      
+          <!-- Step 2: Upload Photo -->
+          <div id="step2" style="display: none;">
+            <p>Upload image before submitting:</p>
+            <input type="file" id="modalImageUpload" accept="image/*" multiple="true"/>
+            <div id="modalImagePreviewContainer" class="image-preview-container" style="margin-top:10px;"></div>
+            <div style="margin-top: 10px;">
+              <button onclick="goToStep1()">Back</button>
+              <button onclick="confirmAddItem()">Submit</button>
+            </div>
+          </div>
+      
+        </div>
+      </div>
+      
+
+    <!-- Product List Section -->
+    <div class="product-list" id="product-list">
+        {% for item in home_depot_items %}
+        <!-- Example Product Item -->
+        <div class="product-item" data-name="{{ item.item_desc }}">
+            <img src="{{ item.item_image }}" alt="Product" loading="lazy">
+            <p class="truncate-text data-english">J{{item.item_desc}}</p>
+            <p class="truncate-text data-mandarin" style="display: none;">J{{item.item_desc_mandarin}}</p>
+            <p style="display: none;">${{item.item_price}}</p>
+            <p style="display: none;">{{item.keywords}}</p>
+            <p style="display: none;">{{item.keywords_ch}}</p>
+            <input type="number" value="1" min="1" class="quantity-input">
+            <button class="add-btn" onclick="addItem('{{ item.material_id }}', 
+                                                    '{{ item.supplier_name }}', 
+                                                    '{{ item.internet_sku_number }}', 
+                                                    '{{ item.item_desc }}', 
+                                                    '{{ item.item_desc_mandarin }}',
+                                                    '{{ item.item_price }}', 
+                                                    '{{ item.item_image }}',
+                                                    document.querySelector('.product-item[data-name=\'{{ item.item_desc }}\'] .quantity-input').value,
+                                                    '{{ user.name }}')">Add</button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+</body>
+<script>
+    let selectedFiles = []; // Store images persistently
+
+    const imageInput = document.getElementById("imageInput");
+    const imagePreviewContainer = document.getElementById("imagePreviewContainer");
+    const imageModal = document.getElementById("imageModal");
+    const modalImage = document.getElementById("modalImage");
+
+    imageInput.addEventListener("change", function(event) {
+        const files = Array.from(event.target.files);
+
+        files.forEach(file => {
+            if (file.type.startsWith("image/")) {
+                // Avoid duplicate images
+                if (!selectedFiles.some(f => f.name === file.name)) {
+                    selectedFiles.push(file);
+
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        displayImage(file, e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        });
+
+        // Reset input to allow selecting the same file again
+        imageInput.value = "";
+    });
+
+    function displayImage(file, src) {
+        const imgContainer = document.createElement("div");
+        imgContainer.classList.add("image-preview");
+        imgContainer.setAttribute("data-name", file.name);
+
+        const img = document.createElement("img");
+        img.src = src;
+        img.onclick = function() {
+            openModal(src);
+        };
+
+        const removeBtn = document.createElement("button");
+        removeBtn.classList.add("remove-btn");
+        removeBtn.innerHTML = "X";
+        removeBtn.onclick = function(event) {
+            event.stopPropagation(); // Prevent opening modal when clicking remove
+            removeImage(file.name, imgContainer);
+        };
+
+        imgContainer.appendChild(img);
+        imgContainer.appendChild(removeBtn);
+        imagePreviewContainer.appendChild(imgContainer);
+    }
+
+    function removeImage(filename, imgContainer) {
+        selectedFiles = selectedFiles.filter(file => file.name !== filename);
+        imgContainer.remove();
+    }
+
+    function openModal(src) {
+        modalImage.src = src;
+        imageModal.style.display = "flex";
+    }
+
+    function closeModal() {
+        imageModal.style.display = "none";
+    }
+
+    function showUpcNotFoundModal() {
+        document.getElementById('upcNotFoundModal').style.display = 'block';
+        setTimeout(() => {
+            closeUpcModal();
+        }, 2000); // Auto-close after 2 seconds
+    }
+
+    function closeUpcModal() {
+        document.getElementById('upcNotFoundModal').style.display = 'none';
+    }
+    let scanBuffer = "";
+    let lastScanTime = 0;
+
+    document.addEventListener("keydown", (event) => {
+        const currentTime = Date.now();
+        const scanThreshold = window.scanThreshold || 50;
+        const scanMinChar = window.scanMinChar || 3;
+
+        if (currentTime - lastScanTime > scanThreshold) {
+            scanBuffer = "";
+        }
+
+        if (event.key.length === 1) {
+            scanBuffer += event.key;
+        }
+
+        if (event.key === "Enter" && scanBuffer.length >= scanMinChar) {
+            document.dispatchEvent(new CustomEvent("PDA_SCAN", { detail: { value: scanBuffer } }));
+            scanBuffer = "";
+        }
+
+        lastScanTime = currentTime;
+    });
+
+    document.addEventListener("PDA_SCAN", (e) => {
+            const scanMessage = document.getElementById("scanMessage");
+            //scanMessage.textContent = `Scanning detected:\n${e.detail.value}`;
+            //scanMessage.style.display = "block";
+
+            console.log(`${e.detail.value}`)
+            scannedCode = `${e.detail.value}`
+            if (scannedCode) {
+                fetch('/search_barcode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ barcode: scannedCode })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        openConfirmationModal(data.material_id , 
+                                                data.supplier_name, 
+                                                data.internet_sku_number, 
+                                                data.item_desc, 
+                                                data.item_desc_mandarin,
+                                                data.item_price, 
+                                                data.item_image,
+                                                data.default_order_qty,
+                                                "{{ user.name }}");
+                        console.log('Custom script executed with data:', data); // Log to verify
+                    } else {
+                            showUpcNotFoundModal(); // ← Show the modal here
+                    }
+                })}
+
+            setTimeout(() => 3000);
+        });
+
+    function updateDescriptions() {
+        const language = document.getElementById('languageSelect').value;
+
+        // Save the selected language in local storage
+        localStorage.setItem('selectedLanguage', language);
+
+        // Get all elements with class 'data-english' and 'data-mandarin'
+        const englishElements = document.querySelectorAll('.data-english');
+        const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+        if (language === 'english') {
+            englishElements.forEach(element => {
+                element.style.display = 'block';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'none';
+            });
+        } else if (language === 'chinese') {
+            englishElements.forEach(element => {
+                element.style.display = 'none';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'block';
+            });
+        }
+    }
+
+    // Function to open the cart modal
+    function openCartModal() {
+        document.getElementById('cartModal').style.display = 'block';
+    }
+
+    // Function to close the cart modal
+    function closeCartModal() {
+        document.getElementById('cartModal').style.display = 'none';
+    }
+
+    // Cart functionality
+    let cart = [];
+    let cartCount = document.getElementById("cart-count");
+
+    function updateCartCount() {
+        let totalCount = 0;
+        const rows = document.querySelectorAll('[id^="selected-items-"] tr');
+        rows.forEach(row => {
+            const quantityInput = row.querySelector('td:nth-child(7) input');
+            totalCount += parseInt(quantityInput.value);
+        });
+        document.getElementById('cart-count').textContent = totalCount;
+    }
+
+    // Handle "Add" button click
+    const addButtons = document.querySelectorAll(".add-btn");
+
+    addButtons.forEach((button) => {
+        button.addEventListener("click", (event) => {
+            const productItem = event.target.closest(".product-item");
+            const productName = productItem.querySelector("p").textContent;
+            const quantityInput = productItem.querySelector(".quantity-input");
+            const quantity = parseInt(quantityInput.value);
+
+            // Add product to cart
+            cart.push({ name: productName, quantity });
+
+            // Update cart count
+            updateCartCount();
+        });
+    });
+
+    // Search functionality
+    const searchInput = document.getElementById("search");
+
+    searchInput.addEventListener("input", function () {
+        const query = searchInput.value.toLowerCase();
+        const productItems = document.querySelectorAll(".product-item");
+
+        // Split the query into individual words
+        const keywords = query.split(" ").filter((word) => word.trim() !== "");
+
+        productItems.forEach((item) => {
+            const productTexts = item.querySelectorAll("p"); // Get all <p> tags inside the product item
+            let isMatch = true;
+
+            // Check if all keywords are present in any of the <p> elements
+            keywords.forEach((keyword) => {
+                const matched = Array.from(productTexts).some((text) => text.textContent.toLowerCase().includes(keyword));
+                if (!matched) {
+                    isMatch = false; // If a keyword is not found, hide the product
+                }
+            });
+
+            // Show or hide the product based on whether it matches the keywords
+            if (isMatch) {
+                item.style.display = "block";
+            } else {
+                item.style.display = "none";
+            }
+        });
+    });
+
+    function deleteItem(sku_num, requesting_party) {
+    // Retrieve the latest cart items from localStorage
+        let receivecartItems = JSON.parse(localStorage.getItem('receivecartItems')) || [];
+
+        // Find the item in the cart
+        const itemIndex = receivecartItems.findIndex(item => item.sku_num === sku_num && item.requesting_party === requesting_party);
+
+        if (itemIndex !== -1) {
+            // Remove the item from the array
+            receivecartItems.splice(itemIndex, 1);
+
+            // Save the updated receivecartItems array to localStorage
+            localStorage.setItem('receivecartItems', JSON.stringify(receivecartItems));
+
+            // Update the cart count display
+            updateCartCount();
+
+            console.log(receivecartItems);
+        }
+    }
+
+    function addItem(sku_num, supplier_name, internet_num, description_english, description_mandarin, price, image, default_qty, requesting_party, uploadedFiles = null) {
+        const supplierContainer = document.getElementById('supplier-tables-container');
+
+        const receivesavedItems = JSON.parse(localStorage.getItem('receivecartItems')) || [];
+
+        // Check if the item with the same sku_num and requesting_party already exists
+        const itemExists = receivesavedItems.some(item => item.sku_num === sku_num && item.requesting_party === requesting_party);
+
+        // If the item is not in the cart, create a new item object
+        const newItem = {
+            sku_num,
+            supplier_name,
+            internet_num,
+            description_english,
+            description_mandarin,
+            price,
+            image,
+            default_qty,
+            requesting_party
+        };
+
+        const receivecartItems = JSON.parse(localStorage.getItem('receivecartItems')) || [];
+        console.log(receivecartItems);
+
+        // Check if the requesting party matches the current user's name
+        if (requesting_party !== "Automatic" &&  !itemExists){
+            // If it matches, push the new item to the cart
+            receivecartItems.push(newItem);
+
+            // Save the updated cart back to localStorage
+            localStorage.setItem('receivecartItems', JSON.stringify(receivecartItems));
+        } else {
+            // If the requesting party doesn't match, don't add the item
+            console.log("The requesting party does not match the current user. Item not added.");
+        }
+
+        // Check if a table for this supplier already exists
+        let supplierTable = document.querySelector(`#supplier-table-${supplier_name.replace(/\s+/g, '-')}`);
+        if (!supplierTable) {
+            // Create a new table for this supplier if it doesn't exist
+            supplierTable = document.createElement('div');
+            supplierTable.id = `supplier-table-${supplier_name.replace(/\s+/g, '-')}`;
+            supplierTable.classList.add('supplier-table');
+            
+            supplierTable.innerHTML = `
+                <h3 style="display: flex; align-items: left; justify-content: left;">
+                    <span class="description data-english">Supplier: ${supplier_name}</span>
+                    <span class="description data-mandarin" style="display: none;">供应商: ${supplier_name}</span>
+                </h3>
+                <table class="supplier-table-content">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th style="display: none;">Requesting Party</th>
+                            <th style="display: none;" id="sku-header" onclick="sortTable('${supplier_name.replace(/\s+/g, '-')}', 'sku')">SKU Number</th>
+                            <th style="display: none;">Supplier SKU Number</th>
+                            <th style="width: 120px" id="description-header" onclick="sortTable('${supplier_name.replace(/\s+/g, '-')}', 'description')">Description</th>
+                            <th style="display: none;" id="price-header" onclick="sortTable('${supplier_name.replace(/\s+/g, '-')}', 'price')">Price</th>
+                            <th id="quantity-header" onclick="sortTable('${supplier_name.replace(/\s+/g, '-')}', 'quantity')">Quantity</th>
+                            <th>Upload Image</th> <!-- New Column for Image Upload -->
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="selected-items-${supplier_name.replace(/\s+/g, '-')}">
+                        <!-- Items will be added here -->
+                    </tbody>
+                </table>
+            `;
+            supplierContainer.appendChild(supplierTable);
+        }
+
+        // Create and append the new row to the table body
+        const tableBody = document.getElementById(`selected-items-${supplier_name.replace(/\s+/g, '-')}`);
+        const newRow = document.createElement('tr');
+
+        // Create row cells (image, SKU, description, price, etc.)
+        const imageCell = document.createElement('td');
+        const imgElement = document.createElement('img');
+        imgElement.src = image;
+        imgElement.alt = description_english;
+        imgElement.style.width = '50px';
+        imgElement.style.height = '50px';
+        imageCell.appendChild(imgElement);
+
+        const skuCell = document.createElement('td');
+        skuCell.style.display = 'none';
+        skuCell.textContent = sku_num;
+
+        const requestingPartyCell = document.createElement('td');
+        requestingPartyCell.style.display = 'none';
+        requestingPartyCell.textContent = requesting_party;
+
+        const internetskuCell = document.createElement('td');
+        internetskuCell.style.display = 'none';
+        internetskuCell.textContent = internet_num;
+
+        const descriptionCell = document.createElement('td');
+        const descriptionEnglishDiv = document.createElement('div');
+        descriptionCell.classList.add('truncate-text');
+        descriptionCell.style.width = '100px';
+        descriptionEnglishDiv.classList.add('data-english');
+        descriptionEnglishDiv.textContent = description_english;
+        descriptionEnglishDiv.style.display = 'block';
+
+        const descriptionMandarinDiv = document.createElement('div');
+        descriptionMandarinDiv.classList.add('data-mandarin');
+        descriptionMandarinDiv.textContent = description_mandarin;
+        descriptionMandarinDiv.style.display = 'none';
+
+        descriptionCell.appendChild(descriptionEnglishDiv);
+        descriptionCell.appendChild(descriptionMandarinDiv);
+
+        const priceCell = document.createElement('td');
+        priceCell.style.display = 'none';
+        priceCell.textContent = parseFloat(price).toFixed(2);
+
+        const quantityCell = document.createElement('td');
+        const quantityInput = document.createElement('input');
+        quantityInput.type = 'number';
+        quantityInput.value = default_qty;
+        quantityInput.min = 1;
+        quantityInput.style.fontSize = '10px';
+        quantityInput.style.width = '20px';
+        quantityCell.appendChild(quantityInput);
+
+        // New Column for Image Upload
+        const uploadImageCell = document.createElement('td');
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.multiple = true;
+        fileInput.style.width = '85px';
+        fileInput.style.fontSize = '8px';
+
+        // Create a separate image element for the preview in this column
+        const uploadPreview = document.createElement('img');
+        uploadPreview.style.width = '50px';
+        uploadPreview.style.height = '50px';
+        uploadPreview.style.display = 'block'; // Ensure it shows as a block element
+        uploadPreview.style.marginTop = '5px';  // Optional: add some spacing
+
+       // Append both the file input and the preview image to the cell
+        uploadImageCell.appendChild(fileInput);
+        uploadImageCell.appendChild(uploadPreview);
+
+        if (uploadedFiles && uploadedFiles.length > 0) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadPreview.src = e.target.result;
+                };
+                reader.readAsDataURL(uploadedFiles[0]); // Just preview the first
+            }
+
+            // Still allow manual changes afterward
+            fileInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        uploadPreview.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+
+        const deleteCell = document.createElement('td');
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.classList.add('logout-button');
+        deleteButton.onclick = function() {
+            tableBody.removeChild(newRow);
+
+            deleteItem(sku_num, requesting_party)
+        };
+
+        deleteCell.appendChild(deleteButton);
+
+        newRow.appendChild(imageCell);
+        newRow.appendChild(requestingPartyCell);
+        newRow.appendChild(skuCell);
+        newRow.appendChild(internetskuCell);
+        newRow.appendChild(descriptionCell);
+        newRow.appendChild(priceCell);
+        newRow.appendChild(quantityCell);
+        newRow.appendChild(uploadImageCell); 
+        newRow.appendChild(deleteCell);
+        tableBody.appendChild(newRow);
+
+        updateCartCount();
+        updateDescriptions();
+    };
+
+    // Function to load the saved language preference on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Get the selected language from local storage
+        const receivesavedItems = JSON.parse(localStorage.getItem('receivecartItems')) || [];
+        console.log(receivesavedItems);
+
+        receivesavedItems.forEach(item => {
+                {
+                addItem(
+                    item.sku_num,
+                    item.supplier_name,
+                    item.internet_num,
+                    item.description_english,
+                    item.description_mandarin,
+                    item.price,
+                    item.image,
+                    item.default_qty,
+                    item.requesting_party
+                );
+            }
+        });
+    });
+    
+    // Open confirmation modal for adding an item
+    function openConfirmationModal(sku_num, supplier_name, internet_num, description_english, description_mandarin, price, image, default_qty, requesting_party) {
+      // Store the item details in a global object
+      selectedItem = { sku_num, supplier_name, internet_num, description_english, description_mandarin, price, image, default_qty, requesting_party };
+      // Populate modal fields
+      document.getElementById('confirmImage').src = image;
+      document.getElementById('confirmName').textContent = description_english;
+      document.getElementById('qty').value = 1;
+      document.getElementById('confirmationModal').style.display = 'block';
+    }
+
+    function closeConfirmationModal() {
+      document.getElementById('confirmationModal').style.display = 'none';
+    }
+
+    function goToStep2() {
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'block';
+    }
+
+    function goToStep1() {
+        document.getElementById('step2').style.display = 'none';
+        document.getElementById('step1').style.display = 'block';
+    }
+
+    document.getElementById('modalImageUpload').addEventListener('change', function (event) {
+        const files = Array.from(event.target.files);
+        const previewContainer = document.getElementById('modalImagePreviewContainer');
+
+        // Clear old previews
+        previewContainer.innerHTML = '';
+
+        files.forEach(file => {
+            if (file.type.startsWith("image/")) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const imgWrapper = document.createElement("div");
+                    imgWrapper.className = "image-preview";
+
+                    const img = document.createElement("img");
+                    img.src = e.target.result;
+                    img.title = file.name;
+                    img.onclick = () => openModal(img.src); // Optional: click to enlarge
+
+                    imgWrapper.appendChild(img);
+                    previewContainer.appendChild(imgWrapper);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+});
+
+
+
+    function confirmAddItem() {
+        const qty = document.getElementById('qty').value;
+        const imageFile = document.getElementById('modalImageUpload').files[0];
+
+        if (!qty || qty <= 0) {
+            alert("Please enter a valid quantity.");
+            return;
+        }
+
+        if (!imageFile) {
+            alert("Please upload an image.");
+            return;
+        }
+
+        // Optional: add image to selectedFiles array if needed later
+        selectedFiles.push(imageFile);
+
+        const modalImageInput = document.getElementById('modalImageUpload');
+        const modalImageFiles = modalImageInput.files;
+
+        // Proceed to add the item
+        addItem(
+            selectedItem.sku_num,
+            selectedItem.supplier_name,
+            selectedItem.internet_num,
+            selectedItem.description_english,
+            selectedItem.description_mandarin,
+            parseFloat(selectedItem.price).toFixed(2),
+            selectedItem.image,
+            qty,
+            selectedItem.requesting_party,
+            modalImageFiles
+        );
+
+        alert("Your request has been submitted!");
+        closeConfirmationModal();
+        document.getElementById('modalImageUpload').value = '';
+        document.getElementById('modalImagePreviewContainer').innerHTML = '';
+    }
+
+
+    // Creating a JavaScript object that maps supplier names to their IDs
+    const supplierData = {};
+    {% for supplier in supplier_data %}
+        supplierData["{{ supplier.supplier_name }}"] = "{{ supplier.id }}";
+    {% endfor %}
+
+    function beforeUnloadHandler(e) {
+        const unsavedItems = localStorage.getItem('receivecartItems');
+        if (unsavedItems && JSON.parse(unsavedItems).length > 0) {
+            e.preventDefault();
+            e.returnValue = 'You have not submitted your items yet. Are you sure you want to leave?';
+            return 'You have not submitted your items yet. Are you sure you want to leave?';
+        }
+    }
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+
+    // Function to submit the order data and selected items
+    async function sendRequest() {
+
+        if (!confirm("Are you sure everything is final? Click OK to continue or Cancel to review your materials.")) {
+            return; // Stop execution if the user cancels
+        }
+        
+
+        const requestingParty = "{{ user.name }}";
+        const requestingPartyId = "{{ user.id | escape }}";
+
+        // Create a FormData object to handle file uploads
+        let formData = new FormData();
+        formData.append("requesting_party", requestingParty);
+        formData.append("requesting_party_id", requestingPartyId);
+
+        // *** New Code: Append images from the global image input ***
+        if (selectedFiles.length > 0) {
+            selectedFiles.forEach((file, index) => {
+                // Using an array-like key so that multiple files can be processed on the backend
+                formData.append(`global_images[]`, file);
+            });
+        }
+
+        // Collect selected items data, grouped by supplier
+        const receiveMaterials = [];
+        const supplierTables = document.querySelectorAll('.supplier-table');
+
+        for (let supplierTable of supplierTables) {
+            const supplierName = supplierTable.querySelector('h3 .data-english').textContent.replace('Supplier: ', '');
+            const supplierId = supplierData[supplierName.trim()];
+            const rows = supplierTable.querySelectorAll('tbody tr');
+
+            for (let row of rows) {
+                const sku_number = row.querySelector('td:nth-child(3)').textContent;
+                const internet_sku_number = row.querySelector('td:nth-child(4)').textContent;
+                const description = row.querySelector('td:nth-child(5) .data-english').textContent.trim();
+                const price = parseFloat(row.querySelector('td:nth-child(6)').textContent);
+                const image = row.querySelector('td:nth-child(1) img').src;
+                const quantity = parseInt(row.querySelector('td:nth-child(7) input').value);
+                const fileInput = row.querySelector('td:nth-child(8) input[type="file"]');
+                console.log("Row file input:", fileInput, fileInput.files);
+
+                let uploadedFiles = [];
+
+                if (fileInput && fileInput.files.length > 0) {
+                    // Use a unified key for all row uploads (or one per row if you prefer)
+                    for (let file of fileInput.files) {
+                        // Append to FormData using an array-like key
+                        formData.append(sku_number, file);
+                        // Push the File object itself into the uploadedFiles array so that it matches selectedFiles output
+                        uploadedFiles.push(sku_number);
+                    }
+                }
+
+                // Add item details
+                receiveMaterials.push({
+                    material_id: sku_number,
+                    internet_sku_number: internet_sku_number,
+                    item_desc: description,
+                    item_price: price,
+                    item_image: image,
+                    received_quantity: quantity,
+                    supplier_name: supplierName,
+                    supplier_id: supplierId,
+                    uploaded_files: uploadedFiles // Reference file keys
+                });
+            }
+        }
+
+        formData.append("receive_materials", JSON.stringify(receiveMaterials));
+
+        console.log("Sending data:", receiveMaterials);
+
+        // Check if there are any items to submit
+        if (receiveMaterials.length === 0) {
+            alert("Please add at least one item.");
+            return;
+        }
+
+        // Send the data to the backend using Fetch API
+        fetch('/send_receive_material', {
+            method: 'POST',
+            body: formData  // Sending as FormData to handle file uploads
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message && data.redirect_url) {
+                localStorage.removeItem('receivecartItems');
+                alert('Request successfully added: ' + data.message);
+                window.location.href = data.redirect_url;
+            } else {
+                console.error('Invalid response:', data);
+                alert('An error occurred while processing the order.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+</script>
+</html>

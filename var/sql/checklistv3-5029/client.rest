@@ -1,0 +1,82 @@
+### Get All
+GET http://localhost:5030/api/v1/projects
+
+### Create
+POST http://localhost:5030/api/v1/projects
+Content-Type: application/json
+
+{
+    "name_en": "New Project"
+}
+
+
+
+### Get one
+GET http://localhost:5030/api/v1/projects/1
+
+### Update one
+PUT http://localhost:5030/api/v1/projects/1
+Content-Type: application/json
+
+{
+    "name_en": "New Project5"
+}
+
+### Delete one
+DELETE http://localhost:5030/api/v1/projects/1
+
+
+### Get all user delagate
+GET  http://localhost:5030/api/v1/projects/2/users
+### Create user delagate
+POST  http://localhost:5030/api/v1/projects/2/users
+Content-Type: application/json
+
+{
+    "userId": "25",
+    "entityType": "project"
+}
+
+### Create user delagate
+DELETE  http://localhost:5030/api/v1/projects/2/users
+Content-Type: application/json
+
+{
+    "action": "remove-value",
+    "userId": "25",
+    "entityType": "project"
+}
+
+### Get all dynamicfields
+GET  http://localhost:5030/api/v1/projects/2/fields
+
+
+
+### Get all relations
+GET  http://localhost:5030/api/v1/projects/2/relations
+
+### Get all blockers
+GET  http://localhost:5030/api/v1/projects/2/blockers
+
+### Get all blocking
+GET  http://localhost:5030/api/v1/projects/2/blocking
+
+
+
+
+### duplicate
+
+POST  http://localhost:5030/api/v1/projects/2/duplicate
+Content-Type: application/json
+
+### templating
+POST  http://localhost:5030/api/v1/projects/5/template
+Content-Type: application/json
+
+{
+    "templateName": "sample template for porject 2"
+}
+
+### create from template
+POST  http://localhost:5030/api/v1/projects/from-template/5
+Content-Type: application/json

@@ -1,0 +1,43 @@
+<div class="offcanvas offcanvas-start w-auto" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
+<div class="sidebar d-flex flex-column p-3 text-bg-dark">
+    <span class="fs-4 text-white fw-bold">DragonTinyHomes</span>
+    <hr>
+    <ul class="nav nav-pills flex-column mb-auto">
+        <li><a class="nav-link active" href="/checklists/admin/"><i class="bi bi-person-fill-up""></i> Admin</a></li >
+        <li><a class="nav-link text-white" href="/checklists/"><i class="bi bi-people"></i> Worker</a></li>
+        <li><a class="nav-link text-white" href="/checklists/watcher/"><i class="bi-easel2"></i> Watcher</a></li>
+        <li><a class="nav-link text-white" href="#"><i class="bi bi-house-gear" onclick="alert('Not available')"></i> NOAH</a></li>
+        <li>
+            <a href="#" class="nav-link text-white" data-bs-toggle="collapse" data-bs-target="#template-collapse"><i class="bi bi-journals"></i> Templates</a>
+            <div class="collapse" id="template-collapse">
+                <ul class="ms-5 pb-1 small list-unstyled">
+                    <li><a class="link-underline-light link-underline-opacity-0 link-underline-opacity-100-hover  link-offset-2 text-white" href="#" onclick="alert('Not available')">Project Templates</a></li>
+                    <li><a class="link-underline-light link-underline-opacity-0 link-underline-opacity-100-hover  link-offset-2 text-white" href="#" onclick="alert('Not available')">House Models</a></li>
+                    <li><a class="link-underline-light link-underline-opacity-0 link-underline-opacity-100-hover  link-offset-2 text-white" href="/checklists/1/">Work Checklists</a></li>
+                    <li><a class="link-underline-light link-underline-opacity-0 link-underline-opacity-100-hover  link-offset-2 text-white" href="#" onclick="alert('Not available')">Inspection Checklists</a></li>
+                </ul>
+            </div>
+        </li>
+
+        <hr>
+        <li><a class="nav-link text-white" href="#"><i class="bi bi-gear"></i> Settings</a></li>
+
+        <li><a class="nav-link text-white pe-none"><i class="bi bi-person-circle fs-4 me-2"></i> <strong><%= authUser.name %></strong></a></li>
+        <li>
+            <form action="/logout/" method="POST">
+            <a href="#" class="nav-link text-danger" onclick="this.closest('form').submit(); return false;"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            </form>
+        </li>
+    </ul>
+</div>
+
+</div>
+
+
+<div id="topNav" class="pe-none">
+  <button style="pointer-events: all;" class="btn text-black fs-1 px-0 py-1 no-focus" id="sidebarToggle" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas">
+    <i class="bi bi-list"></i>
+  </button>
+</div>
+
+

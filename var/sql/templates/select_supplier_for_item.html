@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Supplier</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #343a40;
+            margin-top: 20px;
+        }
+
+        .buttons-container {
+            margin: 30px;
+        }
+
+        .button {
+            padding: 12px 25px;
+            margin: 0 15px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #fff;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .supplier-orders-btn {
+            background-color: #218838;
+        }
+
+        /* Header container */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: #f8f9fa;
+            position: relative;
+        }
+
+        /* Centered title */
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 0;
+        }
+
+        /* Logout button styles */
+        .logout-button {
+            padding: 10px 20px;
+            background-color: #cc716c;
+            color: #333;
+            font-size: 1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            margin-left: auto; /* Pushes the button to the right */
+        }
+
+        .logout-button:hover {
+            background-color: #cc716c;
+        }
+    </style>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#000000">
+    <script>
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+            .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+        }
+    </script>
+</head>
+<body>
+    <div class="container_info" id="info-container" style="width: 100%; max-width: 800px; margin: 0 auto;">
+        <div class="header">
+            <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+                <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;">
+            </a>
+            <h1>Select Supplier</h1>
+            <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+            <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+        </div>
+    
+        <div style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+            <label for="languageSelect" class="description data-english">Choose Language:</label>
+            <label for="languageSelect" class="description data-mandarin" style="display: none;">选择语言: </label>
+            <select id="languageSelect" onchange="updateDescriptions()" style="margin-left: 10px;">
+                <option value="english">English</option>
+                <option value="chinese">Chinese</option>
+            </select>
+        </div>
+            
+    {% if user.role != "user" %}
+    <div class="supplier_info" style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+        <a href="{{ url_for('add_supplier') }}">
+            <button class="button supplier-orders-btn" style="align-items: center;">
+                <span class="data-english">Add Supplier</span>
+                <span class="data-mandarin" style="display: none;">添加供应商</span>
+            </button>
+        </a>
+    </div>
+    {% endif %}
+        
+    {% for supplier in supplier_data %}
+    <a href="{{ url_for('get_home_depot_items', supplier_id=supplier.id) }}">
+        <button class="button supplier-orders-btn" style="align-items: center; margin-bottom: 20px;">
+            <span class="data-english">{{ supplier.supplier_name }}</span>
+            <span class="data-mandarin" style="display: none;">{{ supplier.supplier_name_mandarin }}</span>
+        </button>
+    </a>
+    {% endfor %}
+<script>
+    function updateDescriptions() {
+        const language = document.getElementById('languageSelect').value;
+
+        // Save the selected language in local storage
+        localStorage.setItem('selectedLanguage', language);
+
+        // Add debugging to ensure the function runs
+        console.log(`Language selected: ${language}`);
+        
+        // Get all elements with class 'data-english' and 'data-mandarin'
+        const englishElements = document.querySelectorAll('.data-english');
+        const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+        if (language === 'english') {
+            englishElements.forEach(element => {
+                console.log(`Displaying English element:`, element); 
+                element.style.display = 'block';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'none';
+            });
+        } else if (language === 'chinese') {
+            englishElements.forEach(element => {
+                element.style.display = 'none';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'block';
+            });
+        }
+    }   
+
+    // Function to load the saved language preference on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Get the selected language from local storage
+        const savedLanguage = localStorage.getItem('selectedLanguage');
+
+        // If there's a saved language, set it in the dropdown and update descriptions
+        if (savedLanguage) {
+            document.getElementById('languageSelect').value = savedLanguage;
+            updateDescriptions();
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Return Inventory</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            font-size: 14px;
+            background-color: #f8f8f8;
+        }
+
+        header {
+            background-color: #fff;
+            padding: 10px 20px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0;
+            flex: 1;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            width: 50%;
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .search-container input[type="text"] {
+            padding: 8px;
+            width: 75%;
+        }
+
+        .search-container button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 25%;
+        }
+
+        .logout-btn {
+            background-color: #FF6347;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .product-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .product-item {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .product-item img {
+            width: 100px;
+            height: 100px;
+        }
+
+        .product-item input[type="number"] {
+            padding: 5px;
+            width: 40px;
+            margin-right: 10px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            .icons {
+                justify-content: flex-end;
+                gap: 15px;
+            }
+
+            .product-list {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .header-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-right {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .search-container {
+                width: 100%;
+            }
+
+            .search-container input[type="text"] {
+                width: 70%;
+            }
+
+            .search-container button {
+                width: 30%;
+            }
+
+            .logout-btn {
+                width: 100%;
+            }
+        }
+
+        h1 {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: 700;
+            color: #343a40;
+            margin-top: 20px;
+            }
+        /* Logout button styles */
+        .logout-button {
+                padding: 4px 8px;
+                background-color: #cc716c;
+                color: #333;
+                font-size: 0.5em;
+                font-weight: bold;
+                border: none;
+                border-radius: 12px;
+                cursor: pointer;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                transition: background-color 0.3s ease;
+                text-decoration: none;
+                margin-left: auto; /* Pushes the button to the right */
+            }
+
+        .logout-button:hover {
+                background-color: #cc716c;
+            }
+        .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px;
+                background-color: #f8f9fa;
+                position: relative;
+            }
+
+            /* Centered title */
+        .header h1 {
+                font-weight: bold;
+                color: #333;
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        .truncate-text {
+            display: -webkit-box;
+            width: 120px; /* Adjust width as needed */
+            -webkit-line-clamp: 2; /* Limit to 2 lines */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-wrap: break-word;
+        }
+        .cart-icon {
+            display: flex;
+            align-items: right;
+            cursor: pointer;
+            color: #007bff;
+            font-size: 14px;
+            gap: 5px;
+        }
+
+            /* Modal styles */
+        .modal {
+                display: none;
+                position: fixed;
+                z-index: 1;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                overflow: auto;
+                background-color: rgba(0, 0, 0, 0.4);
+            }
+    
+        .modal-content {
+                background-color: #fefefe;
+                font-size: 10px;
+                margin: 15% auto;
+                padding: 20px;
+                border: 1px solid #888;
+                width: 80%;
+                max-width: 800px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            }
+         /* Confirmation Modal (mini screen) styles */
+         #confirmationModal .modal-content {
+            max-width: 400px;
+            text-align: center;
+            font-size: 14px;
+            }
+        #confirmationModal img {
+            width: 100px;
+            height: 100px;
+            display: block;
+            margin: 0 auto;
+            }
+        #confirmationModal p {
+            font-weight: bold;
+            margin: 10px 0;
+            }
+        #confirmationModal input[type="text"] {
+            width: 100%;
+            padding: 5px;
+            margin: 10px 0;}
+    </style>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#000000">
+    <script>
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+            .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+        }
+    </script>
+</head>
+<body>
+    <!-- Header Section -->
+ <div class="container_info" id="info-container" style="width: 100%;  margin: 0 auto;">
+    <div class="header" style="margin-bottom: 20px;">
+        <a href="{{ url_for('main') }}" style="text-decoration: none; color: inherit;">
+            <img src="/static/home-logo.png" alt="Home" style="width: 30px; height: 30px; vertical-align: middle; margin-right: 10px;" loading="lazy">
+        </a>
+        <h1>Return Inventory</h1>
+        <a href="{{ url_for('logout') }}" class="logout-button data-english">Logout</a>
+        <a href="{{ url_for('logout') }}" class="logout-button data-mandarin" style="display: none;">登出</a>
+    </div>
+
+    <!-- <div class="icons" style="display: flex; align-items: right; justify-content: flex-end; padding: 10px; width: 100%;">
+        <div class="cart-icon" onclick="openCartModal()" style="display: flex; align-items: right; cursor: pointer; gap: 5px;">
+            <i class="fas fa-clipboard-list" style="margin-right: 5px;"></i>
+            <span id="cart-count" class="cart-badge" style="margin-right: 20px;">0</span>
+        </div>
+    </div> -->
+
+    <!-- Modal for Non-Existent UPC -->
+    <div id="upcNotFoundModal" class="modal">
+        <div class="modal-content" style="max-width: 300px; text-align: center;">
+        <span class="close" onclick="closeUpcModal()" style="float: right; cursor: pointer;">&times;</span>
+        <p style="font-weight: bold;">UPC does not exist</p>
+        </div>
+    </div>
+
+    <!-- Modal for Cart -->
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCartModal()">&times;</span>
+            <h2>Inventory Materials</h2>
+            <div id="supplier-tables-container">
+                <!-- Individual supplier tables will be added here dynamically -->
+            </div>
+            <div class="add-order-button">
+                <button onclick="sendRequest()" class="add-btn">Send Request</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal for Adding an Item -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closeConfirmationModal()" style="float: right; cursor: pointer;">&times;</span>
+          <img id="confirmImage" src="" alt="Product Image" />
+          <p id="confirmName"></p>
+          <div class="form-group" style="margin: 10px 0; text-align: left;">
+            <label for="confirmProject">Project:</label>
+            <select id="confirmProject" style="width: 100%; padding: 5px; margin-top: 5px;">
+              <option value="">No Project Selected</option>
+              {% for project in project_data %}
+                {% if project.status != "done" %}
+                  <option value="{{ project.id }}">{{ project.project_name }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          <label for="confirmQty">Quantity:</label>
+          <input type="number" id="confirmQty" placeholder="Enter quantity..." />
+          <button onclick="confirmAddItem()">Submit</button>
+        </div>
+      </div>
+
+    <div style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px; font-size: 10px; margin: 0 auto;">
+        <label for="languageSelect" class="description data-english" style="margin-left: 20px;">Choose Language:</label>
+        <label for="languageSelect" class="description data-mandarin" style="margin-left: 20px; display: none;">选择语言: </label>
+        <select id="languageSelect" onchange="updateDescriptions()" style="margin-left: 10px; font-size: 10px;">
+            <option value="english">English</option>
+            <option value="chinese">Chinese</option>
+        </select>
+    </div>
+
+    <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+        <label for="supplierFilter" class="description data-english" style="display: block; text-align: left;">Filter by Supplier:</label>
+        <label for="supplierFilter" class="description data-mandarin" style="display: none; text-align: left;">按供应商筛选:</label>
+        <select id="supplierFilter" onchange="filterTable()" style="margin-left: 10px; width: 200px;">
+            <option value="">All Suppliers</option>
+            {% for supplier in supplier_data %}
+                <option value="{{ supplier.supplier_name }}">{{ supplier.supplier_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- <div class="form-group" style="display: flex; align-items: left; justify-content: left; margin-bottom: 20px;">
+        <label for="approverFilter" class="description data-english" style="display: block; text-align: left;">Project:</label>
+        <label for="approverFilter" class="description data-mandarin" style="display: none; text-align: left;">工程:</label>
+        <select id="approverFilter" style="margin-left: 10px; width: 200px;" multiple>
+            <option value="">No Project Selected</option>
+            {% for project in project_data %}
+                {% if project.status != "done" %}
+                    <option value="{{ project.id }}" data-name="{{ project.project_name }}">{{ project.project_name }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div> -->
+
+    <div class="search-container" style="margin-top: 20px;">
+        <input type="text" id="search" placeholder="Search...">
+        <button id="search-btn">Search</button>
+    </div>
+
+    <!-- Product List Section -->
+    <div class="product-list" id="product-list">
+        {% for item in home_depot_items %}
+        <!-- Example Product Item -->
+        <div class="product-item" data-supplier="{{ item.supplier_name }}"  data-name="{{ item.item_desc }}">
+            <img src="{{ item.item_image }}" alt="Product" loading="lazy">
+            <p class="truncate-text"><p class="truncate-text">
+                <span class="data-english">{{ item.item_desc }}</span>
+                <span class="data-mandarin" style="display: none;">{{ item.item_desc_mandarin }}</span>
+            </p>
+            <p style="display: none;">${{item.item_price}}</p>
+            <p style="display: none;">{{item.keywords}}</p>
+            <p style="display: none;">{{item.keywords_ch}}</p>
+            <input type="number" value="1" min="1" class="quantity-input">
+            <button class="add-btn" onclick="openConfirmationModal('{{ item.material_id }}', 
+                                                                    '{{ item.supplier_name }}', 
+                                                                    '{{ item.internet_sku_number }}',  
+                                                                    '{{ item.item_desc }}', 
+                                                                    '{{ item.item_desc_mandarin }}',
+                                                                    '{{ item.item_price }}', 
+                                                                    '{{ item.item_image }}',
+                                                                    '{{ item.default_order_qty }}',
+                                                                    '{{ user.name }}'
+                                                                    )">Add</button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+</body>
+<script>
+    let scanBuffer = "";
+    let lastScanTime = 0;
+
+    document.addEventListener("keydown", (event) => {
+        const currentTime = Date.now();
+        const scanThreshold = window.scanThreshold || 50;
+        const scanMinChar = window.scanMinChar || 3;
+
+        if (currentTime - lastScanTime > scanThreshold) {
+            scanBuffer = "";
+        }
+
+        if (event.key.length === 1) {
+            scanBuffer += event.key;
+        }
+
+        if (event.key === "Enter" && scanBuffer.length >= scanMinChar) {
+            document.dispatchEvent(new CustomEvent("PDA_SCAN", { detail: { value: scanBuffer } }));
+            scanBuffer = "";
+        }
+
+        lastScanTime = currentTime;
+    });
+
+    document.addEventListener("PDA_SCAN", (e) => {
+            //const scanMessage = document.getElementById("scanMessage");
+            //scanMessage.textContent = `Scanning detected:\n${e.detail.value}`;
+            //scanMessage.style.display = "block";
+
+            console.log(`${e.detail.value}`)
+            scannedCode = `${e.detail.value}`
+            if (scannedCode) {
+                fetch('/search_barcode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ barcode: scannedCode })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        openConfirmationModal(data.material_id , 
+                                                data.supplier_name, 
+                                                data.internet_sku_number, 
+                                                data.item_desc, 
+                                                data.item_desc_mandarin,
+                                                data.item_price, 
+                                                data.item_image,
+                                                data.default_order_qty,
+                                                "{{ user.name }}");
+                        console.log('Custom script executed with data:', data); // Log to verify
+                    } else {
+                            showUpcNotFoundModal(); // ← Show the modal here
+                    }
+                })}
+
+            setTimeout(() => 3000);
+        });
+
+    function updateDescriptions() {
+        const language = document.getElementById('languageSelect').value;
+
+        // Save the selected language in local storage
+        localStorage.setItem('selectedLanguage', language);
+
+        // Get all elements with class 'data-english' and 'data-mandarin'
+        const englishElements = document.querySelectorAll('.data-english');
+        const mandarinElements = document.querySelectorAll('.data-mandarin');
+
+        if (language === 'english') {
+            englishElements.forEach(element => {
+                element.style.display = 'block';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'none';
+            });
+        } else if (language === 'chinese') {
+            englishElements.forEach(element => {
+                element.style.display = 'none';
+            });
+            mandarinElements.forEach(element => {
+                element.style.display = 'block';
+            });
+        }
+    }
+
+    // Function to open the cart modal
+    function openCartModal() {
+        document.getElementById('cartModal').style.display = 'block';
+    }
+
+    // Function to close the cart modal
+    function closeCartModal() {
+        document.getElementById('cartModal').style.display = 'none';
+    }
+
+    function showUpcNotFoundModal() {
+        document.getElementById('upcNotFoundModal').style.display = 'block';
+        setTimeout(() => {
+            closeUpcModal();
+        }, 2000); // Auto-close after 2 seconds
+    }
+
+    function closeUpcModal() {
+        document.getElementById('upcNotFoundModal').style.display = 'none';
+    }
+
+    // Cart functionality
+    let cart = [];
+    let cartCount = document.getElementById("cart-count");
+
+    function updateCartCount() {
+        let totalCount = 0;
+        const rows = document.querySelectorAll('[id^="selected-items-"] tr');
+        rows.forEach(row => {
+            const quantityInput = row.querySelector('td:nth-child(6) input');
+            totalCount += parseInt(quantityInput.value);
+        });
+        document.getElementById('cart-count').textContent = totalCount;
+    }
+
+    function filterTable() {
+        const supplierFilter = document.getElementById("supplierFilter").value.toLowerCase();
+        const searchQuery = document.getElementById("search").value.toLowerCase();
+        
+        const productItems = document.querySelectorAll(".product-item");
+
+        productItems.forEach(item => {
+            const supplierName = item.getAttribute("data-supplier").toLowerCase();
+            const productName = item.getAttribute("data-name").toLowerCase();
+            
+            const matchesSupplier = supplierFilter === "" || supplierName.includes(supplierFilter);
+            const matchesSearch = searchQuery === "" || productName.includes(searchQuery);
+
+            if (matchesSupplier && matchesSearch) {
+                item.style.display = "block";
+            } else {
+                item.style.display = "none";
+            }
+        });
+    }
+
+    // Attach search filter to the input field
+    document.getElementById("search").addEventListener("input", filterTable);
+
+    function deleteItem(sku_num) {
+    // Retrieve the latest cart items from localStorage
+        let inventoryreturncartItems = JSON.parse(localStorage.getItem('inventoryreturncartItems')) || [];
+
+        // Find the item in the cart
+        const itemIndex = inventoryreturncartItems.findIndex(item => item.sku_num === sku_num);
+
+        if (itemIndex !== -1) {
+            // Remove the item from the array
+            inventoryreturncartItems.splice(itemIndex, 1);
+
+            // Save the updated requestcartItems array to localStorage
+            localStorage.setItem('inventoryreturncartItems', JSON.stringify(inventoryreturncartItems));
+
+            // Update the cart count display
+            updateCartCount();
+
+            console.log(inventoryreturncartItems);
+        }
+    }
+
+    // Open confirmation modal for adding an item
+    function openConfirmationModal(sku_num, supplier_name, internet_num, description_english, description_mandarin, price, image, default_qty, requesting_party) {
+      // Store the item details in a global object
+      selectedItem = { sku_num, supplier_name, internet_num, description_english, description_mandarin, price, image, default_qty, requesting_party };
+      // Populate modal fields
+      document.getElementById('confirmImage').src = image;
+      document.getElementById('confirmName').textContent = description_english;
+      document.getElementById('confirmQty').value = 1;
+      document.getElementById('confirmationModal').style.display = 'block';
+    }
+
+    function closeConfirmationModal() {
+      document.getElementById('confirmationModal').style.display = 'none';
+    }
+
+    function confirmAddItem() {
+        const qty = document.getElementById('confirmQty').value;
+        const projectFilter = document.getElementById("confirmProject");
+        const selectedProjectId = projectFilter.value; // Get the selected project ID
+        const selectedProjectName = projectFilter.options[projectFilter.selectedIndex].text; // Get the project name
+        console.log(qty, selectedProjectId, selectedProjectName);
+
+        if (!selectedProjectId) {
+            alert('Please select a project before submitting.');
+            return;
+        }
+        
+        // Ask the user to confirm before adding the item
+        if (confirm("Are you sure you want to add this item?")) {
+            const requestingParty = "{{ user.name }}";
+            const requestingPartyId = "{{ user.id | escape }}";
+
+            // Collect selected items data, skipping supplier names and IDs
+            const selectedItems = [];
+
+            const sku_number = selectedItem.sku_num;
+            const supplier_name = selectedItem.supplier_name;
+            const description = selectedItem.description_english;
+            const price = parseFloat(selectedItem.price).toFixed(2);
+            const image = selectedItem.image;
+            const quantity = qty;
+
+            // Add item details to the array
+            selectedItems.push({
+                material_id: sku_number,
+                supplier_name: supplier_name,
+                item_desc: description,
+                item_price: price,
+                item_image: image,
+                inventory_qty: quantity,
+            });
+
+            // Prepare the data payload to send to the backend
+            const inventoryData = {
+                requesting_party: requestingParty,
+                requesting_party_id: requestingPartyId,
+                project_id: selectedProjectId,
+                project_name: selectedProjectName,
+                inventory_items: selectedItems // Send only the items, not supplier details
+            };
+
+            // Send the data to the backend using Fetch API
+            fetch('/add_return_inventory', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(inventoryData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message && data.redirect_url) {
+                    localStorage.removeItem('inventoryreturncartItems');
+                    alert('Inventory successfully returned: ' + data.message);
+                    window.location.href = data.redirect_url;
+                } else {
+                    console.error('Invalid response:', data);
+                    alert('An error occurred while processing the inventory.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
+            alert("Item has been returned!");
+            closeConfirmationModal();
+        }
+    }
+
+    function addItem(sku_num, supplier_name, supplier_num, description_english, description_mandarin, price, image, qty) {
+        const supplierContainer = document.getElementById('supplier-tables-container');
+
+        const inventoryreturnsavedItems = JSON.parse(localStorage.getItem('inventoryreturncartItems')) || [];
+
+        // Check if the item with the same sku_num exists
+        const itemExists = inventoryreturnsavedItems.some(item => item.sku_num === sku_num);
+
+        // If the item is not in the cart, create a new item object
+        const newItem = {
+            sku_num,
+            supplier_name,
+            supplier_num,
+            description_english,
+            description_mandarin,
+            price,
+            image,
+
+        };
+
+        if (!itemExists) {
+            // Add the new item to the saved items array
+            inventoryreturnsavedItems.push(newItem);
+
+            // Update localStorage with the new array
+            localStorage.setItem('inventoryreturncartItems', JSON.stringify(inventoryreturnsavedItems));
+        };
+
+        const inventoryreturncartItems = JSON.parse(localStorage.getItem('inventoryreturncartItems')) || [];
+        console.log(inventoryreturncartItems);
+
+        // Check if a table for this supplier already exists
+        let supplierTable = document.querySelector(`#supplier-table-${supplier_name.replace(/\s+/g, '-')}`);
+        if (!supplierTable) {
+            // Create a new table for this supplier if it doesn't exist
+            supplierTable = document.createElement('div');
+            supplierTable.id = `supplier-table-${supplier_name.replace(/\s+/g, '-')}`;
+            supplierTable.classList.add('supplier-table');
+            
+            supplierTable.innerHTML = `
+                <h3 style="display: flex; align-items: left; justify-content: left;">
+                    <span class="description data-english">Supplier: ${supplier_name}</span>
+                    <span class="description data-mandarin" style="display: none;">供应商: ${supplier_name}</span>
+                </h3>
+                <table class="supplier-table-content">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th style="display: none;" id="sku-header" onclick="sortTable('${supplier_name.replace(/\s+/g, '-')}', 'sku')">SKU Number</th>
+                            <th style="display: none;">Supplier Name</th>
+                            <th style="width: 120px" id="description-header" onclick="sortTable('${supplier_name.replace(/\s+/g, '-')}', 'description')">Description</th>
+                            <th style="display: none;" id="price-header" onclick="sortTable('${supplier_name.replace(/\s+/g, '-')}', 'price')">Price</th>
+                            <th id="quantity-header" onclick="sortTable('${supplier_name.replace(/\s+/g, '-')}', 'quantity')">Quantity</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="selected-items-${supplier_name.replace(/\s+/g, '-')}">
+                        <!-- Items will be added here -->
+                    </tbody>
+                </table>
+            `;
+            supplierContainer.appendChild(supplierTable);
+        }
+
+        // Create and append the new row to the table body
+        const tableBody = document.getElementById(`selected-items-${supplier_name.replace(/\s+/g, '-')}`);
+        const newRow = document.createElement('tr');
+
+        // Create row cells (image, SKU, description, price, etc.)
+        const imageCell = document.createElement('td');
+        const imgElement = document.createElement('img');
+        imgElement.src = image;
+        imgElement.alt = description_english;
+        imgElement.style.width = '50px';
+        imgElement.style.height = '50px';
+        imageCell.appendChild(imgElement);
+
+        const skuCell = document.createElement('td');
+        skuCell.style.display = 'none';
+        skuCell.textContent = sku_num;
+
+        const supplierNameCell = document.createElement('td');
+        supplierNameCell.style.display = 'none';
+        supplierNameCell.textContent = supplier_name;
+
+        const descriptionCell = document.createElement('td');
+        const descriptionEnglishDiv = document.createElement('div');
+        descriptionCell.classList.add('truncate-text');
+        descriptionEnglishDiv.classList.add('data-english');
+        descriptionEnglishDiv.textContent = description_english;
+        descriptionEnglishDiv.style.display = 'block';
+
+        const descriptionMandarinDiv = document.createElement('div');
+        descriptionMandarinDiv.classList.add('data-mandarin');
+        descriptionMandarinDiv.textContent = description_mandarin;
+        descriptionMandarinDiv.style.display = 'none';
+
+        descriptionCell.appendChild(descriptionEnglishDiv);
+        descriptionCell.appendChild(descriptionMandarinDiv);
+
+        const priceCell = document.createElement('td');
+        priceCell.style.display = 'none';
+        priceCell.textContent = parseFloat(price).toFixed(2);
+
+        const quantityCell = document.createElement('td');
+        const quantityInput = document.createElement('input');
+        quantityInput.type = 'number';
+        quantityInput.value = qty;
+        quantityInput.min = 1;
+        quantityInput.style.fontSize = '10px';
+        quantityInput.style.width = '20px';
+        quantityCell.appendChild(quantityInput);
+
+        const deleteCell = document.createElement('td');
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.classList.add('logout-button');
+        deleteButton.onclick = function() {
+            tableBody.removeChild(newRow);
+
+            deleteItem(sku_num)
+        };
+
+        deleteCell.appendChild(deleteButton);
+
+        newRow.appendChild(imageCell);
+        newRow.appendChild(skuCell);
+        newRow.appendChild(supplierNameCell);
+        newRow.appendChild(descriptionCell);
+        newRow.appendChild(priceCell);
+        newRow.appendChild(quantityCell);
+        newRow.appendChild(deleteCell);
+        tableBody.appendChild(newRow);
+
+        updateCartCount();
+        updateDescriptions();
+    };
+
+    // Function to load the saved language preference on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Get the selected language from local storage
+        const inventoryreturnsavedItems = JSON.parse(localStorage.getItem('inventoryreturncartItems')) || [];
+        console.log(inventoryreturnsavedItems);
+
+        inventoryreturnsavedItems.forEach(item => {
+                {
+                addItem(
+                    item.sku_num,
+                    item.supplier_name,
+                    item.supplier_num,
+                    item.description_english,
+                    item.description_mandarin,
+                    item.price,
+                    item.image,
+                    item.qty
+                );
+            }
+        });
+    });
+
+    // Creating a JavaScript object that maps supplier names to their IDs
+    const supplierData = {};
+    {% for supplier in supplier_data %}
+        supplierData["{{ supplier.supplier_name }}"] = "{{ supplier.id }}";
+    {% endfor %}
+
+    // Function to submit the inventory data and selected items
+    function sendRequest() {
+        if (!confirm("Are you sure everything is final? Click OK to continue or Cancel to review your inventory.")) {
+            return; // Stop execution if the user cancels
+        }
+
+        const requestingParty = "{{ user.name }}";
+        const requestingPartyId = "{{ user.id | escape }}";
+
+        const projectFilter = document.getElementById("approverFilter");
+        const selectedProjectId = projectFilter.value; // Get the selected project ID
+        const selectedProjectName = projectFilter.options[projectFilter.selectedIndex].text; // Get the project name
+
+         // Collect selected items data, skipping supplier names and IDs
+        const selectedItems = [];
+        const rows = document.querySelectorAll('[id^="selected-items-"] tr'); // Select all rows in the supplier tables
+
+        rows.forEach(row => {
+            const sku_number = row.querySelector('td:nth-child(2)').textContent;
+            const supplier_name = row.querySelector('td:nth-child(3)').textContent;
+            const description = row.querySelector('td:nth-child(4) .data-english').textContent.trim();
+            const price = parseFloat(row.querySelector('td:nth-child(5)').textContent);
+            const image = row.querySelector('td:nth-child(1) img').src;
+            const quantity = parseInt(row.querySelector('td:nth-child(6) input').value);
+
+            // Add item details to the array
+            selectedItems.push({
+                material_id: sku_number,
+                supplier_name: supplier_name,
+                item_desc: description,
+                item_price: price,
+                item_image: image,
+                inventory_qty: quantity,
+            });
+        });
+
+        // Prepare the data payload to send to the backend
+        const inventoryData = {
+            requesting_party: requestingParty,
+            requesting_party_id: requestingPartyId,
+            project_id: selectedProjectId,
+            project_name: selectedProjectName,
+            inventory_items: selectedItems // Send only the items, not supplier details
+        };
+
+        console.log(inventoryData);
+        
+        // Send the data to the backend using Fetch API
+        fetch('/add_return_inventory', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(inventoryData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message && data.redirect_url) {
+                localStorage.removeItem('inventoryreturncartItems');
+                alert('Inventory successfully returned: ' + data.message);
+                window.location.href = data.redirect_url;
+            } else {
+                console.error('Invalid response:', data);
+                alert('An error occurred while processing the inventory.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+</script>
+</html>

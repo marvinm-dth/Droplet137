@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>Checklist Items Dashboard</title>
+
+    <style>
+        input[type="checkbox"] {
+            width: 20px;  /* Adjust width */
+            height: 20px; /* Adjust height */
+            cursor: pointer;
+        }
+        .no-shadow {
+            border: none;
+
+        }
+        .no-shadow:focus {
+            box-shadow: none;
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <div class="container-md border border-dark small p-0">
+        <div class="container-fluid mb-5 p-0">
+            <div class="bg-dark text-white text-center py-1 fs-4">DELEGATE ASSIGNMENTS</div>
+            <div class="py-2 px-4 small fw-bolder">
+                NOTE: This is where a manager would delegate pre-created <a href="/manager/items">checklist items</a>.
+                Choose an item, assign to a staff, a project, a task, and add additional notes.
+            </div>
+
+            <div class="row py-2 px-4 g-0">
+                <div class="col row align-items-center g-1">
+                    <div class="col-3">
+                        <label for="select-new-assigned-by" class="form-label">Login as: </label>
+                    </div>
+                    <div class="col">
+                        <select id="select-new-assigned-by" class="form-select"></select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row py-2 px-4 g-0"> 
+                <div class="col row align-items-center g-1">
+                    <div class="col-3">
+                        <label for="select-new-item" class="form-label">Item: </label>
+                    </div>
+                    <div class="col">
+                        <select id="select-new-item" class="form-select"></select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row py-2 px-4 g-0"> 
+                <div class="col row align-items-center g-1">
+                    <div class="col-3">
+                        <label for="select-new-assigned-to" class="form-label">Assigned To: </label>
+                    </div>
+                    <div class="col">
+                        <select id="select-new-assigned-to" class="form-select"></select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row py-2 px-4 g-0"> 
+                <div class="col row align-items-center g-1">
+                    <div class="col-3">
+                        <label for="select-project-id" class="form-label">Project Parent: </label>
+                    </div>
+                    <div class="col">
+                        <select id="select-project-id" class="form-select disabled" disabled>
+                            <option value="1">Kemi (Disabled)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row py-2 px-4 g-0"> 
+                <div class="col row align-items-center g-1">
+                    <div class="col-3">
+                        <label for="select-task-id" class="form-label">Task Parent: </label>
+                    </div>
+                    <div class="col">
+                        <select id="select-task-id" class="form-select disabled" disabled>
+                            <option value="1">1 (Disabled)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row py-2 px-4 g-0"> 
+                <div class="col row align-items-center g-1">
+                    <div class="col-3">
+                        <label for="input-new-notes" class="form-label">Additional Notes: </label>
+                    </div>
+                    <div class="col">
+                        <input id="input-new-notes" class="form-control" name="notes"></input>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row py-2 px-4 g-0 mb-5"> 
+                <div class="col row align-items-center g-1">
+                    <div class="col d-flex justify-content-end">
+                        <button type="button" class="btn btn-primary w-25" onclick="handleAssign()">Assign</button>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+            <div class="bg-dark text-white text-center py-1 fs-4">ALL ASSIGNMENTS</div>
+            <div class="py-2 px-4 small fw-bolder">
+                NOTE: This is where a manager would approve or reject submitted assignments by staffs.
+                The staff can view their assignments <a href="/staff/assignments">here.</a>
+            </div>
+
+            <div class="row py-2 px-4 g-0"> 
+                <div class="col row align-items-center g-1">
+                    <div class="col-3">
+                        <label for="select-evaluated-by" class="form-label">Login as: </label>
+                    </div>
+                    <div class="col">
+                        <select id="select-evaluated-by" class="form-select"></select>
+                    </div>
+                </div>
+
+                <div class="col row align-items-center g-1"> </div>
+            </div>
+
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th class="col-2">Description (EN)</th>
+                        <th class="col-2">Notes</th>
+                        <th class="col-1">Photo Proof</th>
+                        <th class="col-2">Staffs</th>
+                        <th class="col-2">Status</th>
+                        <th class="col-2">Reject Reason</th>
+                        <th class="col-1">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+<script>
+    let assignments;
+    let items;
+    let employees;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        await refreshEverything();
+    });
+
+    async function refreshEverything() {
+        await fetchItems();
+        populateSelectCreateItem();
+
+        await fetchEmployees();
+        populateSelectEmployees();
+
+        await fetchAssignments();
+        populateTable();
+    }
+
+    async function fetchItems() {
+        let res = await fetch(`/items`)
+        items = await res.json();
+    }
+
+    async function fetchEmployees() {
+        let res = await fetch(`/employees`)
+        employees = await res.json();
+    }
+
+    async function fetchAssignments() {
+        let res = await fetch(`/assignments`)
+        assignments = await res.json();
+    }
+
+
+    function populateSelectCreateItem() {
+        let options = items.map(item => {
+            return `<option value="${item.id}">${item.description_en}</option>`;
+        }).join('');
+        document.querySelector("#select-new-item").innerHTML = options;
+    }
+
+    function populateSelectEmployees() {
+        let options = employees.map(employee => {
+            return `<option value="${employee.employee_id}">${employee.employee_name}</option>`;
+        }).join('');
+        document.querySelector("#select-new-assigned-to").innerHTML = options;
+        document.querySelector("#select-new-assigned-by").innerHTML = options; 
+        document.querySelector("#select-evaluated-by").innerHTML = options; //approver login as
+    }
+
+    function populateTable() {
+        const tBody = document.querySelector('tbody');
+        tBody.innerHTML = '';
+
+        assignments.forEach(assignment => {
+            const row = document.createElement('tr');
+            row.setAttribute('id', `assignment-${assignment.id}`);
+            row.innerHTML = `
+                <td id="template.description_en-${assignment.id}">${assignment.all_checklists_templates.description_en}</td>
+                <td id="notes-${assignment.id}">${assignment.notes}</td>
+                <td id="photo_proof-${assignment.id}" class="align-middle text-center">
+                    ${assignment.is_submitted || assignment.is_rejected ? `<img src="${assignment.photo_path}" class="img-fluid d-block mx-auto"/>` : "N/A"}
+                </td>
+                <td class="small">
+                    <p>Assigned to: <br/><span class="fw-bolder text-primary">${assignment.assignee.employee_name}</span></p>
+                    <p>Assigned by: <br/><span class="fw-bolder">${assignment.assigner.employee_name}</span></p>
+                </td>
+                <td class="align-middle text-center small">
+                    ${(assignment.is_approved) 
+                    ? ` <p> Approved on: <br/><span class="fw-bolder">${formatDate(new Date(assignment.approved_on))}</span></p>
+                        <p> Evaluated by: <br/><span class="fw-bolder">${assignment.evaluator.employee_name}</span></p>`
+                    :(assignment.is_rejected)
+                        ? ` <p class="text-danger fw-bolder">Rejected</p>
+                            <p class="text-black">Evaluated by: <br/><span class="fw-bolder">${assignment.evaluator.employee_name}</span></p>`
+                        :(assignment.is_submitted)
+                            ? `Waiting for Approval`
+                            : "In progress" }
+                </td>
+                <td class="align-middle text-center fw-bolder">
+                    ${assignment.is_approved
+                        ? `<span class="text-success">Approved</span>`
+                        : (assignment.is_rejected)
+                            ? `<span class="text-danger">${assignment.rejected_reason_current}</span>`
+                            : `<input id="rejected_reason_current-${assignment.id}" class="w-100 form-control" ${!assignment.is_submitted ? "disabled" : ""} type="text">`}     
+                </td>
+                <td>
+                    <div class="d-flex flex-column gap-2">
+                        <button type="button" class="w-100 btn ${(assignment.is_approved || assignment.is_rejected || !assignment.is_submitted) ?  "btn-secondary disabled": "btn-primary"}" onclick="handleApprove(${assignment.id})">Approve</button>
+                        <button type="button" class="w-100 btn ${(assignment.is_approved || assignment.is_rejected || !assignment.is_submitted) ?  "btn-secondary disabled": "btn-primary"}" onclick="handleReject(${assignment.id})">Reject</button>
+                    </div>
+                </td>
+            `;
+            tBody.appendChild(row);
+        });
+    }
+
+    async function handleApprove(id){
+        let evaluated_by = document.querySelector("#select-evaluated-by").value;
+
+        let res = await fetch(`/assignments/${id}/approve`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({evaluated_by}),
+        });
+        if(res.ok) {
+            refreshEverything()
+            alert("Successfully approved");
+        };
+    }
+
+    async function handleReject(id){
+        let evaluated_by = document.querySelector("#select-evaluated-by").value;
+        let rejected_reason_current = document.querySelector(`#rejected_reason_current-${id}`).value;
+
+        let res = await fetch(`/assignments/${id}/reject`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({evaluated_by, rejected_reason_current}),
+        });
+        if(res.ok) {
+            refreshEverything()
+            alert("Successfully rejected");
+        };
+    }
+
+    async function  handleAssign() {
+        let item_id = document.querySelector("#select-new-item").value;
+        let assigned_to = document.querySelector("#select-new-assigned-to").value;
+        let assigned_by = document.querySelector("#select-new-assigned-by").value;
+        let project_id = document.querySelector("#select-project-id").value;
+        let task_id = document.querySelector("#select-task-id").value;
+        let notes = document.querySelector("#input-new-notes").value;
+
+
+        let new_assignment = {item_id, project_id, task_id, assigned_to, assigned_by, notes};
+
+        let res = await fetch(`/assignments`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(new_assignment),
+        });
+        if(res.ok) {
+            refreshEverything()
+            alert("Created a new assignment");
+        };
+    }
+
+    const options = { 
+        month: 'short', 
+        day: '2-digit', 
+        year: 'numeric', 
+        hour: 'numeric', 
+        minute: 'numeric', 
+        hour12: true 
+    };
+
+    const formatDate = (date) => new Intl.DateTimeFormat('en-US', options).format(date);
+
+
+</script>
+</body>
+
+</html>

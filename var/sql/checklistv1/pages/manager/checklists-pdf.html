@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <style>
+        .no-shadow {
+            border: none;
+
+        }
+
+        .no-shadow:focus {
+            box-shadow: none;
+        }
+
+        .bg-secondary {
+            background-color: #D9D9D9 !important;
+        }
+
+        .form-step {
+            display: none;
+        }
+
+        .form-step.active {
+            display: block;
+        }
+
+        .page-custom {
+            width: 816px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="text-center pt-5 fs-3"> Page 1 </div>
+    <div class="text-center pt-2 pb-5">
+        <button id="export-btn" class="btn btn-primary" onclick="exportAsPDF()">Export as PDF</button>
+    </div>
+
+    <div id="cover-page" class="page-custom small p-0 border border-dark mx-auto">
+        <header class="pt-4">
+            <div class="d-block d-flex align-items-center gap-4">
+                <div class="col-3 mb-3 mb-0 ps-0 ps-4 mx-auto">
+                    <img src="/uploads/dth-logo.jpg" alt="tiny-dragon-home-logo" class="img-fluid">
+                </div>
+                <div class="col">
+                    <div class="row">
+                        <div class="col-auto fs-5">PRE INSPECTION FORM <span>预检表格</span></div>
+                    </div>
+                    <div id="checklist-title" class="fs-3 fw-bolder"></div>
+                    <div class="row g-0">
+                        <div class="col-6 row align-items-center g-0 border border-dark">
+                            <div class="col-auto px-2 fw-bolder bg-secondary">Date <span>日期</span>:</div>
+                            <div class="col text-center">
+                                <p id="project-date" class="m-0"></p>
+                            </div>
+                        </div>
+
+                        <div class="col-6 row align-items-center g-0 border border-dark">
+                            <div class="col-auto px-2 fw-bolder bg-secondary">DTH #<span>/房屋号码</span>:</div>
+                            <div class="col text-center">
+                                <p id="project-parent" class="m-0"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </header>
+
+
+        <div class="row justify-content-between g-0">
+
+            <div class="mb-3">
+                <div class="bg-dark text-light text-center py-1 fs-5 fw-bolder">DESCRIPTION <span>描述</span>:</div>
+                <div class="p-1 small">The foundation is the steel framed trailer that the house is built on top of. It
+                    is important that everything on the foundation iscorrect because this is the starting point of a
+                    home. If anything is wrong or missing it could cause serious problems down the line. It is always
+                    good to double check things during the building process. Even if you think you have checked
+                    something check it again to confirm. If something doesn't look right or you have any questions
+                    please talk to a manager before signing your name.
+                    <span class="d-block mt-3">基础是建在钢框架拖车上的房子的根基。确保基础的一切都正确是非常重要的，因为这是房屋的起点。如果现在有任何错误或遗漏
+                        可能会在后续造成严重问题。在建造过程中始终好好检查事物是明智的。即使你认为已经检查过某些东西，也要再次检查以确认 如果有什么看起来不对或者你有任何问题，请在签名前与经理交谈。</span>
+                </div>
+
+
+            </div>
+
+            <div>
+                <div class="bg-dark text-light text-center py-1 fs-5 fw-bolder">PRE INSPECTION INFO <span>(预检信息)</span>
+                </div>
+
+                <div class="row g-0">
+                    <div class="col-6 row g-0">
+                        <div
+                            class="col-6 bg-secondary text-center col py-1 small fw-bolder border-end border-dark">
+                            PHASE START DATE <span class="d-block">阶段开始日期</span></div>
+                        <div class="col-6 d-flex justify-content-center align-items-center">
+                            <p id="checklist-phase_start_date" class="m-0"></p>
+                        </div>
+                    </div>
+                    <div class="col-6 row g-0">
+                        <div
+                            class="col-6 bg-secondary text-center col py-1 small fw-bolder border-end border-dark">
+                            WHO DID THE WORK <span class="d-block">谁做的工作?阶段开始日期</span></div>
+                        <div class="col-6 d-flex justify-content-center align-items-center">
+                            <p id="checklist-who_did_the_work" class="m-0"></p>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <div class="border border-dark">
+                    <div class="bg-secondary text-center col py-1 small fw-bolder border-bottom border-dark">ISSUES THAT
+                        HAPPENED DURING THE CONSTRUCTION PROCESS <span class="d-block">施工过程中发生的问题</span></div>
+                    <div class="col d-flex p-2">
+                        <p id="checklist-issues" style="height: calc(1.5rem * 3);"></p>
+                    </div>
+                </div>
+
+                <div class="border border-dark">
+                    <div class="bg-secondary text-center col py-1 small fw-bolder border-bottom border-dark">CHANGES TO
+                        THE DESIGN OR BUILD <span>设计或建造的变更</span></div>
+                    <div class="col d-flex p-2">
+                        <p id="checklist-changes" style="height: calc(1.5rem * 3)"></p>
+                    </div>
+                </div>
+
+                <div class="row g-0 border border-dark">
+                    <div class="col-6 row g-0">
+                        <div
+                            class="col-6 bg-secondary text-center col py-1 small fw-bolder border-end border-dark">
+                            WHO IS CHECKING <span class="d-block">谁在检查</span></div>
+                        <div class="col-6 d-flex justify-content-center align-items-center">
+                            <p id="checklist-who_is_checking" class="m-0"></p>
+                        </div>
+                    </div>
+
+
+                    <div class="col-6 row g-0">
+                        <div
+                            class="col-6 bg-secondary text-center col py-1 small fw-bolder border-end border-dark">
+                            COMPLETED DATE <span class="d-block">完成的日期</span></div>
+                        <div class="col-6 d-flex justify-content-center align-items-center">
+                            <p id="checklist-completed_date" class="m-0"></p>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <div class="row g-0 border border-dark">
+                    <div class="col-6 row g-0">
+                        <div
+                            class="col-6 bg-secondary text-center col py-1 small fw-bolder border-end border-dark">
+                            IS EVERYTHING DONE <span class="d-block">都完成了吗</span></div>
+                        <div class="col-6 d-flex flex-column justify-content-center align-items-center">
+
+                            <div class="form-group">
+                                <label for="checklist-is_done_yes">YES<span>/是的</span></label>
+                                <input id="checklist-is_done_yes" type="checkbox" class="form-check-input"
+                                    name="group-done" disabled>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="checklist-is_done_no">NO<span>/不是</span></label>
+                                <input id="checklist-is_done_no" type="checkbox" class="form-check-input"
+                                    name="group-done" disabled>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-6 row g-0">
+                        <div
+                            class="col-6 bg-secondary text-center col py-1 small fw-bolder border-end border-dark">
+                            MISSING ITEMS? <span class="d-block">缺少的项目</span></div>
+                        <div class="col-6 d-flex flex-column justify-content-center align-items-center">
+
+                            <div class="form-group">
+                                <label for="checklist-is_missing_yes">YES<span>/是的</span></label>
+                                <input id="checklist-is_missing_yes" type="checkbox" class="form-check-input"
+                                    name="group-missing" disabled>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="checklist-is_missing_no">NO<span>/不是</span></label>
+                                <input id="checklist-is_missing_no" type="checkbox" class="form-check-input"
+                                    name="group-missing" disabled>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <div class="row g-0 border border-dark">
+                    <div class="col row g-0">
+                        <div
+                            class="bg-secondary text-center col-3 py-1 px-1 fw-bolder small border-end border-dark">
+                            IF NO WHAT IS NOT DONE?<span class="d-block">如果没有，缺少什么或 未完成的部分是什么？</span></div>
+                        <div class="col-9 d-flex p-2">
+                            <p id="checklist-what_is_not_done"></p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="row g-0 border border-dark">
+                    <div class="col-6 row g-0">
+                        <div
+                            class="bg-secondary text-center col-6 py-1 small fw-bolder border-end border-dark">
+                            READY TO INSPECT?<span class="d-block">准备好检查了吗</span></div>
+                        <div class="col d-flex flex-column justify-content-center align-items-center">
+                            <div class="form-group">
+                                <label for="checklist-is_ready_inspect_yes">YES<span>/是的</span></label>
+                                <input id="checklist-is_ready_inspect_yes" type="checkbox" class="form-check-input"
+                                    name="group-inspect" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label for="checklist-is_ready_inspect_no">NO<span>/不是</span></label>
+                                <input id="checklist-is_ready_inspect_no" type="checkbox" class="form-check-input"
+                                    name="group-inspect" disabled>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-6 row g-0">
+                        <div
+                            class="bg-secondary text-center col-8 py-1 small fw-bolder border-end border-dark">
+                            REQUESTED INSPECTION DATE/TIME <span class="d-block">要求的检查日期/时间</span></div>
+                        <div class="col-4 d-flex justify-content-center align-items-center">
+                            <p id="checklist-requested_inspection_date" class="m-0"></p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="row g-0 mt-5  border border-dark">
+                    <div class="col text-center bg-danger fw-bolder text-white py-2">
+                        <div>DO NOT SCHEDULE THE INSPECTION UNTIL EVERYTHING IS COMPLETED <span
+                                class="d-block">在一切没有完成之前不要安排检查。</span></div>
+
+                    </div>
+                </div>
+
+                <div class="row g-0">
+                    <div class="row g-0">
+                        <div
+                            class="bg-secondary text-center col-3 py-1 small fw-bolder border-end border-dark">
+                            INSPECTION DATE/TIME <span class="d-block">检查 日期/时间</span></div>
+                        <div class="col-9 d-flex justify-content-center">
+                            <p id="checklist-inspection_date" class="m-0"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <div class="text-center py-5 fs-3"> Page 2 </div>
+
+    <div id="items-page" class="page-custom small p-0 border border-dark mx-auto">
+        <header class="pt-4">
+            <div class="d-flex align-items-center gap-4 mb-3">
+
+                <div class="col-3 mb-3 mb-0 ps-0 ps-4 mx-auto">
+                    <img src="/uploads/dth-logo.jpg" alt="tiny-dragon-home-logo" class="img-fluid">
+                </div>
+                <div class="col">
+                    <div class="fs-5 ps-2 ps-0">INSPECTION FORM</div>
+                    <div id="checklist-name" class="fs-3 ps-2 ps-0 fw-bolder"></div>
+                </div>
+            </div>
+        </header>
+
+        <div id="page2-fields" class="mb-3">
+            <div class="row g-0">
+                <div class="col-6 row g-0 border border-dark">
+                    <div class="col-6 bg-secondary text-center col py-2">DTH#</div>
+                    <div class="col-6 d-flex justify-content-center align-items-center">
+                        <p id="project-parent-2" class="m-0"></p>
+                    </div>
+                </div>
+
+                <div class="col-6 row g-0 border border-dark">
+                    <div class="col-6 bg-secondary text-center col py-2">NOAH INSPECTOR</div>
+                    <div class="col-6 d-flex justify-content-center align-items-center">
+                        <p id="checklist-noah_inspector" class="m-0"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-0">
+                <div class="col-6 row g-0 border border-dark">
+                    <div class="col-6 bg-secondary text-center col py-2">SESSION ID</div>
+                    <div class="col-6 d-flex justify-content-center align-items-center">
+                        <p id="checklist-session_id" class="m-0"></p>
+                    </div>
+                </div>
+
+                <div class="col-6 row g-0 border border-dark">
+                    <div class="col-6 bg-secondary text-center col py-2">DRAGON INSPECTOR</div>
+                    <div class="col-6 d-flex justify-content-center align-items-center">
+                        <p id="checklist-dragon_inspector" class="m-0"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-0">
+                <div class="col-6 row g-0 border border-dark">
+                    <div class="col-6 bg-secondary text-center col py-2">PASS OR FAIL</div>
+                    <div class="col-6 d-flex justify-content-center align-items-center">
+                        <p id="checklist-is_pass" class="m-0"></p>
+                    </div>
+                </div>
+
+                <div class="col-6 row g-0 border border-dark">
+                    <div class="col-6 bg-secondary text-center col py-2">REINSPECTION NEEDED?</div>
+                    <div class="col-6 d-flex justify-content-center align-items-center">
+                        <p id="checklist-is_reinspection_needed" class="m-0"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page2-notes" class="mb-3">
+            <div class="fs-5 fw-bolder">NOTES:</div>
+            <p id="checklist-inspection_notes"
+                class="form-control border border-dark border-start-0 border-end-0 rounded-0"
+                style="height: calc(1.5rem * 5);"></p>
+        </div>
+
+
+        <div class="container-fluid mb-3 p-0">
+            <div id="table-title" class="bg-secondary text-center py-1 fs-4">Checklist</div>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th class="col-auto">#</th>
+                        <th class="col-3">Description</th>
+                        <th class="col-3">Notes</th>
+                        <th class="col-3">Photos</th>
+                        <th class="col-3">Remarks</th>
+                        <th class="col-auto">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <h3>Screenshot:</h3>
+    <div id="canvasContainer"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+
+        async function exportAsPDF() {
+            const { jsPDF } = window.jspdf;
+            const paperType = "letter";
+            const paperDimensions = {
+                    "a4": {pageWidth: 210, pageHeight: 297},
+                    "letter": {pageWidth: 215.9, pageHeight: 279.4},
+                }
+
+            const topMargin = 13;
+            const bottomMargin = 13;
+            const leftMargin = 13;
+            const rightMargin = 13;
+
+            const {pageWidth, pageHeight} = paperDimensions[paperType];
+
+            const contentWidth = pageWidth - topMargin - bottomMargin;
+            const contentHeight = pageHeight - leftMargin - rightMargin;
+            
+            const doc = new jsPDF('p', 'mm', paperType);
+            
+
+            
+            let page_canvas, canvas_imgData, imgData_height;
+
+            
+
+
+            const page1 = document.querySelector('#cover-page');
+            page_canvas = await html2canvas(page1);
+            canvas_imgData = page_canvas.toDataURL("image/png");
+            imgData_height = (page_canvas.height * contentWidth) / page_canvas.width;
+            
+            doc.addImage(canvas_imgData, "PNG", leftMargin, topMargin, contentWidth, imgData_height);
+
+            //start new page 2
+            doc.addPage();
+
+            const page2 = document.querySelector('#items-page');
+            page_canvas = await html2canvas(page2);
+
+            canvas_imgData = page_canvas.toDataURL("image/png");
+            imgData_height = (page_canvas.height * contentWidth) / page_canvas.width;
+
+            doc.addImage(canvas_imgData, "PNG", leftMargin, topMargin, contentWidth, imgData_height);
+            doc.setFillColor(255, 255, 255); 
+            doc.rect(0, pageHeight - bottomMargin, pageWidth, bottomMargin, 'F');
+
+            let position = 0;
+
+            const itemOffset = 5
+            for(let i = 1; position + imgData_height > contentHeight; i++) {
+                position -= (contentHeight - topMargin - bottomMargin - itemOffset);
+                doc.addPage();
+
+
+                doc.addImage(canvas_imgData, "PNG", leftMargin, position, contentWidth, imgData_height);
+                position -= topMargin;
+                doc.setFillColor(255, 255, 255); 
+                doc.rect(0, 0, pageWidth, topMargin, 'F');
+                doc.rect(0, pageHeight - bottomMargin, pageWidth, bottomMargin, 'F');
+
+            }
+
+
+            //set pages
+            doc.setFontSize(10);
+            doc.setTextColor(128, 128, 128);
+            const pageOffset = 2
+            const totalPages = doc.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+                doc.setPage(i);
+                doc.text(`Page ${i} of ${totalPages}`, leftMargin, topMargin - pageOffset);
+            }
+
+            
+            doc.save("newpdf.pdf");
+        }
+    </script>
+
+    <script>
+        let checklistInfo;
+        let checklistItems;
+
+        const status_colors = { approved: "success", completed: "success", rejected: "danger", pending: "warning", inprogress: "secondary" }
+        document.addEventListener("DOMContentLoaded", async () => {
+            await fetchChecklistInfo();
+            populateChecklistInfo();
+            populateChecklistItems();
+        });
+        async function fetchChecklistInfo() {
+            const checklist_id = new URLSearchParams(window.location.search).get("checklist_id");
+            if (!checklist_id) window.location.href = "/checklists/manage"
+            let res = await fetch(`/api/checklists/${checklist_id}`)
+            checklistInfo = await res.json();
+            checklistItems = checklistInfo.all_items;
+        }
+        function populateChecklistInfo() {
+            const getDate = (datetime) => (datetime) ? new Date(datetime).toISOString().slice(0, 10) : datetime;
+            const getDateTime = (datetime) => (datetime) ? new Date(datetime).toISOString().slice(0, 16) : datetime;
+
+            document.querySelector("#project-parent").innerText = checklistInfo.all_projects.project_name;
+            document.querySelector("#project-parent-2").innerText = checklistInfo.all_projects.project_name;
+            document.querySelector("#checklist-title").innerText = checklistInfo.all_template_checklists.name;
+            document.querySelector("#checklist-name").innerText = checklistInfo.all_template_checklists.name;
+
+            document.querySelector("#checklist-who_did_the_work").innerText = checklistInfo.worker?.employee_id || "";
+            document.querySelector("#checklist-who_is_checking").innerText = checklistInfo.evaluator?.employee_id || "";
+
+            document.querySelector("#checklist-issues").innerText = checklistInfo.issues ?? "";
+            document.querySelector("#checklist-changes").innerText = checklistInfo.changes ?? "";
+            document.querySelector("#checklist-what_is_not_done").innerText = checklistInfo.what_is_not_done ?? "";
+
+            document.querySelector("#checklist-phase_start_date").innerText = getDate(checklistInfo.phase_start_date) || "";
+            document.querySelector("#checklist-completed_date").innerText = getDate(checklistInfo.completed_date) || "";
+            document.querySelector("#checklist-requested_inspection_date").innerText = getDateTime(checklistInfo.requested_inspection_date) || "";
+
+            document.querySelector("#checklist-inspection_date").innerText = getDateTime(checklistInfo.inspection_date) || "";
+
+            document.querySelector("#checklist-is_done_yes").checked = checklistInfo.is_done;
+            document.querySelector("#checklist-is_done_no").checked = !checklistInfo.is_done;
+
+            document.querySelector("#checklist-is_missing_yes").checked = checklistInfo.is_done;
+            document.querySelector("#checklist-is_missing_no").checked = !checklistInfo.is_done;
+
+            document.querySelector("#checklist-is_ready_inspect_yes").checked = checklistInfo.is_ready_inspect;
+            document.querySelector("#checklist-is_ready_inspect_no").checked = !checklistInfo.is_ready_inspect;
+
+
+            document.querySelector("#checklist-session_id").innerText = checklistInfo.session_id;
+            document.querySelector("#checklist-noah_inspector").innerText = checklistInfo.noah_inspector;
+            document.querySelector("#checklist-dragon_inspector").innerText = checklistInfo.dragon_inspector;
+            document.querySelector("#checklist-is_pass").value = checklistInfo.is_pass
+            document.querySelector("#checklist-is_reinspection_needed").value = checklistInfo.is_reinspection_needed;
+
+        }
+        async function populateChecklistItems() {
+            const tBody = document.querySelector('tbody');
+            tBody.innerHTML = '';
+
+
+            for (const [index, item] of checklistItems.entries()) {
+
+                const row = document.createElement('tr');
+                const template = item.all_template_items;
+                row.setAttribute('id', `item-check-${item.id}`);
+
+                row.innerHTML = `
+                    <td class="align-middle text-center">${index + 1}</td>
+                    <td class="align-middle">
+                        <p>${template.description_en}</p>
+                        <p>${template.translation_overwrite_cn || template.description_cn}</p>
+                    </td>
+                    <td class="align-middle">${template.notes ? `${template.notes}` : ""}</td>
+                    <td class="align-middle">${item.photo_path ? `<img src="${item.photo_path}" class="img-fluid d-block mx-auto"/>`:""}</td>
+                    <td class="align-middle"><p>${item.remarks}</p></td>
+                    <td id="item-status-${item.id}" class="align-middle text-center fw-bolder">${item.status === "completed" ? "approved" : item.status}</td>
+                    
+                `;
+                tBody.appendChild(row);
+            }
+        }
+    </script>
+</body>
+
+</html>

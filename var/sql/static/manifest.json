@@ -1,0 +1,33 @@
+{
+    "name": "Dragon Tiny Homes",
+    "short_name": "DTH",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#000000",
+    "screenshots": [
+        {
+          "src": "/static/1024x500.jpg",
+          "sizes": "1024x500",   
+          "type": "image/jpeg",
+          "form_factor": "wide"
+        },
+        {
+          "src": "/static/400x800.jpg",
+          "sizes": "400x800",
+          "type": "image/jpeg"
+        }
+      ],
+    "icons": [
+      {
+        "src": "/static/dth.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "/static/dth512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }

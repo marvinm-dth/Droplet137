@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam Capture & Upload</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #f4f4f4;
+            padding: 20px;
+        }
+        #camera-container {
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        #capture-btn, #upload-btn {
+            margin: 10px auto 0 auto;
+            display: block;
+            padding: 10px 15px;
+            border: none;
+            background: #007BFF;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        #capture-btn:hover, #upload-btn:hover {
+            background: #0056b3;
+        }
+        #preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .image-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .image-wrapper img {
+            width: 120px;
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+        .remove-btn {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: red;
+            color: white;
+            border: none;
+            padding: 5px 8px;
+            font-size: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .remove-btn:hover {
+            background: darkred;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="camera-container">
+        <div id="my_camera"></div>
+        <button id="capture-btn">Capture Image</button>
+    </div>
+
+    <div id="preview-container"></div>
+
+    <button id="upload-btn" style="display: none;">Upload All</button>
+
+    <script>
+        Webcam.set({
+            width: 320,
+            height: 240,
+            image_format: 'jpeg',
+            jpeg_quality: 90
+        });
+        Webcam.attach('#my_camera');
+
+        let capturedImages = [];
+
+        document.getElementById('capture-btn').addEventListener('click', () => {
+            Webcam.snap(data_uri => {
+                const imgWrapper = document.createElement('div');
+                imgWrapper.classList.add('image-wrapper');
+
+                const img = document.createElement('img');
+                img.src = data_uri;
+
+                const removeBtn = document.createElement('button');
+                removeBtn.classList.add('remove-btn');
+                removeBtn.textContent = "Remove";
+                removeBtn.addEventListener('click', () => {
+                    imgWrapper.remove();
+                    capturedImages = capturedImages.filter(imgObj => imgObj !== img.src);
+                    toggleUploadButton();
+                });
+
+                imgWrapper.appendChild(img);
+                imgWrapper.appendChild(removeBtn);
+                document.getElementById('preview-container').appendChild(imgWrapper);
+                
+                capturedImages.push(data_uri);
+                toggleUploadButton();
+            });
+        });
+
+        document.getElementById('upload-btn').addEventListener('click', () => {
+            const formData = new FormData();
+            capturedImages.forEach((dataUri, index) => {
+                fetch(dataUri)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        formData.append(`files[]`, new File([blob], `photo_${index}.jpg`, { type: 'image/jpeg' }));
+
+                        if (index === capturedImages.length - 1) {
+                            uploadImages(formData);
+                        }
+                    });
+            });
+        });
+
+        function uploadImages(formData) {
+            fetch('/upload', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Upload successful', data);
+                    alert('Images uploaded successfully!');
+                    document.getElementById('preview-container').innerHTML = '';
+                    capturedImages = [];
+                    toggleUploadButton();
+                })
+                .catch(err => console.error('Upload error', err));
+        }
+
+        function toggleUploadButton() {
+            document.getElementById('upload-btn').style.display = capturedImages.length > 0 ? 'block' : 'none';
+        }
+    </script>
+
+</body>
+</html>

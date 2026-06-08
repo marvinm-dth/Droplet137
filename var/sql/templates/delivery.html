@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="order-id" content="{{ order_id }}" />
+    <title>Dragon Tiny Homes — Deliveries</title>
+
+    <!-- Google Font -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+    />
+    <!-- hidden tag that Jinja fills -->
+
+    <!-- jsPDF + html2canvas -->
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <!-- ↓ add under the html2canvas line -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- ========== Base + utility styles ========== -->
+    <style>
+      :root {
+        --blue: #007bff;
+        --green: #28a745;
+        --green-dk: #19692c;
+        --red: #cc716c;
+        --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Poppins, Arial, sans-serif;
+        background: #f8f9fa;
+        color: #333;
+      }
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      /* ---------- layout ---------- */
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 16px;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        padding: 20px 0;
+      }
+      .header img {
+        width: 30px;
+        height: 30px;
+        margin-right: 8px;
+      }
+      .header h1 {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+      }
+      .logout-button {
+        padding: 10px 20px;
+        background: var(--red);
+        color: #fff;
+        font-weight: bold;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+      }
+      .logout-button:hover {
+        background: #b35c58;
+      }
+
+      .form-group {
+        display: flex;
+        align-items: center;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .form-group label {
+        min-width: 180px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .form-group input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        background: #fff;
+        min-width: 0;
+      }
+
+      .add-delivery {
+        display: inline-block;
+        padding: 10px 20px;
+        border-radius: 10px;
+        background: var(--green);
+        color: #fff;
+        font-weight: 600;
+      }
+      .add-delivery:hover {
+        background: #218838;
+      }
+
+      .delivery-card {
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: var(--card-shadow);
+        margin: 14px 0;
+        overflow: hidden;
+      }
+      .delivery-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        cursor: pointer;
+        background: #eceff3;
+      }
+      .delivery-head h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+      .delivery-body {
+        display: none;
+        padding: 14px 20px;
+      }
+
+      .item-row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin: 10px 0;
+      }
+      .item-img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+      }
+      .item-info {
+        flex: 1;
+      }
+      .qty-badge {
+        min-width: 70px;
+        text-align: center;
+        border-radius: 8px;
+        padding: 6px 10px;
+        background: #e7f6ec;
+        color: var(--green-dk);
+        font-weight: 600;
+      }
+
+      .language-selector {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .language-selector label {
+        font-weight: 600;
+        margin-right: 10px;
+      }
+      select {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+      }
+
+      /* ---------- pills & picker ---------- */
+      .date-pill {
+        background: #e9f7ff;
+        color: #0277bd;
+        border-radius: 20px;
+        padding: 2px 10px;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .edit-qty {
+        cursor: pointer;
+      }
+      .pick-check {
+        transform: scale(1.2);
+        cursor: pointer;
+      }
+      .pick-qty {
+        text-align: center;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        width: 80px;
+        padding: 4px 6px;
+      }
+
+      /* ---------- modals ---------- */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        display: none;
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-card {
+        background: #fff;
+        width: 90%;
+        max-width: 850px;
+        max-height: 90%;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        display: flex;
+        flex-direction: column;
+      }
+
+      @media (max-width: 500px) {
+        .header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .header h1 {
+          position: static;
+          transform: none;
+          margin-top: 8px;
+        }
+        .logout-button {
+          width: 80%;
+          text-align: center;
+          margin-top: 8px;
+        }
+        .form-group label,
+        .form-group input {
+          width: 100%;
+        }
+        .add-delivery {
+          width: 80%;
+          text-align: center;
+          margin: 16px auto;
+        }
+      }
+
+      /* Put with your other utility styles */
+      #loadingOverlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        display: none; /* toggled via JS */
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+      }
+      .loaderMsg {
+        color: #fff;
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        animation: pulse 1.2s ease-in-out infinite alternate;
+      }
+      @keyframes pulse {
+        to {
+          opacity: 0.4;
+        }
+      }
+      /* ---- PDF preview ratio control ---- */
+      .pdf-wrapper {
+        position: relative;
+        width: 100%;
+        /* Modern browsers get a one-line fix */
+        aspect-ratio: 8.5 / 11; /* 0.7727… portrait letter */
+        /* Fallback for very old browsers */
+        padding-top: 129.5%; /* 11 / 8.5 * 100 ≈ 129.4% */
+      }
+      .pdf-wrapper iframe {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- hidden tag that Jinja fills -->
+      <span
+        id="serverOrderId"
+        data-order-id="{{ order_id }}"
+        style="display: none"
+      ></span>
+
+      <!-- ────────── Header ────────── -->
+      <div class="header">
+        <a href="/main" class="logo-link"
+          ><img src="/static/home-logo.png" alt="Home"
+        /></a>
+        <h1>Deliveries</h1>
+        <a href="/logout" class="logout-button data-english">Logout</a>
+        <a
+          href="/logout"
+          class="logout-button data-mandarin"
+          style="display: none"
+          >登出</a
+        >
+      </div>
+
+      <!-- ────────── Language selector ────────── -->
+      <div class="language-selector">
+        <label for="langSel" class="data-english">Choose Language:</label>
+        <label for="langSel" class="data-mandarin" style="display: none"
+          >选择语言:</label
+        >
+        <select id="langSel" onchange="toggleLang()">
+          <option value="english">English</option>
+          <option value="chinese">Chinese</option>
+        </select>
+      </div>
+
+      <!-- ────────── Order info placeholders ────────── -->
+      <div class="form-group">
+        <label class="data-english"><b>Order Name:</b></label>
+        <label class="data-mandarin" style="display: none"
+          ><b>订单名称:</b></label
+        >
+        <input id="orderName" readonly />
+      </div>
+      <div class="form-group">
+        <label class="data-english"><b>Supplier Order #:</b></label>
+        <label class="data-mandarin" style="display: none"
+          ><b>供应商订单编号:</b></label
+        >
+        <input id="supplierNo" readonly />
+      </div>
+
+      <div id="actionBox" style="text-align: center; margin: 22px 0"></div>
+      <div id="deliveries"></div>
+    </div>
+
+    <!-- ────────── Hidden printable template ────────── -->
+    <!-- ────────── Hidden printable template ────────── -->
+    <div
+      id="pdfTemplate"
+      style="
+        position: absolute;
+        left: -9999px;
+        top: -9999px;
+        width: 8.5in;
+        height: 11in;
+        padding: 0.5in; /* ½-inch page margins on all sides   */
+        font-family: Poppins, Arial, sans-serif;
+        box-sizing: border-box;
+      "
+    >
+      <!-- LOGO (true upper-left corner, inside the margin) -->
+      <img
+        id="tplLogo"
+        src=""
+        style="
+          position: absolute;
+          top: 0.5in;
+          left: 0.5in;
+          height: 45px;
+          object-fit: contain;
+        "
+        crossorigin="anonymous"
+      />
+
+      <!-- BARCODE (true upper-right corner, inside the margin) -->
+      <div
+        id="barcodeBox"
+        style="
+          position: absolute;
+          top: 0.5in;
+          right: 0.5in;
+          height: 45px;
+          display: flex;
+          align-items: center;
+        "
+      ></div>
+
+      <!-- Title band -->
+      <h3 style="text-align: center; margin: 1.35in 0 4px 0">
+        Delivery #<span id="tplDelId"></span>
+      </h3>
+      <p style="text-align: center; margin: 0 0 20px 0; font-size: 12px">
+        Order #<span id="tplOrdId"></span> · Date <span id="tplDelDate"></span>
+      </p>
+
+      <!-- Lines table -->
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px">
+        <thead>
+          <tr style="background: #f0f0f0">
+            <th style="border: 1px solid #ccc; padding: 4px">Image</th>
+            <th style="border: 1px solid #ccc; padding: 4px">
+              SKU / Description<br /><span style="font-weight: 400"
+                >(中文)</span
+              >
+            </th>
+            <th style="border: 1px solid #ccc; padding: 4px">Expected</th>
+            <th style="border: 1px solid #ccc; padding: 4px">Actual</th>
+          </tr>
+        </thead>
+        <tbody id="tplRows"></tbody>
+      </table>
+    </div>
+
+    <!-- ────────── PDF viewer modal ────────── -->
+    <div id="pdfModal" class="modal-backdrop">
+      <div class="modal-card">
+        <div
+          style="
+            padding: 8px 12px;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <span id="pdfModalTitle" style="font-weight: 600"></span>
+          <div>
+            <button id="pdfDownloadBtn" style="margin-right: 8px">
+              Download PDF
+            </button>
+            <button id="pdfSaveBtn" style="margin-right: 8px">
+              Save to Server
+            </button>
+            <button id="pdfCloseBtn">✖</button>
+          </div>
+        </div>
+        <div class="pdf-wrapper">
+          <iframe id="pdfViewer" scrolling="auto"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- ────────── Create-Delivery picker modal ────────── -->
+    <div id="newDelModal" class="modal-backdrop">
+      <div class="modal-card" style="max-width: 900px">
+        <div
+          style="
+            padding: 10px 14px;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+          "
+        >
+          <strong>Create Delivery</strong>
+          <button id="closeNewDel" style="font-size: 1.2rem">✖</button>
+        </div>
+        <div
+          id="pickItemsWrap"
+          style="flex: 1; overflow: auto; padding: 14px 18px"
+        ></div>
+        <div
+          style="
+            padding: 12px 18px;
+            border-top: 1px solid #ccc;
+            text-align: right;
+          "
+        >
+          <button
+            id="submitNewDel"
+            style="
+              padding: 8px 18px;
+              border-radius: 8px;
+              background: var(--green);
+              color: #fff;
+              font-weight: 600;
+            "
+          >
+            Submit
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loadingOverlay">
+      <div class="loaderMsg">Generating PDF…</div>
+    </div>
+
+    <!-- ────────── JavaScript ────────── -->
+    <script>
+      /* ───────── CONFIG ──────── */
+      const API = "https://inventory.orcagroup.io:5092";
+      const LOGO_URL =
+        "https://inventory.orcagroup.io:5092/assets/dragon-logo-black-horizontal-768x278.webp";
+
+      const orderId =
+        Number(document.getElementById("serverOrderId")?.dataset.orderId) ||
+        Number(new URLSearchParams(location.search).get("order_id"));
+      if (!orderId) {
+        alert("missing order_id");
+        throw new Error("order_id required");
+      }
+
+      async function fetchAsDataURL(url) {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        return new Promise((resolve) => {
+          const fr = new FileReader();
+          fr.onloadend = () => resolve(fr.result); // <-- data URL
+          fr.readAsDataURL(blob);
+        });
+      }
+
+      /* ───────── SHORTCUTS ───── */
+      const $ = (s) => document.querySelector(s);
+      const $$ = (s) => document.querySelectorAll(s);
+      const H = (s) => {
+        const t = document.createElement("template");
+        t.innerHTML = s.trim();
+        return t.content.firstChild;
+      };
+      const J = (u) => fetch(u).then((r) => r.json());
+      const fDate = (d) => (d ? new Date(d).toLocaleDateString() : "No date");
+      const today = () => new Date().toISOString().slice(0, 10);
+
+      /* ───────── STATE ───────── */
+      let allRows = [],
+        deliveries = [];
+
+      /* ───────── LANG TOGGLE ─── */
+      document.addEventListener("DOMContentLoaded", () => {
+        $("#langSel").value = localStorage.getItem("lang") || "english";
+        toggleLang();
+      });
+      function toggleLang() {
+        const lang = $("#langSel").value;
+        localStorage.setItem("lang", lang);
+        $$(".data-english").forEach(
+          (e) => (e.style.display = lang === "english" ? "" : "none")
+        );
+        $$(".data-mandarin").forEach(
+          (e) => (e.style.display = lang === "chinese" ? "" : "none")
+        );
+      }
+
+      /* ───────── LOAD / REFRESH ─ */
+      refresh();
+      async function refresh() {
+        const [hdr, raw] = await Promise.all([
+          J(`${API}/orders/${orderId}`),
+          J(`${API}/order-history?order_id=${orderId}`),
+        ]);
+        const rows = await autoAssignMissing(raw);
+        allRows = rows;
+        deliveries = group(rows);
+        renderHeader(hdr);
+        renderCards();
+      }
+
+      /* ───────── HEADER ───────── */
+      function renderHeader(h) {
+        $("#orderName").value = h.order_name || "(unnamed)";
+        $("#supplierNo").value = h.supplier_order_number || "-";
+        if (!$("#orderLabel"))
+          $(".header").appendChild(H(`<p id="orderLabel"></p>`));
+        $("#orderLabel").textContent = `Order #${orderId}`;
+        $("#actionBox").innerHTML =
+          h.order_status === "Done"
+            ? '<span class="add-delivery" style="background:#6c757d">✔ Done Delivery</span>'
+            : '<button id="addDeliveryBtn" class="add-delivery">Add Delivery</button>';
+      }
+
+      /* ───────── GROUPER ──────── */
+      function group(rows) {
+        const m = {};
+        rows.forEach((r) => {
+          const ids = r.delivery_id ?? [],
+            qs = r.delivery_qty ?? [];
+          ids.forEach((id, i) => {
+            const copy = { ...r, this_qty: qs[i] ?? 0, this_idx: i };
+            (m[id] ??= []).push(copy);
+          });
+        });
+        return Object.entries(m).map(([id, items]) => ({ id: +id, items }));
+      }
+
+      /* ───────── CARDS ───────── */
+      function renderCards() {
+        const wrap = $("#deliveries");
+        wrap.innerHTML = "";
+        if (!deliveries.length) {
+          wrap.innerHTML = "<p>No deliveries yet.</p>";
+          return;
+        }
+        deliveries.forEach(({ id, items }) => {
+          const dateISO = items[0]?.expected_date || null;
+          const card = H(`
+        <div class="delivery-card" data-id="${id}">
+          <div class="delivery-head">
+            <div style="display:flex;align-items:center;gap:8px">
+              <h3>Delivery #${id}</h3>
+              <span class="date-pill">${fDate(
+                dateISO
+              )} <span class="edit-date">✏️</span></span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <span>${items.length} item${items.length > 1 ? "s" : ""}</span>
+              <span class="submit-delivery" title="Submit">✅</span>
+              <span class="print-delivery"  title="Print PDF">🖨️</span>
+              <span class="del-delivery"    title="Delete">🗑️</span>
+            </div>
+          </div>
+          <div class="delivery-body" style="display:none"></div>
+        </div>`);
+          buildRows(card.querySelector(".delivery-body"), items);
+          wrap.appendChild(card);
+        });
+      }
+      function buildRows(body, items) {
+        items.forEach((it) => {
+          const pcs = Math.round((it.this_qty ?? 0) * 1_000_000);
+          body.insertAdjacentHTML(
+            "beforeend",
+            `
+        <div class="item-row" data-idx="${it.this_idx}" data-row="${
+              it.order_item_number
+            }">
+          <img class="item-img" src="${
+            it.item_image || "/static/no-image.png"
+          }" alt="">
+          <div class="item-info">
+            <div><b>${it.item_desc || it.sku_number}</b></div>
+            <div>Qty: ${
+              it.order_qty_confirmed ?? it.order_qty_requested ?? 0
+            }</div>
+            <div>$${Number(it.item_price ?? it.actual_item_price ?? 0).toFixed(
+              2
+            )}</div>
+          </div>
+          <div class="qty-badge edit-qty">${pcs}</div>
+        </div>`
+          );
+        });
+      }
+
+      /* ───────── HELPERS ───────── */
+      function nextId() {
+        return deliveries.length
+          ? Math.max(...deliveries.map((d) => d.id)) + 1
+          : 1;
+      }
+      async function patchRows(filterFn, updateFn) {
+        const tg = allRows.filter(filterFn);
+        await Promise.all(
+          tg.map((r) => {
+            const payload = updateFn(structuredClone(r));
+            return fetch(`${API}/order-history/${r.order_item_number}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+          })
+        );
+      }
+      /* auto-assign NULL delivery_id → newId */
+      async function autoAssignMissing(rows) {
+        const miss = rows.filter(
+          (r) => !(Array.isArray(r.delivery_id) && r.delivery_id.length)
+        );
+        if (!miss.length) return rows;
+        const newId = nextId();
+        await Promise.all(
+          miss.map((r) => {
+            r.delivery_id = [newId];
+            r.delivery_qty = [0];
+            return fetch(`${API}/order-history/${r.order_item_number}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                delivery_id: r.delivery_id,
+                delivery_qty: r.delivery_qty,
+              }),
+            });
+          })
+        );
+        return rows;
+      }
+
+      /* ───────── Picker helpers ───────── */
+      function sumDelivered(row) {
+        if (!Array.isArray(row.delivery_qty)) return 0;
+        return row.delivery_qty.reduce((s, q) => s + (q || 0), 0);
+      }
+      function buildPickerRow(r) {
+        const remaining =
+          (r.order_qty_confirmed ?? r.order_qty_requested ?? 0) -
+          sumDelivered(r);
+        const pcs = Math.round(remaining * 1_000_000);
+        return H(`
+      <div class="item-row" style="margin:8px 0;align-items:center;gap:10px">
+        <input type="checkbox" class="pick-check" data-row="${
+          r.order_item_number
+        }">
+        <img src="${
+          r.item_image || "/static/no-image.png"
+        }" style="width:50px;height:50px;border-radius:6px;border:1px solid #ddd;object-fit:cover">
+        <div style="flex:1">
+          <b>${r.item_desc || r.sku_number}</b><br>Remaining: ${pcs}
+        </div>
+        <input type="number" min="0" class="pick-qty" data-row="${
+          r.order_item_number
+        }" value="${pcs}">
+      </div>`);
+      }
+
+      /* ───────── CRUD actions ───── (delete / edit etc stay identical) */
+      async function deleteDelivery(id) {
+        if (!confirm(`Delete delivery #${id}?`)) return;
+        await patchRows(
+          (r) => r.delivery_id.includes(id),
+          (r) => {
+            const i = r.delivery_id.indexOf(id);
+            r.delivery_id.splice(i, 1);
+            r.delivery_qty.splice(i, 1);
+            r.is_del_confirmed?.splice?.(i, 1);
+            return {
+              delivery_id: r.delivery_id.length ? r.delivery_id : null,
+              delivery_qty: r.delivery_qty.length ? r.delivery_qty : null,
+              is_del_confirmed: r.is_del_confirmed?.length
+                ? r.is_del_confirmed
+                : null,
+            };
+          }
+        );
+        refresh();
+      }
+
+      async function editDate(id, pill) {
+        const iso = prompt("Delivery date (YYYY-MM-DD)", today());
+        if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+        await patchRows(
+          (r) => r.delivery_id.includes(id),
+          () => ({ expected_date: iso })
+        );
+        pill.firstChild.textContent = fDate(iso) + " ";
+      }
+
+      async function editQty(rowId, idx, badge) {
+        const cur = parseInt(badge.textContent, 10);
+        const pcs = parseInt(
+          prompt("Expected quantity (whole pieces):", cur) || "",
+          10
+        );
+        if (isNaN(pcs)) return;
+        const newFloat = pcs / 1_000_000;
+
+        const local = allRows.find((r) => r.order_item_number == rowId);
+        if (local) {
+          if (!Array.isArray(local.delivery_qty)) local.delivery_qty = [];
+          local.delivery_qty[idx] = newFloat;
+        }
+
+        const row = await J(`${API}/order-history/${rowId}`);
+        const dq = Array.isArray(row.delivery_qty) ? [...row.delivery_qty] : [];
+        dq[idx] = newFloat;
+        await fetch(`${API}/order-history/${rowId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ delivery_qty: dq }),
+        });
+        badge.textContent = pcs;
+      }
+
+      /* ───────── Picker modal logic ───────── */
+      function openPickerModal() {
+        const wrap = $("#pickItemsWrap");
+        wrap.innerHTML = "";
+        allRows.forEach((r) => {
+          const remaining =
+            (r.order_qty_confirmed ?? r.order_qty_requested ?? 0) -
+            sumDelivered(r);
+          if (remaining > 0) wrap.appendChild(buildPickerRow(r));
+        });
+        $("#newDelModal").style.display = "flex";
+      }
+      $("#closeNewDel").onclick = () =>
+        ($("#newDelModal").style.display = "none");
+
+      $("#submitNewDel").onclick = async () => {
+        const checks = [...$$(".pick-check")].filter((c) => c.checked);
+        if (!checks.length) {
+          alert("Select at least one item.");
+          return;
+        }
+        const id = nextId();
+
+        const qtyMap = {};
+        checks.forEach((c) => {
+          const rowId = c.dataset.row;
+          const qty =
+            parseInt($(`.pick-qty[data-row='${rowId}']`).value, 10) || 0;
+          qtyMap[rowId] = qty / 1_000_000;
+        });
+
+        await Promise.all(
+          Object.entries(qtyMap).map(async ([rowId, qtyFloat]) => {
+            const row = await J(`${API}/order-history/${rowId}`);
+            const dIds = Array.isArray(row.delivery_id)
+              ? [...row.delivery_id]
+              : [];
+            const dQs = Array.isArray(row.delivery_qty)
+              ? [...row.delivery_qty]
+              : [];
+            dIds.push(id);
+            dQs.push(qtyFloat);
+            return fetch(`${API}/order-history/${rowId}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ delivery_id: dIds, delivery_qty: dQs }),
+            });
+          })
+        );
+
+        $("#newDelModal").style.display = "none";
+        refresh();
+      };
+
+      /* ───────── PDF helpers (unchanged) ───── */
+      function showModal(show, title = "", blobURL = "") {
+        const modal = $("#pdfModal");
+        if (show) {
+          $("#pdfViewer").src = blobURL;
+          $("#pdfModalTitle").textContent = title;
+          modal.style.display = "flex";
+        } else {
+          modal.style.display = "none";
+          $("#pdfViewer").src = "";
+        }
+      }
+      $("#pdfCloseBtn").onclick = () => showModal(false);
+
+      // async function printDelivery(delId) {
+      //   const delivery = deliveries.find((d) => d.id === delId);
+      //   if (!delivery) return alert("Delivery not found");
+      //   const delDateISO = delivery.items[0]?.expected_date || today();
+
+      //   $("#tplDelId").textContent = delId;
+      //   $("#tplOrdId").textContent = orderId;
+      //   $("#tplDelDate").textContent = fDate(delDateISO);
+      //   const tbody = $("#tplRows");
+      //   tbody.innerHTML = "";
+      //   for (const row of delivery.items) {
+      //     const exp = Math.round((row.this_qty ?? 0) * 1_000_000);
+      //     tbody.insertAdjacentHTML(
+      //       "beforeend",
+      //       `
+      //   <tr>
+      //     <td style="border:1px solid #ccc;padding:4px;text-align:center">
+      //       <img src="${
+      //         row.item_image || "/static/no-image.png"
+      //       }" crossOrigin="anonymous" style="height:60px;object-fit:contain">
+      //     </td>
+      //     <td style="border:1px solid #ccc;padding:4px">
+      //       ${row.sku_number || ""}<br><b>${row.item_desc || ""}</b>
+      //     </td>
+      //     <td style="border:1px solid #ccc;padding:4px;text-align:center">
+      //       ${row.order_qty_confirmed ?? row.order_qty_requested ?? 0}
+      //     </td>
+      //     <td style="border:1px solid #ccc;padding:4px;text-align:center">${exp}</td>
+      //   </tr>`
+      //     );
+      //   }
+      //   const template = $("#pdfTemplate");
+      //   template.style.display = "block";
+      //   let blobURL = "";
+      //   try {
+      //     const canvas = await html2canvas(template, {
+      //       scale: 2,
+      //       useCORS: true,
+      //     });
+      //     const { jsPDF } = window.jspdf;
+      //     const pdf = new jsPDF({
+      //       orientation: "portrait",
+      //       unit: "in",
+      //       format: "letter",
+      //     });
+      //     const imgW = 7.5,
+      //       imgH = (imgW * canvas.height) / canvas.width;
+      //     pdf.addImage(canvas, "PNG", 0.5, 0.5, imgW, imgH);
+      //     blobURL = pdf.output("bloburl");
+      //     $("#pdfDownloadBtn").onclick = () =>
+      //       pdf.save(`order-${orderId}-delivery-${delId}.pdf`);
+      //   } catch (err) {
+      //     console.warn("html2canvas failed", err);
+      //     blobURL = "about:blank";
+      //     $("#pdfDownloadBtn").onclick = null;
+      //     alert(
+      //       "Couldn’t embed some images – showing a basic preview instead."
+      //     );
+      //   }
+      //   template.style.display = "none";
+      //   showModal(true, `Delivery #${delId} – ${fDate(delDateISO)}`, blobURL);
+      // }
+
+      //   async function printDelivery(delId) {
+      //     const delivery = deliveries.find((d) => d.id === delId);
+      //     if (!delivery) {
+      //       alert("Delivery not found");
+      //       return;
+      //     }
+
+      //     const delDateISO = delivery.items[0]?.expected_date || today();
+
+      //     /* header */
+      //     $("#tplDelId").textContent = delId;
+      //     $("#tplOrdId").textContent = orderId;
+      //     $("#tplDelDate").textContent = fDate(delDateISO);
+
+      //     /* logo */
+      //     $("#tplLogo").src = LOGO_URL;
+      //     /* logo – convert to same-origin data URL first */
+      //     const logoDataURL = await fetchAsDataURL(LOGO_URL);
+      //     const imgLogo = $("#tplLogo");
+      //     imgLogo.src = logoDataURL;
+      //     await imgLogo.decode?.().catch(() => {}); // ☑ wait for it to load
+
+      //     /* barcode */
+      //     const box = $("#barcodeBox");
+      //     box.innerHTML = "";
+      //     const svg = document.createElementNS(
+      //       "http://www.w3.org/2000/svg",
+      //       "svg"
+      //     );
+      //     box.appendChild(svg);
+      //     JsBarcode(svg, `${orderId}-${delDateISO}`, {
+      //       format: "CODE128",
+      //       width: 1.2,
+      //       height: 40,
+      //       displayValue: false,
+      //     });
+
+      //     /* rows */
+      //     const tbody = $("#tplRows");
+      //     tbody.innerHTML = "";
+      //     for (const row of delivery.items) {
+      //       const expectedPcs = Math.round((row.this_qty ?? 0) * 1_000_000);
+      //       tbody.insertAdjacentHTML(
+      //         "beforeend",
+      //         `
+      //   <tr>
+      //     <td style="border:1px solid #ccc;padding:4px;text-align:center">
+      //       <img src="${row.item_image || "/static/no-image.png"}"
+      //            crossOrigin="anonymous"
+      //            style="height:120px;object-fit:contain">
+      //     </td>
+      //     <td style="border:1px solid #ccc;padding:4px">
+      //       ${row.sku_number || ""}<br>
+      //       <b>${row.item_desc || ""}</b><br>
+      //       <span style="font-size:11px;color:#555;">
+      //         ${row.item_desc_mandarin || row.item_name_cn || ""}
+      //       </span>
+      //     </td>
+      //     <td style="border:1px solid #ccc;padding:4px;text-align:center">${expectedPcs}</td>
+      //     <td style="border:1px solid #ccc;padding:4px"></td>
+      //   </tr>
+      // `
+      //       );
+      //     }
+
+      //     /* render to PDF */
+      //     $("#loadingOverlay").style.display = "flex";
+      //     const template = $("#pdfTemplate");
+      //     template.style.display = "block";
+
+      //     try {
+      //       const canvas = await html2canvas(template, {
+      //         scale: 2,
+      //         useCORS: true,
+      //       });
+      //       const { jsPDF } = window.jspdf;
+      //       const pdf = new jsPDF({
+      //         orientation: "portrait",
+      //         unit: "in",
+      //         format: "letter",
+      //       });
+      //       const pageW = pdf.internal.pageSize.getWidth();
+      //       const pageH = (pageW * canvas.height) / canvas.width;
+      //       pdf.addImage(canvas, "PNG", 0, 0, pageW, pageH);
+
+      //       const blobURL = pdf.output("bloburl");
+      //       $("#pdfDownloadBtn").onclick = () =>
+      //         pdf.save(`order-${orderId}-delivery-${delId}.pdf`);
+      //       showModal(true, `Delivery #${delId} – ${fDate(delDateISO)}`, blobURL);
+      //     } catch (err) {
+      //       console.warn("html2canvas failed", err);
+      //       alert(
+      //         "Couldn’t embed some images – showing a basic preview instead."
+      //       );
+      //       showModal(true, `Delivery #${delId}`, "about:blank");
+      //     } finally {
+      //       template.style.display = "none";
+      //       $("#loadingOverlay").style.display = "none";
+      //     }
+      //   }
+
+      // async function printDelivery(delId) {
+      //   const delivery = deliveries.find((d) => d.id === delId);
+      //   if (!delivery) {
+      //     alert("Delivery not found");
+      //     return;
+      //   }
+
+      //   const delDateISO = delivery.items[0]?.expected_date || today();
+
+      //   /* ── Header fields ─────────────────────────────────── */
+      //   $("#tplDelId").textContent = delId;
+      //   $("#tplOrdId").textContent = orderId;
+      //   $("#tplDelDate").textContent = fDate(delDateISO);
+
+      //   /* ── Logo (convert to data-URL so CORS is never an issue) ─ */
+      //   const logoDataURL = await fetchAsDataURL(LOGO_URL);
+      //   const imgLogo = $("#tplLogo");
+      //   imgLogo.src = logoDataURL;
+      //   await imgLogo.decode?.().catch(() => {}); // wait for it to load
+
+      //   /* ── Barcode ──────────────────────────────────────────── */
+      //   let box = document.getElementById("barcodeBox");
+      //   if (!box) {
+      //     // <== safety net: recreate if someone removed it accidentally
+      //     box = document.createElement("div");
+      //     box.id = "barcodeBox";
+      //     box.style.cssText = "position:absolute; top:0.5in; right:0.5in;";
+      //     document.getElementById("pdfTemplate").appendChild(box);
+      //   }
+      //   box.innerHTML = ""; // clear any old SVG
+      //   const svg = document.createElementNS(
+      //     "http://www.w3.org/2000/svg",
+      //     "svg"
+      //   );
+      //   box.appendChild(svg);
+      //   JsBarcode(svg, `${orderId}-${delDateISO}`, {
+      //     format: "CODE128",
+      //     width: 1.2,
+      //     height: 45,
+      //     displayValue: false,
+      //     margin: 0,
+      //   });
+
+      //   /* ── Lines table ─────────────────────────────────────── */
+      //   const tbody = $("#tplRows");
+      //   tbody.innerHTML = "";
+      //   for (const row of delivery.items) {
+      //     const expectedPcs = Math.round((row.this_qty ?? 0) * 1_000_000);
+      //     tbody.insertAdjacentHTML(
+      //       "beforeend",
+      //       `
+      // <tr>
+      //   <td style="border:1px solid #ccc; padding:4px; text-align:center">
+      //     <img src="${row.item_image || "/static/no-image.png"}"
+      //          crossOrigin="anonymous"
+      //          style="height:120px; object-fit:contain">
+      //   </td>
+      //   <td style="border:1px solid #ccc; padding:4px">
+      //     ${row.sku_number || ""}<br>
+      //     <b>${row.item_desc || ""}</b><br>
+      //     <span style="font-size:11px; color:#555">
+      //       ${row.item_desc_mandarin || row.item_name_cn || ""}
+      //     </span>
+      //   </td>
+      //   <td style="border:1px solid #ccc; padding:4px; text-align:center">
+      //     ${expectedPcs}
+      //   </td>
+      //   <td style="border:1px solid #ccc; padding:4px"></td>
+      // </tr>`
+      //     );
+      //   }
+
+      //   /* ── Render to PDF ───────────────────────────────────── */
+      //   $("#loadingOverlay").style.display = "flex";
+      //   const template = $("#pdfTemplate");
+      //   template.style.display = "block";
+
+      //   try {
+      //     const canvas = await html2canvas(template, {
+      //       scale: 2,
+      //       useCORS: true,
+      //     });
+      //     const { jsPDF } = window.jspdf;
+      //     const pdf = new jsPDF({
+      //       orientation: "portrait",
+      //       unit: "in",
+      //       format: "letter",
+      //     });
+
+      //     const pageW = pdf.internal.pageSize.getWidth();
+      //     const pageH = (pageW * canvas.height) / canvas.width;
+      //     pdf.addImage(canvas, "PNG", 0, 0, pageW, pageH);
+
+      //     const blobURL = pdf.output("bloburl");
+      //     $("#pdfDownloadBtn").onclick = () =>
+      //       pdf.save(`order-${orderId}-delivery-${delId}.pdf`);
+      //     showModal(true, `Delivery #${delId} – ${fDate(delDateISO)}`, blobURL);
+      //   } catch (err) {
+      //     console.warn("html2canvas failed", err);
+      //     alert(
+      //       "Couldn’t embed some images – showing a basic preview instead."
+      //     );
+      //     showModal(true, `Delivery #${delId}`, "about:blank");
+      //   } finally {
+      //     template.style.display = "none";
+      //     $("#loadingOverlay").style.display = "none";
+      //   }
+      // }
+
+      async function printDelivery(delId) {
+        const delivery = deliveries.find((d) => d.id === delId);
+        if (!delivery) {
+          alert("Delivery not found");
+          return;
+        }
+
+        const delDateISO = delivery.items[0]?.expected_date || today();
+
+        /* ── Header fields ─────────────────────────────────── */
+        $("#tplDelId").textContent = delId;
+        $("#tplOrdId").textContent = orderId;
+        $("#tplDelDate").textContent = fDate(delDateISO);
+
+        /* ── Logo (convert to data-URL so CORS is never an issue) ─ */
+        const logoDataURL = await fetchAsDataURL(LOGO_URL);
+        const imgLogo = $("#tplLogo");
+        imgLogo.src = logoDataURL;
+        await imgLogo.decode?.().catch(() => {}); // wait for it to load
+
+        /* ── Barcode ──────────────────────────────────────────── */
+        let box = document.getElementById("barcodeBox");
+        if (!box) {
+          // safety net: recreate if someone removed it accidentally
+          box = document.createElement("div");
+          box.id = "barcodeBox";
+          box.style.cssText = "position:absolute; top:0.5in; right:0.5in;";
+          document.getElementById("pdfTemplate").appendChild(box);
+        }
+        box.innerHTML = ""; // clear any old SVG
+        const svg = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "svg"
+        );
+        box.appendChild(svg);
+        JsBarcode(svg, `${orderId}-${delDateISO}`, {
+          format: "CODE128",
+          width: 1.2,
+          height: 45,
+          displayValue: false,
+          margin: 0,
+        });
+
+        /* ── Lines table ─────────────────────────────────────── */
+        const tbody = $("#tplRows");
+        tbody.innerHTML = "";
+        for (const row of delivery.items) {
+          const expectedPcs = Math.round((row.this_qty ?? 0) * 1_000_000);
+          tbody.insertAdjacentHTML(
+            "beforeend",
+            `
+      <tr>
+        <td style="border:1px solid #ccc; padding:4px; text-align:center">
+          <img src="${row.item_image || "/static/no-image.png"}"
+               crossOrigin="anonymous"
+               style="height:120px; object-fit:contain">
+        </td>
+        <td style="border:1px solid #ccc; padding:4px">
+          ${row.sku_number || ""}<br>
+          <b>${row.item_desc || ""}</b><br>
+          <span style="font-size:11px; color:#555">
+            ${row.item_desc_mandarin || row.item_name_cn || ""}
+          </span>
+        </td>
+        <td style="border:1px solid #ccc; padding:4px; text-align:center">
+          ${expectedPcs}
+        </td>
+        <td style="border:1px solid #ccc; padding:4px"></td>
+      </tr>`
+          );
+        }
+
+        /* ── Render to PDF ───────────────────────────────────── */
+        const overlay = $("#loadingOverlay");
+        const msgEl = $(".loaderMsg");
+        const prevMsg = msgEl?.textContent || "Generating PDF…";
+
+        overlay.style.display = "flex";
+        const template = $("#pdfTemplate");
+        template.style.display = "block";
+
+        try {
+          const canvas = await html2canvas(template, {
+            scale: 2,
+            useCORS: true,
+          });
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF({
+            orientation: "portrait",
+            unit: "in",
+            format: "letter",
+          });
+
+          const pageW = pdf.internal.pageSize.getWidth();
+          const pageH = (pageW * canvas.height) / canvas.width;
+          pdf.addImage(canvas, "PNG", 0, 0, pageW, pageH);
+
+          // Build preview + hooks
+          const pdfBlob = pdf.output("blob"); // <-- actual file for upload
+          const blobURL = URL.createObjectURL(pdfBlob); // <-- preview
+
+          // Download
+          $("#pdfDownloadBtn").onclick = () =>
+            pdf.save(`order-${orderId}-delivery-${delId}.pdf`);
+
+          // Save to server (button is optional; attach if present)
+          const saveBtn = $("#pdfSaveBtn");
+          if (saveBtn) {
+            saveBtn.onclick = async () => {
+              try {
+                msgEl && (msgEl.textContent = "Saving to server…");
+                overlay.style.display = "flex";
+
+                const fd = new FormData();
+                const filename = `order-${orderId}-delivery-${delId}.pdf`;
+                fd.append("file", pdfBlob, filename);
+                fd.append("order_id", String(orderId));
+                fd.append("delivery_id", String(delId));
+
+                const resp = await fetch(`${API}/delivery-pdfs`, {
+                  method: "POST",
+                  body: fd,
+                });
+                if (!resp.ok) throw new Error(await resp.text());
+                const json = await resp.json();
+                alert(`Saved on server: ${json.path || filename}`);
+              } catch (err) {
+                alert(`Save failed: ${err.message}`);
+              } finally {
+                msgEl && (msgEl.textContent = prevMsg);
+                overlay.style.display = "none";
+              }
+            };
+          }
+
+          // Show modal with preview
+          showModal(true, `Delivery #${delId} – ${fDate(delDateISO)}`, blobURL);
+        } catch (err) {
+          console.warn("html2canvas failed", err);
+          alert(
+            "Couldn’t embed some images – showing a basic preview instead."
+          );
+          showModal(true, `Delivery #${delId}`, "about:blank");
+        } finally {
+          template.style.display = "none";
+          overlay.style.display = "none";
+        }
+      }
+
+      async function submitDelivery(id) {
+        const ok = allRows.some((r) => {
+          const i = r.delivery_id.indexOf(id);
+          return i > -1 && (r.delivery_qty?.[i] ?? 0) * 1_000_000 > 0;
+        });
+        if (!ok) {
+          alert("No expected quantity set for this delivery.");
+          return;
+        }
+        await patchRows(
+          (r) => r.delivery_id.includes(id),
+          (r) => {
+            const i = r.delivery_id.indexOf(id);
+            const idVal = r.delivery_id[i];
+            const flags = Array.isArray(r.is_del_confirmed)
+              ? [...r.is_del_confirmed]
+              : Array(r.delivery_id.length).fill(idVal + 0.1);
+            flags[i] = idVal + 0.2;
+            return { is_del_confirmed: flags };
+          }
+        );
+        alert(`Delivery #${id} submitted ✔`);
+        refresh();
+      }
+
+      /* ───────── EVENTS ───────── */
+      document.addEventListener("click", (e) => {
+        if (e.target.id === "addDeliveryBtn") {
+          openPickerModal();
+          return;
+        }
+
+        const head = e.target.closest(".delivery-head");
+        if (
+          (head && !["SPAN", "H3"].includes(e.target.tagName)) ||
+          e.target.classList.contains("date-pill")
+        ) {
+          if (
+            !e.target.classList.contains("edit-date") &&
+            !e.target.classList.contains("submit-delivery") &&
+            !e.target.classList.contains("del-delivery") &&
+            !e.target.classList.contains("print-delivery")
+          ) {
+            const body = head.nextElementSibling;
+            body.style.display =
+              body.style.display === "block" ? "none" : "block";
+          }
+        }
+        if (e.target.classList.contains("del-delivery"))
+          deleteDelivery(+e.target.closest(".delivery-card").dataset.id);
+        if (e.target.classList.contains("print-delivery"))
+          printDelivery(+e.target.closest(".delivery-card").dataset.id);
+        if (e.target.classList.contains("submit-delivery"))
+          submitDelivery(+e.target.closest(".delivery-card").dataset.id);
+        if (e.target.classList.contains("edit-date"))
+          editDate(
+            +e.target.closest(".delivery-card").dataset.id,
+            e.target.parentElement
+          );
+        if (e.target.classList.contains("edit-qty")) {
+          const row = e.target.closest(".item-row");
+          editQty(row.dataset.row, +row.dataset.idx, e.target);
+        }
+      });
+    </script>
+  </body>
+</html>
